@@ -1,0 +1,158 @@
+﻿@model ADHUNIK_BARI.ViewModels.CreateResidentViewModel
+
+
+<h2>Create Resident Account</h2>
+
+
+<form method="post">
+
+    @Html.AntiForgeryToken()
+
+
+    <div asp-validation-summary="All"
+         class="text-danger">
+    </div>
+
+
+
+
+    <!-- Full Name -->
+
+    <div class="mb-3">
+
+        <label>
+            Full Name
+        </label>
+
+
+        <input asp-for="FullName"
+               class="form-control" />
+
+
+        <span asp-validation-for="FullName"
+              class="text-danger">
+        </span>
+
+    </div>
+
+    <!-- Phone -->
+
+    <div class="mb-3">
+
+        <label>
+            Phone
+        </label>
+
+
+        <input asp-for="Phone"
+               class="form-control" />
+
+
+    </div>
+
+
+
+    <!-- Email -->
+
+    <div class="mb-3">
+
+        <label>
+            Email
+        </label>
+
+
+        <input asp-for="Email"
+               class="form-control" />
+
+
+        <span asp-validation-for="Email"
+              class="text-danger">
+        </span>
+
+    </div>
+
+
+
+
+
+
+    <!-- Resident Type -->
+
+    <div class="mb-3">
+
+        <label>
+            Resident Type
+        </label>
+
+
+        <select asp-for="ResidentType"
+                class="form-control">
+
+
+            <option value="">
+                -- Select Resident Type --
+            </option>
+
+
+            <option value="Tenant">
+                Tenant
+            </option>
+
+
+            <option value="FlatOwner">
+                Flat Owner
+            </option>
+
+
+        </select>
+
+
+        <span asp-validation-for="ResidentType"
+              class="text-danger">
+        </span>
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- Temporary Password -->
+
+    <div class="mb-3">
+
+        <label>
+            Temporary Password
+        </label>
+
+
+        <input asp-for="TemporaryPassword"
+               type="password"
+               class="form-control" />
+
+
+        <span asp-validation-for="TemporaryPassword"
+              class="text-danger">
+        </span>
+
+
+    </div>
+
+
+
+
+
+
+    <button type="submit"
+            class="btn btn-primary">
+
+        Create Account
+
+    </button>
+
+
+
+</form>

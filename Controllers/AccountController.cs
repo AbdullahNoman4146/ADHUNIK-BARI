@@ -39,9 +39,6 @@ namespace ADHUNIK_BARI.Controllers
         {
 
 
-            // If already logged in
-            // send user directly to dashboard
-
             if (User.Identity != null &&
                User.Identity.IsAuthenticated)
             {
@@ -66,12 +63,12 @@ namespace ADHUNIK_BARI.Controllers
         // LOGIN PROCESS
         // =========================
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(
             LoginViewModel model)
         {
-
 
 
             if (!ModelState.IsValid)
@@ -80,6 +77,7 @@ namespace ADHUNIK_BARI.Controllers
                 return View(model);
 
             }
+
 
 
 
@@ -101,6 +99,7 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
+
             if (result.Succeeded)
             {
 
@@ -109,6 +108,8 @@ namespace ADHUNIK_BARI.Controllers
                     await userManager.FindByEmailAsync(
                         model.Email
                     );
+
+
 
 
 
@@ -123,6 +124,8 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
+
+
                 return RedirectToAction(
                     "Index",
                     "Home"
@@ -130,6 +133,7 @@ namespace ADHUNIK_BARI.Controllers
 
 
             }
+
 
 
 
@@ -156,8 +160,157 @@ namespace ADHUNIK_BARI.Controllers
 
 
         // =========================
+        // CHANGE PASSWORD PAGE
+        // =========================
+
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+
+            return View();
+
+        }
+
+
+
+
+
+
+
+
+
+        // =========================
+        // CHANGE PASSWORD PROCESS
+        // =========================
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(
+            ChangePasswordViewModel model)
+        {
+
+
+            if (!ModelState.IsValid)
+            {
+
+                return View(model);
+
+            }
+
+
+
+
+
+            var user =
+                await userManager.GetUserAsync(User);
+
+
+
+
+
+            if (user == null)
+            {
+
+                return RedirectToAction(
+                    "Login"
+                );
+
+            }
+
+
+
+
+
+
+            var result =
+                await userManager.ChangePasswordAsync(
+                    user,
+                    model.OldPassword,
+                    model.NewPassword
+                );
+
+
+
+
+
+
+
+            if (result.Succeeded)
+            {
+
+
+                // Temporary password completed
+
+                user.TemporaryPasswordStatus = false;
+
+
+
+                await userManager.UpdateAsync(user);
+
+
+
+
+
+
+                TempData["Success"] =
+                    "Password changed successfully";
+
+
+
+
+
+
+                // Stay in resident dashboard
+
+                return RedirectToAction(
+                    "Dashboard",
+                    "Resident"
+                );
+
+
+            }
+
+
+
+
+
+
+
+
+            foreach (var error in result.Errors)
+            {
+
+                ModelState.AddModelError(
+                    "",
+                    error.Description
+                );
+
+            }
+
+
+
+
+
+
+            return View(model);
+
+
+        }
+
+
+
+
+
+
+
+
+
+        // =========================
         // LOGOUT
         // =========================
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -201,6 +354,8 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
+
+
             if (roles.Contains("Manager"))
             {
 
@@ -214,28 +369,22 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
-            if (roles.Contains("Tenant"))
+
+
+            if (
+                roles.Contains("Tenant") ||
+                roles.Contains("FlatOwner")
+            )
             {
 
                 return RedirectToAction(
                     "Dashboard",
-                    "Tenant"
+                    "Resident"
                 );
 
             }
 
 
-
-
-            if (roles.Contains("FlatOwner"))
-            {
-
-                return RedirectToAction(
-                    "Dashboard",
-                    "FlatOwner"
-                );
-
-            }
 
 
 
@@ -255,8 +404,8 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
-        // Used by Login GET
-        // when user already logged in
+
+        // Used when already logged in
 
         private IActionResult RedirectToDashboard()
         {
@@ -274,28 +423,24 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
-            if (User.IsInRole("Tenant"))
+
+
+
+            if (
+                User.IsInRole("Tenant") ||
+                User.IsInRole("FlatOwner")
+            )
             {
 
                 return RedirectToAction(
                     "Dashboard",
-                    "Tenant"
+                    "Resident"
                 );
 
             }
 
 
 
-
-            if (User.IsInRole("FlatOwner"))
-            {
-
-                return RedirectToAction(
-                    "Dashboard",
-                    "FlatOwner"
-                );
-
-            }
 
 
 
@@ -307,6 +452,7 @@ namespace ADHUNIK_BARI.Controllers
 
 
         }
+
 
 
     }
