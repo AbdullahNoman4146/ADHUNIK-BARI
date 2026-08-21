@@ -1,8 +1,101 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿
+
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+
+<section class="hero">
+
+
+    <div class="container">
+
+
+        <div class="row align-items-center">
+
+
+            <div class="col-md-6">
+
+
+                <h1>
+
+                    Smart Living,
+                    Simplified.
+
+                </h1>
+
+
+                <p>
+
+                    Manage apartment billing,
+                    complaints, notices and resident
+                    services from one secure platform.
+
+                </p>
+
+
+
+                <a asp-controller="Account"
+                   asp-action="Login"
+                   class="login-btn">
+
+                    Get Started
+
+                </a>
+
+
+            </div>
+
+
+
+            <div class="col-md-6">
+
+
+                <div class="home-card">
+
+
+                    <h3>
+                        ADHUNIK BARI
+                    </h3>
+
+
+                    <p>
+                        Smart Apartment Management System
+                    </p>
+
+
+                    <div class="feature-box">
+
+                        ✓ Digital Billing
+
+                    </div>
+
+
+                    <div class="feature-box">
+
+                        ✓ Complaint Tracking
+
+                    </div>
+
+
+                    <div class="feature-box">
+
+                        ✓ Resident Dashboard
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
