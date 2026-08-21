@@ -22,3 +22,6 @@ obj/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local development secrets
+appsettings.Development.json
