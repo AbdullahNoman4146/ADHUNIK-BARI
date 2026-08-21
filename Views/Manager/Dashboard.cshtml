@@ -1,7 +1,12 @@
 ﻿@{
     ViewData["Title"] = "Manager Dashboard";
 }
-
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
 
 <div class="container mt-5">
 
@@ -21,17 +26,28 @@
 
         <div class="col-md-3">
 
-            <div class="card shadow p-3">
+            <a asp-controller="Manager"
+               asp-action="CreateResident"
+               style="text-decoration:none;color:black">
 
-                <h5>
-                    Residents
-                </h5>
 
-                <p>
-                    Manage Tenant and Flat Owner accounts
-                </p>
+                <div class="card shadow p-3">
 
-            </div>
+
+                    <h5>
+                        Residents
+                    </h5>
+
+
+                    <p>
+                        Create Tenant and Flat Owner accounts
+                    </p>
+
+
+                </div>
+
+
+            </a>
 
         </div>
 

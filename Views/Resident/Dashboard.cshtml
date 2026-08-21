@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Resident Dashboard";
+}
+
+
+<h1>
+    Welcome Resident
+</h1>
+
+
+@if (User.Identity.IsAuthenticated)
+{
+
+    <p>
+        Welcome to ADHUNIK BARI Resident Dashboard
+    </p>
+
+}
+
+
+
+@if (ViewBag.RequirePasswordChange == true)
+{
+
+    <a class="btn btn-primary"
+       asp-controller="Account"
+       asp-action="ChangePassword">
+
+        Change Password
+
+    </a>
+
+}
