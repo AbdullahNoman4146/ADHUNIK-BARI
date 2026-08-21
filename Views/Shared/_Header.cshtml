@@ -1,0 +1,274 @@
+﻿@using Microsoft.AspNetCore.Identity
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+
+
+    <div class="container-fluid px-5">
+
+
+
+        <!-- WEBSITE BRAND -->
+
+        <a class="navbar-brand d-flex align-items-center"
+           asp-controller="Home"
+           asp-action="Index">
+
+
+            <div class="logo-circle">
+
+                AB
+
+            </div>
+
+
+
+            <div class="brand-text ms-3">
+
+
+                <h5 class="mb-0">
+
+                    ADHUNIK BARI
+
+                </h5>
+
+
+                <small>
+
+                    Smart Apartment Management
+
+                </small>
+
+
+            </div>
+
+
+        </a>
+
+
+
+
+
+        <!-- MOBILE MENU BUTTON -->
+
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarMenu">
+
+
+            <span class="navbar-toggler-icon"></span>
+
+
+        </button>
+
+
+
+
+
+        <!-- NAVIGATION MENU -->
+
+
+        <div class="collapse navbar-collapse"
+             id="navbarMenu">
+
+
+            <ul class="navbar-nav ms-auto align-items-center">
+
+
+
+
+
+                <!-- HOME -->
+
+
+                <li class="nav-item">
+
+
+                    <a class="nav-link"
+                       asp-controller="Home"
+                       asp-action="Index">
+
+
+                        Home
+
+
+                    </a>
+
+
+                </li>
+
+
+
+
+
+
+                <!-- FEATURES -->
+
+
+                <li class="nav-item">
+
+
+                    <a class="nav-link"
+                       href="#">
+
+
+                        Features
+
+
+                    </a>
+
+
+                </li>
+
+
+
+
+
+
+
+                <!-- CONTACT -->
+
+
+                <li class="nav-item">
+
+
+                    <a class="nav-link"
+                       href="#">
+
+
+                        Contact
+
+
+                    </a>
+
+
+                </li>
+
+
+
+
+
+
+                <!-- AUTH SECTION -->
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+
+                {
+
+
+
+                    <!-- PROFILE ICON -->
+
+
+                    <li class="nav-item ms-3">
+
+
+                        <a class="profile-btn"
+                           title="Dashboard"
+                           href="@(
+                           User.IsInRole("Manager")
+                           ? Url.Action("Dashboard", "Manager")
+
+                           :
+
+                           User.IsInRole("Tenant")
+                           ? Url.Action("Dashboard", "Tenant")
+
+                           :
+
+                           Url.Action("Dashboard", "FlatOwner")
+                                                  )">
+
+
+                            <i class="fa-solid fa-user"></i>
+
+
+                        </a>
+
+
+                    </li>
+
+
+
+
+
+
+
+                    <!-- LOGOUT ICON -->
+
+
+                    <li class="nav-item ms-2">
+
+
+                        <form method="post"
+                              asp-controller="Account"
+                              asp-action="Logout">
+
+
+                            <button type="submit"
+                                    class="logout-btn"
+                                    title="Logout">
+
+
+                                <i class="fa-solid fa-right-from-bracket"></i>
+
+
+                            </button>
+
+
+                        </form>
+
+
+                    </li>
+
+
+
+                }
+
+
+                else
+
+                {
+
+
+
+                    <!-- LOGIN ICON -->
+
+
+                    <li class="nav-item ms-3">
+
+
+                        <a class="profile-btn"
+                           title="Login"
+                           asp-controller="Account"
+                           asp-action="Login">
+
+
+                            <i class="fa-solid fa-right-to-bracket"></i>
+
+
+                        </a>
+
+
+                    </li>
+
+
+
+                }
+
+
+
+            </ul>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+</nav>
