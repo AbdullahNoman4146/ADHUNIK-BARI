@@ -59,28 +59,28 @@ using (var scope = app.Services.CreateScope())
 
 
     var userManager =
-    services.GetRequiredService<UserManager<ApplicationUser>>();
+        services.GetRequiredService<UserManager<ApplicationUser>>();
 
 
     var roleManager =
-    services.GetRequiredService<RoleManager<IdentityRole>>();
+        services.GetRequiredService<RoleManager<IdentityRole>>();
 
 
 
-    await DbInitializer.SeedRolesAndAdmin(
-    userManager,
-    roleManager,
-    builder.Configuration
-);
+    await DbInitializer.SeedRoles(
+        roleManager
+    );
 
 
 }
 
+
+
 app.MapControllerRoute(
 
-name: "default",
+    name: "default",
 
-pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Home}/{action=Index}/{id?}"
 
 );
 
