@@ -1,0 +1,9 @@
+@model IEnumerable<ADHUNIK_BARI.Models.Notice>
+@{ ViewData["Title"] = "Notices"; }
+<div class="container py-4"><div class="mb-4"><h1 class="mb-1">Notices</h1><p class="text-muted mb-0">Updates for your apartment community.</p></div>
+@foreach (var notice in Model)
+{
+    <article class="card shadow-sm border-0 mb-3"><div class="card-body p-4"><div class="d-flex justify-content-between gap-3"><h2 class="h5 mb-2">@notice.Title</h2><span class="badge @(notice.NoticeType == "General" ? "text-bg-success" : "text-bg-info")">@(notice.NoticeType == "General" ? "General" : "My Flat")</span></div><p class="mb-2">@notice.Description</p><small class="text-muted">Published @notice.CreatedAt.ToString("dd MMM yyyy")</small></div></article>
+}
+@if (!Model.Any()) { <div class="card shadow-sm border-0"><div class="card-body text-center text-muted py-5">There are no notices for you at this time.</div></div> }
+</div>

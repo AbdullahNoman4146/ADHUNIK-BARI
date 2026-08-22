@@ -1,0 +1,12 @@
+@model ADHUNIK_BARI.ViewModels.NoticeViewModel
+@{ ViewData["Title"] = "Create Notice"; }
+<div class="container py-4"><div class="row justify-content-center"><div class="col-lg-8">
+<div class="card shadow-sm border-0"><div class="card-body p-4"><h1 class="h3 mb-4">Create Notice</h1>
+<form asp-action="CreateNotice" method="post"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="mb-3"><label asp-for="Title" class="form-label">Title</label><input asp-for="Title" class="form-control" /><span asp-validation-for="Title" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Description" class="form-label">Description</label><textarea asp-for="Description" class="form-control" rows="5"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="NoticeType" class="form-label">Audience</label><select asp-for="NoticeType" class="form-select" id="noticeType"><option value="General">Everyone</option><option value="SpecificFlats">Selected flats</option></select></div>
+<div class="mb-4" id="flatTargets"><label class="form-label">Select flats</label><div class="row">@foreach (var flat in Model.Flats) { <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="TargetFlatIds" value="@flat.FlatId" id="flat-@flat.FlatId" /><label class="form-check-label" for="flat-@flat.FlatId">@flat.FlatNumber (Floor @flat.FloorNumber)</label></div></div> }</div><span asp-validation-for="TargetFlatIds" class="text-danger"></span></div>
+<a asp-action="Notices" class="btn btn-outline-secondary">Cancel</a> <button type="submit" class="btn btn-primary">Publish Notice</button>
+</form></div></div></div></div></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /><script>function toggleTargets(){document.getElementById('flatTargets').style.display=document.getElementById('noticeType').value==='General'?'none':'block';}document.getElementById('noticeType').addEventListener('change',toggleTargets);toggleTargets();</script> }

@@ -7,6 +7,28 @@
     Welcome Resident
 </h1>
 
+<div class="card shadow-sm border-0 mt-4" style="max-width: 600px;">
+    <div class="card-body">
+        <h2 class="h4">My Flat</h2>
+        @if (ViewBag.Assignment is ADHUNIK_BARI.Models.FlatAssignment assignment)
+        {
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Flat Number</dt><dd class="col-sm-7">@assignment.Flat.FlatNumber</dd>
+                <dt class="col-sm-5">Floor Number</dt><dd class="col-sm-7">@assignment.Flat.FloorNumber</dd>
+                <dt class="col-sm-5">Resident Type</dt><dd class="col-sm-7">@assignment.ResidentType</dd>
+                <dt class="col-sm-5">Assignment Date</dt><dd class="col-sm-7">@assignment.AssignmentDate.ToString("dd MMM yyyy")</dd>
+                <dt class="col-sm-5">Occupancy Status</dt><dd class="col-sm-7"><span class="badge text-bg-success">@assignment.Flat.FlatStatus</span></dd>
+            </dl>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No flat has been assigned to your account yet.</p>
+        }
+    </div>
+
+<a asp-controller="Resident" asp-action="Notices" class="btn btn-primary mt-3">View Notices</a>
+</div>
+
 
 @if (User.Identity.IsAuthenticated)
 {

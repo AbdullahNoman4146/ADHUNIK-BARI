@@ -6,6 +6,7 @@
     <div class="alert alert-success">
         @TempData["Success"]
     </div>
+
 }
 
 <div class="container mt-5">
@@ -53,9 +54,21 @@
 
 
 
+        <div class="col-md-3">
+            <a asp-controller="Manager" asp-action="Notices" style="text-decoration:none;color:black">
+                <div class="card shadow p-3">
+                    <h5>Notices</h5>
+                    <p>Publish resident announcements</p>
+                </div>
+            </a>
+        </div>
+
+
+
 
         <div class="col-md-3">
 
+            <a asp-controller="Manager" asp-action="Flats" style="text-decoration:none;color:black">
             <div class="card shadow p-3">
 
                 <h5>
@@ -67,6 +80,7 @@
                 </p>
 
             </div>
+            </a>
 
         </div>
 
