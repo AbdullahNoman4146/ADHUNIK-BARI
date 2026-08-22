@@ -1,126 +1,306 @@
 ﻿@{
     ViewData["Title"] = "Manager Dashboard";
 }
+
+
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
+    <div class="alert alert-success dashboard-alert">
         @TempData["Success"]
     </div>
-
 }
 
-<div class="container mt-5">
 
 
-    <h1>
-        Welcome Manager
+<div class="dashboard-container fade-in">
+
+
+    <h1 class="dashboard-title">
+        Welcome back, Manager 👋
     </h1>
 
 
-    <p>
+    <p class="dashboard-subtitle">
         ADHUNIK BARI Management Dashboard
     </p>
 
 
-    <div class="row mt-4">
+
+    <!-- METRICS -->
 
 
-        <div class="col-md-3">
-
-            <a asp-controller="Manager"
-               asp-action="CreateResident"
-               style="text-decoration:none;color:black">
+    <div class="metrics-bar">
 
 
-                <div class="card shadow p-3">
+        <div class="metric-card">
 
 
-                    <h5>
-                        Residents
-                    </h5>
+            <div class="metric-number counter"
+     data-target="48">
+    0
+</div>
 
 
-                    <p>
-                        Create Tenant and Flat Owner accounts
-                    </p>
-
-
-                </div>
-
-
-            </a>
-
-        </div>
-
-
-
-        <div class="col-md-3">
-            <a asp-controller="Manager" asp-action="Notices" style="text-decoration:none;color:black">
-                <div class="card shadow p-3">
-                    <h5>Notices</h5>
-                    <p>Publish resident announcements</p>
-                </div>
-            </a>
-        </div>
-
-
-
-
-        <div class="col-md-3">
-
-            <a asp-controller="Manager" asp-action="Flats" style="text-decoration:none;color:black">
-            <div class="card shadow p-3">
-
-                <h5>
-                    Flats
-                </h5>
-
-                <p>
-                    Manage apartment flats
-                </p>
-
-            </div>
-            </a>
-
-        </div>
-
-
-
-
-        <div class="col-md-3">
-
-            <div class="card shadow p-3">
-
-                <h5>
-                    Bills
-                </h5>
-
-                <p>
-                    Generate monthly bills
-                </p>
-
+            <div class="metric-label">
+                Active Flats
             </div>
 
+
         </div>
 
 
 
 
-        <div class="col-md-3">
+        <div class="metric-card">
 
-            <div class="card shadow p-3">
 
-                <h5>
-                    Complaints
-                </h5>
+            <div class="metric-number counter"
+                 data-target="3">
+                0
+            </div>
 
-                <p>
-                    Review complaints
-                </p>
+
+            <div class="metric-label">
+                Pending Complaints
+            </div>
+
+
+        </div>
+
+
+
+
+
+        <div class="metric-card">
+
+
+             <div class="metric-number counter percent"
+     data-target="94">
+    0
+</div>
+
+
+            <div class="metric-label">
+                Rent Collection
+            </div>
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+    <h2 class="section-title">
+        Quick Actions
+    </h2>
+
+
+
+
+
+    <div class="dashboard-grid">
+
+
+
+        <!-- RESIDENTS -->
+
+<div class="dashboard-action-card reveal-card"
+     onclick="toggleCard(this)">
+
+            <h3>
+                👥 Residents
+            </h3>
+
+
+            <p>
+                Create Tenant and Flat Owner accounts
+            </p>
+
+
+            <div class="expand-content">
+
+
+                <a class="dashboard-btn"
+                   asp-controller="Manager"
+                   asp-action="CreateResident">
+
+                    Manage Residents
+
+                </a>
+
 
             </div>
 
+
         </div>
+
+
+
+
+
+
+
+        <!-- NOTICES -->
+
+
+        <div class="dashboard-action-card"
+             onclick="toggleCard(this)">
+
+
+            <h3>
+                📢 Notices
+            </h3>
+
+
+            <p>
+                Publish resident announcements
+            </p>
+
+
+            <div class="expand-content">
+
+
+                <a class="dashboard-btn"
+                   asp-controller="Manager"
+                   asp-action="Notices">
+
+                    Manage Notices
+
+                </a>
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+
+        <!-- FLATS -->
+
+
+        <div class="dashboard-action-card"
+             onclick="toggleCard(this)">
+
+
+            <h3>
+                🏢 Flats
+            </h3>
+
+
+            <p>
+                Manage apartment flats
+            </p>
+
+
+            <div class="expand-content">
+
+
+                <a class="dashboard-btn"
+                   asp-controller="Manager"
+                   asp-action="Flats">
+
+                    View Flats
+
+                </a>
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+
+
+
+        <!-- BILLS -->
+
+
+        <div class="dashboard-action-card"
+             onclick="toggleCard(this)">
+
+
+            <h3>
+                💳 Bills
+            </h3>
+
+
+            <p>
+                Generate monthly bills
+            </p>
+
+
+            <div class="expand-content">
+
+
+                <strong>
+                    12 Unpaid Invoices
+                </strong>
+
+
+                <br>
+
+
+                <button class="dashboard-btn">
+
+                    Send Reminder
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- COMPLAINTS -->
+
+
+        <div class="dashboard-action-card"
+             onclick="toggleCard(this)">
+
+
+            <h3>
+                🛠 Complaints
+            </h3>
+
+
+            <p>
+                Review complaints
+            </p>
+
+
+            <div class="expand-content">
+
+
+                <strong>
+                    3 Pending Requests
+                </strong>
+
+
+            </div>
+
+
+        </div>
+
 
 
     </div>
