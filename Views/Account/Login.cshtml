@@ -6,91 +6,133 @@
 }
 
 
-<div class="container mt-5">
 
-    <div class="row justify-content-center">
-
-        <div class="col-md-5">
-
-
-            <div class="card shadow">
-
-
-                <div class="card-header text-center">
-
-                    <h3>
-                        ADHUNIK BARI
-                    </h3>
-
-                    <p>
-                        Smart Apartment Management System
-                    </p>
-
-                </div>
+<div class="login-page">
 
 
 
-                <div class="card-body">
+    <!-- Animated Background -->
 
+    <div class="ambient-circle circle-one"></div>
 
-                    <form asp-action="Login"
-                          method="post">
+    <div class="ambient-circle circle-two"></div>
 
-
-                        <div asp-validation-summary="All"
-                             class="text-danger">
-                        </div>
+    <div class="ambient-circle circle-three"></div>
 
 
 
-                        <div class="mb-3">
-
-                            <label>
-                                Email
-                            </label>
-
-                            <input asp-for="Email"
-                                   class="form-control"
-                                   placeholder="Enter email" />
-
-                        </div>
 
 
 
-                        <div class="mb-3">
-
-                            <label>
-                                Password
-                            </label>
-
-
-                            <input asp-for="Password"
-                                   class="form-control"
-                                   placeholder="Enter password" />
-
-                        </div>
+    <div class="login-glass-card">
 
 
 
-                        <button type="submit"
-                                class="btn btn-primary w-100">
-
-                            Login
-
-                        </button>
+        <div class="login-header">
 
 
-                    </form>
+            <div class="login-logo">
+                AB
+            </div>
 
 
-                </div>
+            <h1>
+                ADHUNIK BARI
+            </h1>
+
+
+            <p>
+                Smart Apartment Management System
+            </p>
+
+
+        </div>
+
+
+
+
+
+        <form asp-action="Login"
+              method="post"
+              id="loginForm">
+
+
+
+
+
+            <div class="floating-input">
+
+
+                <input asp-for="Email"
+                       id="email"
+                       placeholder=" " />
+
+
+                <label>
+                    Email Address
+                </label>
 
 
             </div>
 
 
-        </div>
+
+
+
+
+            <div class="floating-input">
+
+
+                <input asp-for="Password"
+                       id="password"
+                       placeholder=" " />
+
+
+                <label>
+                    Password
+                </label>
+
+
+            </div>
+
+
+
+
+
+
+            <button type="submit"
+        class="premium-login-btn">
+
+    <span class="btn-text">
+        Login
+    </span>
+
+</button>
+
+
+                <span id="loginText">
+                    
+                </span>
+
+
+                <span id="spinner"
+                      class="spinner">
+
+                </span>
+
+
+            </button>
+
+
+
+
+
+        </form>
+
+
 
     </div>
+
+
 
 </div>

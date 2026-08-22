@@ -3,53 +3,218 @@
 }
 
 
-<h1>
-    Welcome Resident
-</h1>
 
-<div class="card shadow-sm border-0 mt-4" style="max-width: 600px;">
-    <div class="card-body">
-        <h2 class="h4">My Flat</h2>
-        @if (ViewBag.Assignment is ADHUNIK_BARI.Models.FlatAssignment assignment)
-        {
-            <dl class="row mb-0">
-                <dt class="col-sm-5">Flat Number</dt><dd class="col-sm-7">@assignment.Flat.FlatNumber</dd>
-                <dt class="col-sm-5">Floor Number</dt><dd class="col-sm-7">@assignment.Flat.FloorNumber</dd>
-                <dt class="col-sm-5">Resident Type</dt><dd class="col-sm-7">@assignment.ResidentType</dd>
-                <dt class="col-sm-5">Assignment Date</dt><dd class="col-sm-7">@assignment.AssignmentDate.ToString("dd MMM yyyy")</dd>
-                <dt class="col-sm-5">Occupancy Status</dt><dd class="col-sm-7"><span class="badge text-bg-success">@assignment.Flat.FlatStatus</span></dd>
-            </dl>
-        }
-        else
-        {
-            <p class="text-muted mb-0">No flat has been assigned to your account yet.</p>
-        }
-    </div>
-
-<a asp-controller="Resident" asp-action="Notices" class="btn btn-primary mt-3">View Notices</a>
-</div>
+<div class="resident-dashboard">
 
 
-@if (User.Identity.IsAuthenticated)
-{
 
-    <p>
-        Welcome to ADHUNIK BARI Resident Dashboard
+    <h1 class="resident-title">
+        Welcome back, Resident 👋
+    </h1>
+
+
+    <p class="resident-subtitle">
+        Your smart apartment management portal
     </p>
 
-}
 
 
 
-@if (ViewBag.RequirePasswordChange == true)
-{
 
-    <a class="btn btn-primary"
-       asp-controller="Account"
-       asp-action="ChangePassword">
+    <!-- Apartment Card -->
 
-        Change Password
 
-    </a>
+    <div class="resident-glass-card">
 
-}
+
+        <div class="apartment-header">
+
+
+            <div class="apartment-icon">
+                🏠
+            </div>
+
+
+            <div>
+
+                <h2>
+                    My Apartment
+                </h2>
+
+
+                <span>
+                    Smart Living Space
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+        <div class="resident-details">
+
+
+            <div>
+
+                <label>
+                    Flat Number
+                </label>
+
+                <strong>
+                    D
+                </strong>
+
+
+            </div>
+
+
+
+
+            <div>
+
+                <label>
+                    Floor Number
+                </label>
+
+                <strong>
+                    7
+                </strong>
+
+
+            </div>
+
+
+
+
+
+            <div>
+
+                <label>
+                    Resident Type
+                </label>
+
+                <strong>
+                    Tenant
+                </strong>
+
+
+            </div>
+
+
+
+
+
+            <div>
+
+                <label>
+                    Assignment Date
+                </label>
+
+                <strong>
+                    22 Aug 2026
+                </strong>
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+        <div class="status-area">
+
+
+            <span class="status-dot"></span>
+
+
+            <span>
+                Occupied
+            </span>
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- Actions -->
+
+
+    <div class="resident-actions">
+
+
+
+        <a asp-controller="Resident"
+           asp-action="Notices"
+           class="resident-action-card">
+
+
+            <div>
+                📢
+            </div>
+
+
+            <h3>
+                View Notices
+            </h3>
+
+
+            <p>
+                Check latest announcements
+            </p>
+
+
+        </a>
+
+
+
+
+
+
+
+        <a asp-controller="Account"
+           asp-action="ChangePassword"
+           class="resident-action-card">
+
+
+            <div>
+                🔐
+            </div>
+
+
+            <h3>
+                Change Password
+            </h3>
+
+
+            <p>
+                Secure your account
+            </p>
+
+
+        </a>
+
+
+
+    </div>
+
+
+
+
+
+</div>
