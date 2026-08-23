@@ -308,9 +308,126 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            ViewBag.RecentComplaints = await dbContext.Complaints
+                .Include(complaint => complaint.Flat)
+                .Include(complaint => complaint.User)
+                .AsNoTracking()
+                .OrderByDescending(complaint => complaint.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
             return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Complaints(string? flatNumber, string? status)
+        {
+            var query = dbContext.Complaints
+                .Include(complaint => complaint.Flat)
+                .Include(complaint => complaint.User)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(flatNumber))
+            {
+                var search = flatNumber.Trim();
+                query = query.Where(complaint => complaint.Flat != null && complaint.Flat.FlatNumber.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && IsComplaintStatus(status))
+            {
+                query = query.Where(complaint => complaint.ComplaintStatus == status);
+            }
+
+            var model = new ManagerComplaintListViewModel
+            {
+                FlatNumber = flatNumber,
+                Status = status,
+                Complaints = await query
+                    .OrderByDescending(complaint => complaint.CreatedAt)
+                    .ToListAsync()
+            };
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ComplaintDetails(int id)
+        {
+            var complaint = await dbContext.Complaints
+                .Include(item => item.Flat)
+                .Include(item => item.User)
+                .Include(item => item.ResolvedByUser)
+                .AsNoTracking()
+                .SingleOrDefaultAsync(item => item.ComplaintId == id);
+
+            if (complaint == null)
+            {
+                return NotFound();
+            }
+
+            return View(complaint);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateComplaint(UpdateComplaintViewModel model)
+        {
+            var complaint = await dbContext.Complaints
+                .SingleOrDefaultAsync(item => item.ComplaintId == model.ComplaintId);
+
+            if (complaint == null)
+            {
+                return NotFound();
+            }
+
+            if (!IsComplaintStatus(model.ComplaintStatus))
+            {
+                ModelState.AddModelError(nameof(model.ComplaintStatus), "Select a valid complaint status.");
+            }
+            else if (!CanMoveToStatus(complaint.ComplaintStatus, model.ComplaintStatus))
+            {
+                ModelState.AddModelError(nameof(model.ComplaintStatus), "Complaint status must progress from Pending to In Progress to Solved.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var details = await dbContext.Complaints
+                    .Include(item => item.Flat)
+                    .Include(item => item.User)
+                    .Include(item => item.ResolvedByUser)
+                    .AsNoTracking()
+                    .SingleAsync(item => item.ComplaintId == model.ComplaintId);
+                ViewBag.UpdateModel = model;
+                return View("ComplaintDetails", details);
+            }
+
+            complaint.ComplaintStatus = model.ComplaintStatus;
+            complaint.ManagerNote = string.IsNullOrWhiteSpace(model.ManagerNote) ? null : model.ManagerNote.Trim();
+
+            if (model.ComplaintStatus == "Solved" && complaint.ResolvedAt == null)
+            {
+                complaint.ResolvedAt = DateTime.Now;
+                complaint.ResolvedByUserId = userManager.GetUserId(User);
+            }
+
+            await dbContext.SaveChangesAsync();
+            TempData["Success"] = "Complaint updated successfully.";
+            return RedirectToAction(nameof(ComplaintDetails), new { id = complaint.ComplaintId });
+        }
+
+        private static bool IsComplaintStatus(string? status)
+        {
+            return status is "Pending" or "In Progress" or "Solved";
+        }
+
+        private static bool CanMoveToStatus(string currentStatus, string requestedStatus)
+        {
+            return currentStatus == requestedStatus ||
+                (currentStatus == "Pending" && requestedStatus == "In Progress") ||
+                (currentStatus == "In Progress" && requestedStatus == "Solved");
         }
 
 

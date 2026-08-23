@@ -289,11 +289,14 @@
 
 
             <div class="expand-content">
-
-
-                <strong>
-                    3 Pending Requests
-                </strong>
+                @if (ViewBag.RecentComplaints != null)
+                {
+                    foreach (var complaint in ViewBag.RecentComplaints)
+                    {
+                        <div class="small mb-2"><strong>@(complaint.Flat?.FlatNumber ?? "Unknown flat")</strong> · @(complaint.User?.FullName ?? "Unknown resident")<br /><span>@complaint.Category</span> · <span>@complaint.ComplaintStatus</span> · @complaint.CreatedAt.ToString("dd MMM yyyy")</div>
+                    }
+                }
+                <a class="dashboard-btn" asp-controller="Manager" asp-action="Complaints">Open Complaint Center</a>
 
 
             </div>
