@@ -21,4 +21,8 @@
     <Folder Include="Views\Home\Index_old.cshtml\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
+  </ItemGroup>
+
 </Project>

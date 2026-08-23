@@ -4,6 +4,7 @@ using ADHUNIK_BARI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ADHUNIK_BARI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260823171129_AddComplaintBillingEntities")]
+    partial class AddComplaintBillingEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,41 +116,32 @@ namespace ADHUNIK_BARI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BillId"));
 
-                    b.Property<int>("AssignmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("BillMonth")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("BillStatus")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("BillYear")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("Deadline")
+                    b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("DueAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("FlatId")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("PaidAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("BillId");
 
-                    b.HasIndex("AssignmentId");
+                    b.HasIndex("FlatId");
 
                     b.ToTable("Bills");
                 });
@@ -343,6 +337,9 @@ namespace ADHUNIK_BARI.Migrations
                     b.Property<int>("BillId")
                         .HasColumnType("int");
 
+                    b.Property<int>("FlatId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
 
@@ -361,6 +358,8 @@ namespace ADHUNIK_BARI.Migrations
                     b.HasKey("PaymentId");
 
                     b.HasIndex("BillId");
+
+                    b.HasIndex("FlatId");
 
                     b.HasIndex("UserId");
 
@@ -502,13 +501,13 @@ namespace ADHUNIK_BARI.Migrations
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Bill", b =>
                 {
-                    b.HasOne("ADHUNIK_BARI.Models.FlatAssignment", "Assignment")
+                    b.HasOne("ADHUNIK_BARI.Models.Flat", "Flat")
                         .WithMany()
-                        .HasForeignKey("AssignmentId")
+                        .HasForeignKey("FlatId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Assignment");
+                    b.Navigation("Flat");
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Complaint", b =>
@@ -593,6 +592,12 @@ namespace ADHUNIK_BARI.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ADHUNIK_BARI.Models.Flat", "Flat")
+                        .WithMany()
+                        .HasForeignKey("FlatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ADHUNIK_BARI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -600,6 +605,8 @@ namespace ADHUNIK_BARI.Migrations
                         .IsRequired();
 
                     b.Navigation("Bill");
+
+                    b.Navigation("Flat");
 
                     b.Navigation("User");
                 });

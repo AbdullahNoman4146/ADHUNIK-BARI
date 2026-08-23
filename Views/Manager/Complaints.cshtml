@@ -1,0 +1,27 @@
+@model ADHUNIK_BARI.ViewModels.ManagerComplaintListViewModel
+@{
+    ViewData["Title"] = "Complaint Center";
+}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h1 class="mb-1">Complaint Center</h1><p class="text-muted mb-0">Review and resolve resident complaints.</p></div>
+    </div>
+    <div class="card shadow-sm border-0 mb-4"><div class="card-body">
+        <form asp-action="Complaints" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5"><label asp-for="FlatNumber" class="form-label">Search by flat number</label><input asp-for="FlatNumber" class="form-control" placeholder="e.g. A-101" /></div>
+            <div class="col-md-4"><label asp-for="Status" class="form-label">Filter by status</label><select asp-for="Status" class="form-select"><option value="">All statuses</option><option>Pending</option><option>In Progress</option><option>Solved</option></select></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-magnifying-glass me-2"></i>Search Complaints</button></div>
+        </form>
+    </div></div>
+    <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Flat</th><th>Resident</th><th>Category</th><th>Status</th><th>Created</th><th class="text-end">Action</th></tr></thead>
+        <tbody>
+        @foreach (var complaint in Model.Complaints)
+        {
+            var statusClass = complaint.ComplaintStatus switch { "Solved" => "text-bg-success", "In Progress" => "text-bg-info", _ => "text-bg-warning" };
+            <tr><td class="fw-semibold">@(complaint.Flat?.FlatNumber ?? "Unknown")</td><td>@(complaint.User?.FullName ?? complaint.User?.Email ?? "Unknown")</td><td>@complaint.Category</td><td><span class="badge @statusClass">@complaint.ComplaintStatus</span></td><td>@complaint.CreatedAt.ToString("dd MMM yyyy, HH:mm")</td><td class="text-end"><a asp-action="ComplaintDetails" asp-route-id="@complaint.ComplaintId" class="btn btn-sm btn-outline-primary">Open</a></td></tr>
+        }
+        @if (!Model.Complaints.Any()) { <tr><td colspan="6" class="text-center text-muted py-5">No complaints match the selected filters.</td></tr> }
+        </tbody>
+    </table></div></div>
+</div>
