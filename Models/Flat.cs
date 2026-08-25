@@ -14,6 +14,9 @@ namespace ADHUNIK_BARI.Models
 
         public int FloorNumber { get; set; }
 
+        [Range(0, double.MaxValue)]
+        public decimal MonthlyRent { get; set; }
+
         // Available or Occupied
         public string FlatStatus { get; set; }
 

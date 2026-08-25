@@ -1,6 +1,6 @@
-@model ADHUNIK_BARI.ViewModels.CreateFlatViewModel
+@model ADHUNIK_BARI.ViewModels.EditFlatViewModel
 @{
-    ViewData["Title"] = "Create Flat";
+    ViewData["Title"] = "Edit Flat";
 }
 
 <div class="container py-4">
@@ -8,35 +8,45 @@
         <div class="col-md-7">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body p-4">
-                    <h1 class="h3 mb-4 fw-bold">Create New Flat</h1>
-                    <form asp-action="CreateFlat" method="post">
+                    <h1 class="h3 mb-4 fw-bold">Edit Flat @Model.FlatNumber</h1>
+                    <form asp-action="EditFlat" method="post">
                         @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="FlatId" />
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                         
                         <div class="mb-3">
-                            <label asp-for="FlatNumber" class="form-label fw-semibold">Flat Number / Unit</label>
-                            <input asp-for="FlatNumber" class="form-control" placeholder="e.g. 101, A-1" />
+                            <label asp-for="FlatNumber" class="form-label fw-semibold">Flat Number</label>
+                            <input asp-for="FlatNumber" class="form-control" />
                             <span asp-validation-for="FlatNumber" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="FloorNumber" class="form-label fw-semibold">Floor Number</label>
-                            <input asp-for="FloorNumber" class="form-control" type="number" min="0" placeholder="e.g. 1" />
+                            <input asp-for="FloorNumber" class="form-control" type="number" min="0" />
                             <span asp-validation-for="FloorNumber" class="text-danger small"></span>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label asp-for="MonthlyRent" class="form-label fw-semibold">Monthly Rent (৳) <small class="text-muted fw-normal">(Applies to Tenants)</small></label>
                             <div class="input-group">
                                 <span class="input-group-text">৳</span>
-                                <input asp-for="MonthlyRent" class="form-control" type="number" step="100" placeholder="e.g. 15000" />
+                                <input asp-for="MonthlyRent" class="form-control" type="number" step="100" />
                             </div>
                             <span asp-validation-for="MonthlyRent" class="text-danger small"></span>
                         </div>
 
+                        <div class="mb-4">
+                            <label asp-for="FlatStatus" class="form-label fw-semibold">Occupancy Status</label>
+                            <select asp-for="FlatStatus" class="form-select">
+                                <option value="Available">Available</option>
+                                <option value="Occupied">Occupied</option>
+                            </select>
+                            <span asp-validation-for="FlatStatus" class="text-danger small"></span>
+                        </div>
+
                         <div class="d-flex justify-content-between">
                             <a asp-action="Flats" class="btn btn-outline-secondary px-4">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4 fw-bold">Create Flat</button>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">Save Changes</button>
                         </div>
                     </form>
                 </div>

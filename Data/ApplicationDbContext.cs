@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ADHUNIK_BARI.Models;
 
@@ -25,6 +25,7 @@ namespace ADHUNIK_BARI.Data
         public DbSet<NoticeTarget> NoticeTargets { get; set; }
         public DbSet<Complaint> Complaints { get; set; }
         public DbSet<Bill> Bills { get; set; }
+        public DbSet<BillItem> BillItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -36,6 +37,7 @@ namespace ADHUNIK_BARI.Data
             {
                 b.HasKey(f => f.FlatId);
                 b.Property(f => f.FlatNumber).IsRequired();
+                b.Property(f => f.MonthlyRent).HasPrecision(18, 2);
                 b.Property(f => f.FlatStatus).HasMaxLength(50);
                 b.HasMany(f => f.Assignments)
                     .WithOne(a => a.Flat)
@@ -112,13 +114,30 @@ namespace ADHUNIK_BARI.Data
                     .WithOne(payment => payment.Bill)
                     .HasForeignKey(payment => payment.BillId)
                     .OnDelete(DeleteBehavior.Restrict);
+                b.HasMany(bill => bill.BillItems)
+                    .WithOne(item => item.Bill)
+                    .HasForeignKey(item => item.BillId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<BillItem>(b =>
+            {
+                b.HasKey(item => item.BillItemId);
+                b.Property(item => item.ItemType).IsRequired().HasMaxLength(50);
+                b.Property(item => item.Amount).HasPrecision(18, 2);
+                b.Property(item => item.Description).HasMaxLength(255);
+                b.Property(item => item.PaymentStatus).IsRequired().HasMaxLength(50);
             });
 
             builder.Entity<Payment>(b =>
             {
                 b.HasKey(payment => payment.PaymentId);
                 b.Property(payment => payment.Amount).HasPrecision(18, 2);
+                b.Property(payment => payment.AmountPaid).HasPrecision(18, 2);
                 b.Property(payment => payment.PaymentStatus).IsRequired().HasMaxLength(50);
+                b.Property(payment => payment.StripePaymentIntentId).HasMaxLength(255);
+                b.Property(payment => payment.StripeReceiptUrl).HasMaxLength(500);
+                b.Property(payment => payment.PaidItemsJson).HasMaxLength(1000);
                 b.HasOne(payment => payment.User)
                     .WithMany()
                     .HasForeignKey(payment => payment.UserId)

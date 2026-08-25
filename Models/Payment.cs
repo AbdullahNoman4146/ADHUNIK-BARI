@@ -16,12 +16,26 @@ namespace ADHUNIK_BARI.Models
         [Range(0, double.MaxValue)]
         public decimal Amount { get; set; }
 
+        [Range(0, double.MaxValue)]
+        public decimal AmountPaid { get; set; }
+
         public DateTime PaymentDate { get; set; }
 
         [Required]
         public string PaymentStatus { get; set; } = "Pending";
 
         public string? Reference { get; set; }
+
+        [MaxLength(255)]
+        public string? StripePaymentIntentId { get; set; }
+
+        [MaxLength(500)]
+        public string? StripeReceiptUrl { get; set; }
+
+        [MaxLength(1000)]
+        public string? PaidItemsJson { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public Bill? Bill { get; set; }
 

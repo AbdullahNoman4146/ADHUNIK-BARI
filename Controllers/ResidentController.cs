@@ -1,49 +1,42 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.Data;
 using ADHUNIK_BARI.ViewModels;
+using ADHUNIK_BARI.Services;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace ADHUNIK_BARI.Controllers
 {
-
-
-    [Authorize(Roles = "Tenant,FlatOwner")]
+    [Authorize]
     public class ResidentController : Controller
     {
-
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly ApplicationDbContext dbContext;
         private readonly IWebHostEnvironment environment;
-
-
+        private readonly IPaymentService paymentService;
+        private readonly IConfiguration configuration;
 
         public ResidentController(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext dbContext,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IPaymentService paymentService,
+            IConfiguration configuration)
         {
-
             this.userManager = userManager;
             this.dbContext = dbContext;
             this.environment = environment;
-
+            this.paymentService = paymentService;
+            this.configuration = configuration;
         }
 
-
-
-
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
         public async Task<IActionResult> Dashboard()
         {
-
-
-            var user =
-                await userManager.GetUserAsync(User);
-
+            var user = await userManager.GetUserAsync(User);
             var assignment = user == null ? null : await dbContext.FlatAssignments
                 .Include(item => item.Flat)
                 .AsNoTracking()
@@ -51,23 +44,125 @@ namespace ADHUNIK_BARI.Controllers
 
             ViewBag.Assignment = assignment;
 
-
-
             if (user != null)
             {
-
-                ViewBag.RequirePasswordChange =
-                    user.TemporaryPasswordStatus;
-
+                ViewBag.RequirePasswordChange = user.TemporaryPasswordStatus;
             }
 
-
-
             return View();
-
         }
 
         [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
+        public async Task<IActionResult> MyBills()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var assignment = await GetActiveAssignment(user.Id);
+            if (assignment == null)
+            {
+                return View(new MyBillsViewModel
+                {
+                    ResidentName = user.FullName ?? "Resident",
+                    FlatNumber = "N/A",
+                    ResidentType = "Resident"
+                });
+            }
+
+            var bills = await dbContext.Bills
+                .Include(b => b.BillItems)
+                .Include(b => b.Payments)
+                .Where(b => b.AssignmentId == assignment.AssignmentId)
+                .AsNoTracking()
+                .OrderByDescending(b => b.BillYear)
+                .ThenByDescending(b => b.BillMonth)
+                .ToListAsync();
+
+            var payments = await dbContext.Payments
+                .Include(p => p.Bill)
+                .Where(p => p.UserId == user.Id)
+                .AsNoTracking()
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+
+            var currentBillVms = bills.Select(b => new ResidentBillViewModel
+            {
+                BillId = b.BillId,
+                BillMonth = b.BillMonth,
+                BillYear = b.BillYear,
+                FlatNumber = assignment.Flat?.FlatNumber ?? "N/A",
+                ResidentType = assignment.ResidentType,
+                TotalAmount = b.TotalAmount,
+                PaidAmount = b.PaidAmount,
+                DueAmount = b.DueAmount,
+                Deadline = b.Deadline,
+                BillStatus = b.BillStatus,
+                CreatedAt = b.CreatedAt,
+                BillItems = b.BillItems.Select(item => new ResidentBillItemViewModel
+                {
+                    BillItemId = item.BillItemId,
+                    ItemType = item.ItemType,
+                    Amount = item.Amount,
+                    Description = item.Description,
+                    PaymentStatus = item.PaymentStatus
+                }).ToList()
+            }).ToList();
+
+            var paymentHistoryVms = payments.Select(p => new ResidentPaymentHistoryViewModel
+            {
+                PaymentId = p.PaymentId,
+                AmountPaid = p.AmountPaid,
+                PaymentDate = p.PaymentDate != default ? p.PaymentDate : p.CreatedAt,
+                PaymentStatus = p.PaymentStatus,
+                StripeReceiptUrl = p.StripeReceiptUrl,
+                Reference = p.Reference,
+                ItemsDescription = p.PaidItemsJson
+            }).ToList();
+
+            var model = new MyBillsViewModel
+            {
+                ResidentName = user.FullName ?? "Resident",
+                FlatNumber = assignment.Flat?.FlatNumber ?? "N/A",
+                ResidentType = assignment.ResidentType,
+                CurrentBills = currentBillVms,
+                PaymentHistory = paymentHistoryVms
+            };
+
+            ViewBag.StripePublicKey = configuration["Stripe:PublishableKey"] ?? "pk_test_placeholder";
+            ViewBag.StripePublishableKey = configuration["Stripe:PublishableKey"] ?? "pk_test_placeholder";
+
+            return View(model);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Manager,Admin,Tenant,FlatOwner")]
+        public async Task<IActionResult> Receipt(int id, [FromQuery] int? paymentId)
+        {
+            var targetPaymentId = id > 0 ? id : paymentId.GetValueOrDefault();
+            if (targetPaymentId <= 0)
+            {
+                return NotFound("Invalid Receipt/Payment ID.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            var isManager = User.IsInRole("Manager") || User.IsInRole("Admin");
+            var userId = user?.Id ?? "";
+
+            var receipt = await paymentService.GetReceiptDetailsAsync(targetPaymentId, userId, isManager);
+            if (receipt == null)
+            {
+                return NotFound("Receipt not found or access denied.");
+            }
+
+            return View(receipt);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
         public async Task<IActionResult> Notices()
         {
             var user = await userManager.GetUserAsync(User);
@@ -93,6 +188,7 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
         public async Task<IActionResult> SubmitComplaint()
         {
             var assignment = await GetActiveAssignment();
@@ -108,6 +204,7 @@ namespace ADHUNIK_BARI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Tenant,FlatOwner")]
         public async Task<IActionResult> SubmitComplaint(SubmitComplaintViewModel model)
         {
             var user = await userManager.GetUserAsync(User);
@@ -172,6 +269,7 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
         public async Task<IActionResult> MyComplaints()
         {
             var user = await userManager.GetUserAsync(User);
@@ -212,10 +310,5 @@ namespace ADHUNIK_BARI.Controllers
                 .OrderByDescending(assignment => assignment.AssignmentDate)
                 .FirstOrDefaultAsync();
         }
-
-
-
     }
-
-
 }
