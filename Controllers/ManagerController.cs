@@ -1,30 +1,67 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.ViewModels;
 using ADHUNIK_BARI.Data;
+using ADHUNIK_BARI.Services;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace ADHUNIK_BARI.Controllers
 {
-
     [Authorize(Roles = "Manager")]
     public class ManagerController : Controller
     {
-
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly ApplicationDbContext dbContext;
-
+        private readonly IBillingService billingService;
+        private readonly IPaymentService paymentService;
 
         public ManagerController(
             UserManager<ApplicationUser> userManager,
-            ApplicationDbContext dbContext)
+            ApplicationDbContext dbContext,
+            IBillingService billingService,
+            IPaymentService paymentService)
         {
             this.userManager = userManager;
             this.dbContext = dbContext;
+            this.billingService = billingService;
+            this.paymentService = paymentService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Dashboard()
+        {
+            var activeFlatsCount = await dbContext.FlatAssignments.CountAsync(a => a.IsActive);
+            var pendingComplaintsCount = await dbContext.Complaints.CountAsync(c => c.ComplaintStatus == "Pending");
+            var totalBilled = await dbContext.Bills.SumAsync(b => (decimal?)b.TotalAmount) ?? 0m;
+            var totalPaid = await dbContext.Bills.SumAsync(b => (decimal?)b.PaidAmount) ?? 0m;
+            var collectionRate = totalBilled > 0 ? (int)Math.Round((totalPaid / totalBilled) * 100m) : 100;
+
+            ViewBag.ActiveFlatsCount = activeFlatsCount;
+            ViewBag.PendingComplaintsCount = pendingComplaintsCount;
+            ViewBag.CollectionRate = collectionRate;
+            ViewBag.TotalCollectedRevenue = totalPaid;
+
+            ViewBag.RecentComplaints = await dbContext.Complaints
+                .Include(complaint => complaint.Flat)
+                .Include(complaint => complaint.User)
+                .AsNoTracking()
+                .OrderByDescending(complaint => complaint.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            ViewBag.RecentPayments = await dbContext.Payments
+                .Include(p => p.User)
+                .Include(p => p.Bill)
+                    .ThenInclude(b => b!.Assignment)
+                        .ThenInclude(a => a!.Flat)
+                .AsNoTracking()
+                .OrderByDescending(p => p.PaymentDate)
+                .Take(5)
+                .ToListAsync();
+
+            return View();
         }
 
         [HttpGet]
@@ -65,12 +102,57 @@ namespace ADHUNIK_BARI.Controllers
             {
                 FlatNumber = model.FlatNumber,
                 FloorNumber = model.FloorNumber,
+                MonthlyRent = model.MonthlyRent,
                 FlatStatus = "Available",
                 CreatedAt = DateTime.Now
             });
 
             await dbContext.SaveChangesAsync();
-            TempData["Success"] = "Flat created successfully.";
+            TempData["Success"] = $"Flat {model.FlatNumber} created successfully with monthly rent ৳{model.MonthlyRent:N0}.";
+            return RedirectToAction(nameof(Flats));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditFlat(int id)
+        {
+            var flat = await dbContext.Flats.FindAsync(id);
+            if (flat == null)
+            {
+                return NotFound();
+            }
+
+            return View(new EditFlatViewModel
+            {
+                FlatId = flat.FlatId,
+                FlatNumber = flat.FlatNumber,
+                FloorNumber = flat.FloorNumber,
+                MonthlyRent = flat.MonthlyRent,
+                FlatStatus = flat.FlatStatus
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFlat(EditFlatViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var flat = await dbContext.Flats.FindAsync(model.FlatId);
+            if (flat == null)
+            {
+                return NotFound();
+            }
+
+            flat.FlatNumber = model.FlatNumber;
+            flat.FloorNumber = model.FloorNumber;
+            flat.MonthlyRent = model.MonthlyRent;
+            flat.FlatStatus = model.FlatStatus;
+
+            await dbContext.SaveChangesAsync();
+            TempData["Success"] = $"Flat {flat.FlatNumber} updated successfully with monthly rent ৳{flat.MonthlyRent:N0}.";
             return RedirectToAction(nameof(Flats));
         }
 
@@ -304,23 +386,6 @@ namespace ADHUNIK_BARI.Controllers
             return model;
         }
 
-
-
-
-
-        public async Task<IActionResult> Dashboard()
-        {
-            ViewBag.RecentComplaints = await dbContext.Complaints
-                .Include(complaint => complaint.Flat)
-                .Include(complaint => complaint.User)
-                .AsNoTracking()
-                .OrderByDescending(complaint => complaint.CreatedAt)
-                .Take(5)
-                .ToListAsync();
-
-            return View();
-        }
-
         [HttpGet]
         public async Task<IActionResult> Complaints(string? flatNumber, string? status)
         {
@@ -385,244 +450,244 @@ namespace ADHUNIK_BARI.Controllers
 
             if (!IsComplaintStatus(model.ComplaintStatus))
             {
-                ModelState.AddModelError(nameof(model.ComplaintStatus), "Select a valid complaint status.");
-            }
-            else if (!CanMoveToStatus(complaint.ComplaintStatus, model.ComplaintStatus))
-            {
-                ModelState.AddModelError(nameof(model.ComplaintStatus), "Complaint status must progress from Pending to In Progress to Solved.");
+                ModelState.AddModelError(nameof(model.ComplaintStatus), "Select a valid status.");
+                return RedirectToAction(nameof(ComplaintDetails), new { id = model.ComplaintId });
             }
 
-            if (!ModelState.IsValid)
+            var manager = await userManager.GetUserAsync(User);
+            if (manager == null)
             {
-                var details = await dbContext.Complaints
-                    .Include(item => item.Flat)
-                    .Include(item => item.User)
-                    .Include(item => item.ResolvedByUser)
-                    .AsNoTracking()
-                    .SingleAsync(item => item.ComplaintId == model.ComplaintId);
-                ViewBag.UpdateModel = model;
-                return View("ComplaintDetails", details);
+                return Challenge();
             }
 
             complaint.ComplaintStatus = model.ComplaintStatus;
             complaint.ManagerNote = string.IsNullOrWhiteSpace(model.ManagerNote) ? null : model.ManagerNote.Trim();
 
-            if (model.ComplaintStatus == "Solved" && complaint.ResolvedAt == null)
+            if (model.ComplaintStatus == "Resolved" || model.ComplaintStatus == "Closed")
             {
+                complaint.ResolvedByUserId = manager.Id;
                 complaint.ResolvedAt = DateTime.Now;
-                complaint.ResolvedByUserId = userManager.GetUserId(User);
+            }
+            else
+            {
+                complaint.ResolvedByUserId = null;
+                complaint.ResolvedAt = null;
             }
 
             await dbContext.SaveChangesAsync();
-            TempData["Success"] = "Complaint updated successfully.";
-            return RedirectToAction(nameof(ComplaintDetails), new { id = complaint.ComplaintId });
+            TempData["Success"] = "Complaint status updated successfully.";
+            return RedirectToAction(nameof(ComplaintDetails), new { id = model.ComplaintId });
         }
-
-        private static bool IsComplaintStatus(string? status)
-        {
-            return status is "Pending" or "In Progress" or "Solved";
-        }
-
-        private static bool CanMoveToStatus(string currentStatus, string requestedStatus)
-        {
-            return currentStatus == requestedStatus ||
-                (currentStatus == "Pending" && requestedStatus == "In Progress") ||
-                (currentStatus == "In Progress" && requestedStatus == "Solved");
-        }
-
-
-
-
-
-        // GET CREATE RESIDENT
 
         [HttpGet]
         public IActionResult CreateResident()
         {
-            return View();
+            return View(new CreateResidentViewModel());
         }
-
-
-
-
-
-
-
-        // POST CREATE RESIDENT
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateResident(
-            CreateResidentViewModel model)
+        public async Task<IActionResult> CreateResident(CreateResidentViewModel model)
         {
-
-
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-
-
-
-
-            var existingUser =
-                await userManager.FindByEmailAsync(model.Email);
-
-
-
-            if (existingUser != null)
+            var user = new ApplicationUser
             {
-
-                ModelState.AddModelError(
-                    "",
-                    "Email already exists"
-                );
-
-
-                return View(model);
-
-            }
-
-
-
-
-
-
-
-            ApplicationUser user = new ApplicationUser
-            {
-
-
                 FullName = model.FullName,
+                PhoneNumber = model.Phone,
                 Phone = model.Phone,
-
-
                 UserName = model.Email,
-
-
                 Email = model.Email,
-
-
                 EmailConfirmed = true,
-
-
                 TemporaryPasswordStatus = true,
-
-
                 AccountStatus = "Active",
-
-
                 CreatedAt = DateTime.Now
-
-
             };
 
-
-
-
-
-
-
-            var result =
-                await userManager.CreateAsync(
-                    user,
-                    model.TemporaryPassword
-                );
-
-
-
-
-
-
-
+            var result = await userManager.CreateAsync(user, model.TemporaryPassword);
 
             if (result.Succeeded)
             {
-
-
-
-                var roleResult =
-                    await userManager.AddToRoleAsync(
-                        user,
-                        model.ResidentType
-                    );
-
-
-
-
-
-
+                var roleResult = await userManager.AddToRoleAsync(user, model.ResidentType);
                 if (!roleResult.Succeeded)
                 {
-
-
                     foreach (var error in roleResult.Errors)
                     {
-
-                        ModelState.AddModelError(
-                            "",
-                            error.Description
-                        );
-
+                        ModelState.AddModelError("", error.Description);
                     }
-
-
-
                     return View(model);
-
-
                 }
 
-
-
-
-
-
-
-                TempData["Success"] =
-                    "Resident account created successfully";
-
-
-
-
-
-
-                return RedirectToAction(
-                    "Dashboard"
-                );
-
-
+                TempData["Success"] = "Resident account created successfully";
+                return RedirectToAction("Dashboard");
             }
-
-
-
-
-
-
 
             foreach (var error in result.Errors)
             {
-
-                ModelState.AddModelError(
-                    "",
-                    error.Description
-                );
-
+                ModelState.AddModelError("", error.Description);
             }
 
-
-
-
-
-
             return View(model);
-
-
         }
 
+        // ==========================================
+        // BILLING & INVOICE MANAGEMENT ACTIONS
+        // ==========================================
 
+        [HttpGet]
+        public async Task<IActionResult> Bills()
+        {
+            var activeAssignments = await dbContext.FlatAssignments
+                .Include(a => a.Flat)
+                .Include(a => a.User)
+                .Where(a => a.IsActive)
+                .AsNoTracking()
+                .OrderBy(a => a.Flat != null ? a.Flat.FlatNumber : "")
+                .ToListAsync();
 
+            var overviewList = await billingService.GetBillingOverviewForManagerAsync();
+
+            var recentBills = await dbContext.Bills
+                .Include(b => b.BillItems)
+                .Include(b => b.Assignment)
+                    .ThenInclude(a => a!.Flat)
+                .Include(b => b.Assignment)
+                    .ThenInclude(a => a!.User)
+                .AsNoTracking()
+                .OrderByDescending(b => b.BillYear)
+                .ThenByDescending(b => b.BillMonth)
+                .ThenByDescending(b => b.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+
+            var recentPayments = await dbContext.Payments
+                .Include(p => p.User)
+                .Include(p => p.Bill)
+                    .ThenInclude(b => b!.Assignment)
+                        .ThenInclude(a => a!.Flat)
+                .AsNoTracking()
+                .OrderByDescending(p => p.PaymentDate)
+                .Take(50)
+                .ToListAsync();
+
+            var totalBilled = await dbContext.Bills.SumAsync(b => (decimal?)b.TotalAmount) ?? 0m;
+            var totalCollected = await dbContext.Bills.SumAsync(b => (decimal?)b.PaidAmount) ?? 0m;
+            var totalDue = await dbContext.Bills.SumAsync(b => (decimal?)b.DueAmount) ?? 0m;
+            var totalUnpaidBills = await dbContext.Bills.CountAsync(b => b.BillStatus != "Paid");
+
+            var model = new ManagerBillsPageViewModel
+            {
+                GenerateRequest = new GenerateMonthlyBillsRequest
+                {
+                    Month = DateTime.Now.Month,
+                    Year = DateTime.Now.Year
+                },
+                ActiveAssignments = activeAssignments,
+                OverviewList = overviewList,
+                RecentBills = recentBills,
+                RecentPayments = recentPayments,
+                TotalBilledAmount = totalBilled,
+                TotalCollectedAmount = totalCollected,
+                TotalDueAmount = totalDue,
+                TotalUnpaidBills = totalUnpaidBills,
+                TotalActiveAssignments = activeAssignments.Count
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateMonthlyBills(ManagerBillsPageViewModel model)
+        {
+            var req = model.GenerateRequest ?? new GenerateMonthlyBillsRequest();
+            try
+            {
+                var count = await billingService.GenerateMonthlyBillsAsync(
+                    req.Month,
+                    req.Year,
+                    req.ServiceCharge,
+                    req.GasCharge,
+                    req.WaterCharge,
+                    req.ElectricityCharge,
+                    req.MaintenanceCharge,
+                    req.TargetAssignmentId > 0 ? req.TargetAssignmentId : null,
+                    req.MonthlyRent
+                );
+
+                if (count > 0)
+                {
+                    TempData["Success"] = $"Successfully generated and issued {count} monthly invoice(s) for {new DateTime(req.Year, req.Month, 1):MMMM yyyy}.";
+                }
+                else
+                {
+                    TempData["Error"] = $"No new bills were generated. Bills may already exist for {new DateTime(req.Year, req.Month, 1):MMMM yyyy} or no active resident matches.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Failed to generate bills: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Bills));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteBill(int billId)
+        {
+            var bill = await dbContext.Bills
+                .Include(b => b.Payments)
+                .Include(b => b.BillItems)
+                .FirstOrDefaultAsync(b => b.BillId == billId);
+
+            if (bill == null)
+            {
+                TempData["Error"] = "Bill not found.";
+                return RedirectToAction(nameof(Bills));
+            }
+
+            if (bill.PaidAmount > 0 || bill.Payments.Any())
+            {
+                TempData["Error"] = "Cannot delete a bill with recorded payment transactions for audit compliance.";
+                return RedirectToAction(nameof(Bills));
+            }
+
+            dbContext.BillItems.RemoveRange(bill.BillItems);
+            dbContext.Bills.Remove(bill);
+            await dbContext.SaveChangesAsync();
+
+            TempData["Success"] = $"Bill #{billId} was removed successfully.";
+            return RedirectToAction(nameof(Bills));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Receipt(int id, [FromQuery] int? paymentId)
+        {
+            var targetPaymentId = id > 0 ? id : paymentId.GetValueOrDefault();
+            if (targetPaymentId <= 0)
+            {
+                return NotFound("Invalid Receipt/Payment ID.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            var userId = user?.Id ?? "";
+
+            var receipt = await paymentService.GetReceiptDetailsAsync(targetPaymentId, userId, isManagerOrAdmin: true);
+            if (receipt == null)
+            {
+                return NotFound("Receipt not found or access denied.");
+            }
+
+            return View("~/Views/Resident/Receipt.cshtml", receipt);
+        }
+
+        private static bool IsComplaintStatus(string status)
+        {
+            return status is "Pending" or "In Progress" or "Resolved" or "Closed";
+        }
     }
-
 }

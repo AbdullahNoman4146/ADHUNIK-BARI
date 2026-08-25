@@ -1,274 +1,123 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 
-
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-
-
-    <div class="container-fluid px-5">
-
-
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container-fluid px-4 px-md-5">
 
         <!-- WEBSITE BRAND -->
-
-        <a class="navbar-brand d-flex align-items-center"
-           asp-controller="Home"
-           asp-action="Index">
-
-
+        <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
             <div class="logo-circle">
-
                 AB
-
             </div>
-
-
-
             <div class="brand-text ms-3">
-
-
-                <h5 class="mb-0">
-
-                    ADHUNIK BARI
-
-                </h5>
-
-
-                <small>
-
-                    Smart Apartment Management
-
-                </small>
-
-
+                <h5 class="mb-0 fw-bold">ADHUNIK BARI</h5>
+                <small class="text-muted">Smart Apartment Management</small>
             </div>
-
-
         </a>
 
-
-
-
-
         <!-- MOBILE MENU BUTTON -->
-
-
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarMenu">
-
-
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
-
-
         </button>
 
-
-
-
-
         <!-- NAVIGATION MENU -->
+        <div class="collapse navbar-collapse" id="navbarMenu">
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
 
-
-        <div class="collapse navbar-collapse"
-             id="navbarMenu">
-
-
-            <ul class="navbar-nav ms-auto align-items-center">
-
-
-
-
-
-                <!-- HOME -->
-
-
-                <li class="nav-item">
-
-
-                    <a class="nav-link"
-                       asp-controller="Home"
-                       asp-action="Index">
-
-
-                        Home
-
-
-                    </a>
-
-
-                </li>
-
-
-
-
-
-
-                <!-- FEATURES -->
-
-
-                <li class="nav-item">
-
-
-                    <a class="nav-link"
-                       href="#">
-
-
-                        Features
-
-
-                    </a>
-
-
-                </li>
-
-
-
-
-
-
-
-                <!-- CONTACT -->
-
-
-                <li class="nav-item">
-
-
-                    <a class="nav-link"
-                       href="#">
-
-
-                        Contact
-
-
-                    </a>
-
-
-                </li>
-
-
-
-
-
-
-                <!-- AUTH SECTION -->
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
-
                 {
-
-
+                    @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Dashboard">
+                                <i class="fa-solid fa-gauge-high me-1 text-primary"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Flats">
+                                <i class="fa-solid fa-building me-1 text-secondary"></i> Flats
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Notices">
+                                <i class="fa-solid fa-bullhorn me-1 text-info"></i> Notices
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Complaints">
+                                <i class="fa-solid fa-screwdriver-wrench me-1 text-warning"></i> Complaints
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2 fw-semibold text-primary" asp-controller="Manager" asp-action="Bills">
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> Bills & Invoices
+                            </a>
+                        </li>
+                    }
+                    else if (User.IsInRole("Tenant") || User.IsInRole("FlatOwner"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Resident" asp-action="Dashboard">
+                                <i class="fa-solid fa-house me-1 text-primary"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2 fw-semibold text-success" asp-controller="Resident" asp-action="MyBills">
+                                <i class="fa-solid fa-credit-card me-1"></i> My Bills
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Resident" asp-action="Notices">
+                                <i class="fa-solid fa-bullhorn me-1 text-info"></i> Notices
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-2" asp-controller="Resident" asp-action="MyComplaints">
+                                <i class="fa-solid fa-screwdriver-wrench me-1 text-warning"></i> Complaints
+                            </a>
+                        </li>
+                    }
 
                     <!-- PROFILE ICON -->
-
-
-                    <li class="nav-item ms-3">
-
-
-                        <a class="profile-btn"
-                           title="Dashboard"
-                           href="@(
-                           User.IsInRole("Manager")
-                           ? Url.Action("Dashboard", "Manager")
-
-                           :
-
-                           User.IsInRole("Tenant")
-                           ? Url.Action("Dashboard", "Tenant")
-
-                           :
-
-                           Url.Action("Dashboard", "FlatOwner")
-                                                  )">
-
-
+                    <li class="nav-item ms-lg-2">
+                        <a class="profile-btn" title="Go to Dashboard" href="@(
+                            (User.IsInRole("Manager") || User.IsInRole("Admin"))
+                            ? Url.Action("Dashboard", "Manager")
+                            : Url.Action("Dashboard", "Resident")
+                        )">
                             <i class="fa-solid fa-user"></i>
-
-
                         </a>
-
-
                     </li>
-
-
-
-
-
-
 
                     <!-- LOGOUT ICON -->
-
-
-                    <li class="nav-item ms-2">
-
-
-                        <form method="post"
-                              asp-controller="Account"
-                              asp-action="Logout">
-
-
-                            <button type="submit"
-                                    class="logout-btn"
-                                    title="Logout">
-
-
+                    <li class="nav-item ms-1">
+                        <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="logout-btn" title="Logout">
                                 <i class="fa-solid fa-right-from-bracket"></i>
-
-
                             </button>
-
-
                         </form>
-
-
                     </li>
-
-
-
                 }
-
-
                 else
-
                 {
-
-
-
-                    <!-- LOGIN ICON -->
-
-
-                    <li class="nav-item ms-3">
-
-
-                        <a class="profile-btn"
-                           title="Login"
-                           asp-controller="Account"
-                           asp-action="Login">
-
-
-                            <i class="fa-solid fa-right-to-bracket"></i>
-
-
-                        </a>
-
-
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                     </li>
-
-
-
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#contact">Contact</a>
+                    </li>
+                    <li class="nav-item ms-lg-3">
+                        <a class="btn btn-primary px-3 py-2 rounded-pill fw-semibold shadow-sm" asp-controller="Account" asp-action="Login">
+                            <i class="fa-solid fa-right-to-bracket me-1"></i> Login Portal
+                        </a>
+                    </li>
                 }
-
-
 
             </ul>
-
-
-
         </div>
 
-
-
     </div>
-
-
-
 </nav>

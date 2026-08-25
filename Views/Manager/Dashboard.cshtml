@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Manager Dashboard";
 }
 
@@ -14,280 +14,135 @@
 
 <div class="dashboard-container fade-in">
 
-
     <h1 class="dashboard-title">
-        Welcome back, Manager 👋
+        Welcome back, Manager
     </h1>
-
 
     <p class="dashboard-subtitle">
         ADHUNIK BARI Management Dashboard
     </p>
 
-
-
     <!-- METRICS -->
-
-
     <div class="metrics-bar">
-
-
         <div class="metric-card">
-
-
-            <div class="metric-number counter"
-     data-target="48">
-    0
-</div>
-
-
+            <div class="metric-number counter" data-target="@(ViewBag.ActiveFlatsCount ?? 0)">
+                @(ViewBag.ActiveFlatsCount ?? 0)
+            </div>
             <div class="metric-label">
                 Active Flats
             </div>
-
-
         </div>
 
-
-
-
         <div class="metric-card">
-
-
-            <div class="metric-number counter"
-                 data-target="3">
-                0
+            <div class="metric-number counter" data-target="@(ViewBag.PendingComplaintsCount ?? 0)">
+                @(ViewBag.PendingComplaintsCount ?? 0)
             </div>
-
-
             <div class="metric-label">
                 Pending Complaints
             </div>
-
-
         </div>
-
-
-
-
 
         <div class="metric-card">
-
-
-             <div class="metric-number counter percent"
-     data-target="94">
-    0
-</div>
-
-
-            <div class="metric-label">
-                Rent Collection
+            <div class="metric-number counter percent" data-target="@(ViewBag.CollectionRate ?? 0)">
+                @(ViewBag.CollectionRate ?? 0)
             </div>
-
-
+            <div class="metric-label">
+                Rent Collection Rate
+            </div>
         </div>
 
-
-
+        <div class="metric-card">
+            <div class="metric-number text-success fw-bold">
+                ৳@((ViewBag.TotalCollectedRevenue != null ? ((decimal)ViewBag.TotalCollectedRevenue).ToString("N0") : "0"))
+            </div>
+            <div class="metric-label">
+                Total Revenue Collected
+            </div>
+        </div>
     </div>
-
-
-
-
 
     <h2 class="section-title">
         Quick Actions
     </h2>
 
-
-
-
-
     <div class="dashboard-grid">
 
-
-
         <!-- RESIDENTS -->
-
-<div class="dashboard-action-card reveal-card"
-     onclick="toggleCard(this)">
-
+        <div class="dashboard-action-card reveal-card" onclick="toggleCard(this)">
             <h3>
-                👥 Residents
+                <i class="fa-solid fa-users text-primary me-2"></i>Residents
             </h3>
-
-
             <p>
                 Create Tenant and Flat Owner accounts
             </p>
-
-
             <div class="expand-content">
-
-
                 <a class="dashboard-btn"
                    asp-controller="Manager"
                    asp-action="CreateResident">
-
                     Manage Residents
-
                 </a>
-
-
             </div>
-
-
         </div>
 
-
-
-
-
-
-
         <!-- NOTICES -->
-
-
-        <div class="dashboard-action-card"
-             onclick="toggleCard(this)">
-
-
+        <div class="dashboard-action-card" onclick="toggleCard(this)">
             <h3>
-                📢 Notices
+                <i class="fa-solid fa-bullhorn text-warning me-2"></i>Notices
             </h3>
-
-
             <p>
                 Publish resident announcements
             </p>
-
-
             <div class="expand-content">
-
-
                 <a class="dashboard-btn"
                    asp-controller="Manager"
                    asp-action="Notices">
-
                     Manage Notices
-
                 </a>
-
-
             </div>
-
-
         </div>
 
-
-
-
-
-
         <!-- FLATS -->
-
-
-        <div class="dashboard-action-card"
-             onclick="toggleCard(this)">
-
-
+        <div class="dashboard-action-card" onclick="toggleCard(this)">
             <h3>
-                🏢 Flats
+                <i class="fa-solid fa-building text-info me-2"></i>Flats
             </h3>
-
-
             <p>
                 Manage apartment flats
             </p>
-
-
             <div class="expand-content">
-
-
                 <a class="dashboard-btn"
                    asp-controller="Manager"
                    asp-action="Flats">
-
                     View Flats
-
                 </a>
-
-
             </div>
-
-
         </div>
-
-
-
-
-
-
-
 
         <!-- BILLS -->
-
-
-        <div class="dashboard-action-card"
-             onclick="toggleCard(this)">
-
-
+        <div class="dashboard-action-card" onclick="toggleCard(this)">
             <h3>
-                💳 Bills
+                <i class="fa-solid fa-file-invoice-dollar text-success me-2"></i>Bills & Invoices
             </h3>
-
-
             <p>
-                Generate monthly bills
+                Generate & manage monthly bills
             </p>
-
-
             <div class="expand-content">
-
-
-                <strong>
-                    12 Unpaid Invoices
-                </strong>
-
-
-                <br>
-
-
-                <button class="dashboard-btn">
-
-                    Send Reminder
-
-                </button>
-
-
+                <a class="dashboard-btn"
+                   asp-controller="Manager"
+                   asp-action="Bills">
+                    Manage Invoices
+                </a>
             </div>
-
-
         </div>
 
-
-
-
-
-
-
         <!-- COMPLAINTS -->
-
-
-        <div class="dashboard-action-card"
-             onclick="toggleCard(this)">
-
-
+        <div class="dashboard-action-card" onclick="toggleCard(this)">
             <h3>
-                🛠 Complaints
+                <i class="fa-solid fa-wrench text-danger me-2"></i>Complaints
             </h3>
-
-
             <p>
                 Review complaints
             </p>
-
-
             <div class="expand-content">
                 @if (ViewBag.RecentComplaints != null)
                 {
@@ -297,16 +152,80 @@
                     }
                 }
                 <a class="dashboard-btn" asp-controller="Manager" asp-action="Complaints">Open Complaint Center</a>
-
-
             </div>
-
-
         </div>
-
-
-
     </div>
 
+    <!-- RECENT RESIDENT PAYMENTS FEED -->
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title mb-0">
+                <i class="fa-solid fa-receipt text-success me-2"></i>Recent Resident Payments & Receipts
+            </h2>
+            <a asp-controller="Manager" asp-action="Bills" class="btn btn-outline-primary btn-sm rounded-3">
+                <i class="fa-solid fa-arrow-right me-1"></i> Full Billing & Invoices
+            </a>
+        </div>
 
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Receipt #</th>
+                            <th>Resident</th>
+                            <th>Flat</th>
+                            <th>Amount Paid</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.RecentPayments != null && ((IEnumerable<ADHUNIK_BARI.Models.Payment>)ViewBag.RecentPayments).Any())
+                        {
+                            foreach (var payment in (IEnumerable<ADHUNIK_BARI.Models.Payment>)ViewBag.RecentPayments)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge bg-secondary font-monospace">RCP@(payment.PaymentId.ToString("D6"))</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@(payment.User?.FullName ?? "Resident")</div>
+                                        <div class="text-muted small">@(payment.User?.Email ?? "")</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">Flat @(payment.Bill?.Assignment?.Flat?.FlatNumber ?? "N/A")</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold fs-6">৳@payment.AmountPaid.ToString("N2")</span>
+                                    </td>
+                                    <td>
+                                        <span class="small text-muted">@((payment.PaymentDate != default ? payment.PaymentDate : payment.CreatedAt).ToString("dd MMM yyyy, hh:mm tt"))</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Paid & Cleared</span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="/Resident/Receipt/@payment.PaymentId" target="_blank" class="btn btn-sm btn-outline-success rounded-3">
+                                            <i class="fa-solid fa-receipt me-1"></i> View Receipt
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                    No resident payment transactions recorded yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

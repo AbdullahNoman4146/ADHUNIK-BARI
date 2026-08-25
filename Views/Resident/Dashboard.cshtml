@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Resident Dashboard";
 }
 
@@ -9,215 +9,128 @@
 
 
     <h1 class="resident-title">
-        Welcome back, Resident 👋
+        Welcome back, Resident
     </h1>
-
 
     <p class="resident-subtitle">
         Your smart apartment management portal
     </p>
 
-
-
-
-
     <!-- Apartment Card -->
-
-
     <div class="resident-glass-card">
-
-
         <div class="apartment-header">
-
-
             <div class="apartment-icon">
-                🏠
+                <i class="fa-solid fa-house text-primary"></i>
             </div>
-
-
             <div>
-
                 <h2>
                     My Apartment
                 </h2>
-
-
                 <span>
                     Smart Living Space
                 </span>
-
             </div>
-
-
         </div>
 
-
-
-
-
         <div class="resident-details">
-
-
             <div>
-
                 <label>
                     Flat Number
                 </label>
-
                 <strong>
                     D
                 </strong>
-
-
             </div>
 
-
-
-
             <div>
-
                 <label>
                     Floor Number
                 </label>
-
                 <strong>
                     7
                 </strong>
-
-
             </div>
 
-
-
-
-
             <div>
-
                 <label>
                     Resident Type
                 </label>
-
                 <strong>
                     Tenant
                 </strong>
-
-
             </div>
 
-
-
-
-
             <div>
-
                 <label>
                     Assignment Date
                 </label>
-
                 <strong>
                     22 Aug 2026
                 </strong>
-
-
             </div>
-
-
-
         </div>
 
-
-
-
-
         <div class="status-area">
-
-
             <span class="status-dot"></span>
-
-
             <span>
                 Occupied
             </span>
-
-
         </div>
-
-
-
     </div>
 
-
-
-
-
-
-
     <!-- Actions -->
-
-
     <div class="resident-actions">
-
-
+        <a asp-controller="Resident"
+           asp-action="MyBills"
+           class="resident-action-card">
+            <div class="mb-2 fs-3 text-success">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <h3>
+                My Bills & Payments
+            </h3>
+            <p>
+                View monthly bills & pay online
+            </p>
+        </a>
 
         <a asp-controller="Resident"
            asp-action="Notices"
            class="resident-action-card">
-
-
-            <div>
-                📢
+            <div class="mb-2 fs-3 text-warning">
+                <i class="fa-solid fa-bullhorn"></i>
             </div>
-
-
             <h3>
                 View Notices
             </h3>
-
-
             <p>
                 Check latest announcements
             </p>
-
-
         </a>
 
         <a asp-controller="Resident"
            asp-action="MyComplaints"
            class="resident-action-card">
-            <div>🛠️</div>
+            <div class="mb-2 fs-3 text-danger">
+                <i class="fa-solid fa-wrench"></i>
+            </div>
             <h3>My Complaints</h3>
             <p>Submit and track service issues</p>
         </a>
 
-
-
-
-
-
-
         <a asp-controller="Account"
            asp-action="ChangePassword"
            class="resident-action-card">
-
-
-            <div>
-                🔐
+            <div class="mb-2 fs-3 text-info">
+                <i class="fa-solid fa-key"></i>
             </div>
-
-
             <h3>
                 Change Password
             </h3>
-
-
             <p>
                 Secure your account
             </p>
-
-
         </a>
-
-
 
     </div>
 

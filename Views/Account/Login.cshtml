@@ -1,4 +1,4 @@
-﻿@model ADHUNIK_BARI.ViewModels.LoginViewModel
+@model ADHUNIK_BARI.ViewModels.LoginViewModel
 
 
 @{
@@ -85,6 +85,7 @@
 
                 <input asp-for="Password"
                        id="password"
+                       type="password"
                        placeholder=" " />
 
 
@@ -101,25 +102,15 @@
 
 
             <button type="submit"
-        class="premium-login-btn">
+                    class="premium-login-btn">
 
-    <span class="btn-text">
-        Login
-    </span>
-
-</button>
-
-
-                <span id="loginText">
-                    
+                <span id="loginText" class="btn-text">
+                    Login
                 </span>
-
 
                 <span id="spinner"
                       class="spinner">
-
                 </span>
-
 
             </button>
 

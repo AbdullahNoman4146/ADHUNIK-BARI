@@ -1,0 +1,522 @@
+@model MyBillsViewModel
+@{
+    ViewData["Title"] = "My Bills";
+}
+
+<div class="container mt-4 mb-5 fade-in">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h1 class="dashboard-title mb-1">
+                        <i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i>My Bills & Payment Center
+                    </h1>
+                    <p class="dashboard-subtitle mb-0">
+                        View monthly apartment invoices, select charges, and pay securely online
+                    </p>
+                </div>
+                <a asp-controller="Resident" asp-action="Dashboard" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+
+            @if (!Model.HasBills && !Model.HasPaymentHistory)
+            {
+                <div class="card shadow-sm border-0 rounded-4 p-5 text-center bg-white my-4">
+                    <div class="mb-3 text-success" style="font-size: 3rem;">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h3 class="fw-bold">All Cleared!</h3>
+                    <p class="text-muted mb-0">You currently have no pending bills or payment history.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Resident Info Section -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Resident Name</small>
+                                <strong class="fs-6 text-dark">@Model.ResidentName</strong>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Apartment Unit</small>
+                                <strong class="fs-6 text-primary">Flat @Model.FlatNumber</strong>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Resident Type</small>
+                                <span class="badge @(Model.ResidentType == "Tenant" ? "bg-info text-dark" : "bg-secondary")">
+                                    @Model.ResidentType
+                                </span>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Total Outstanding</small>
+                                <strong class="fs-5 text-danger">৳@Model.TotalOutstanding.ToString("N2")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.HasBills)
+                {
+                    <!-- Current Bills Section -->
+                    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+                        <div class="card-header bg-white border-bottom p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa-solid fa-file-invoice-dollar text-danger me-2"></i>
+                                    Pending & Due Invoices (@Model.TotalUnpaidBills)
+                                </h5>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                    Action Required
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            @foreach (var bill in Model.CurrentBills)
+                            {
+                                <div class="bill-card mb-4 p-4 border rounded-4 bg-light">
+                                    <!-- Bill Header -->
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-md-6">
+                                            <h5 class="mb-1 fw-bold">
+                                                Invoice for @(new DateTime(bill.BillYear, bill.BillMonth, 1).ToString("MMMM yyyy"))
+                                                <span class="badge @(bill.BillStatus == "Paid" ? "bg-success" : (bill.BillStatus == "Unpaid" ? "bg-danger" : "bg-warning text-dark")) ms-2">
+                                                    @bill.BillStatus
+                                                </span>
+                                            </h5>
+                                            <small class="text-muted">Issued: @bill.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                                            <div class="text-danger fw-bold fs-5">
+                                                Due: ৳@bill.DueAmount.ToString("N2")
+                                            </div>
+                                            <small class="text-muted">Payment Deadline: <strong>@bill.Deadline.ToString("MMM dd, yyyy")</strong></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bill Items Table -->
+                                    <div class="table-responsive bg-white rounded-3 border">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 50px;" class="text-center">
+                                                        <input type="checkbox" class="form-check-input bill-select-all" data-bill-id="@bill.BillId" title="Select all unpaid items">
+                                                    </th>
+                                                    <th>Charge Item</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (bill.BillItems.Count == 0)
+                                                {
+                                                    <tr>
+                                                        <td colspan="4" class="text-center py-3 text-muted">No items found in this bill</td>
+                                                    </tr>
+                                                }
+                                                else
+                                                {
+                                                    @foreach (var item in bill.BillItems)
+                                                    {
+                                                        <tr>
+                                                            <td class="text-center">
+                                                                @if (item.IsCheckable)
+                                                                {
+                                                                    <input type="checkbox" class="form-check-input bill-item-checkbox"
+                                                                           name="selectedItems"
+                                                                           value="@item.BillItemId"
+                                                                           data-amount="@item.Amount.ToString("F2")"
+                                                                           data-bill-id="@bill.BillId"
+                                                                           title="Select this item for payment">
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                    </span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <strong>@item.ItemType</strong>
+                                                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                                                {
+                                                                    <small class="text-muted d-block">@item.Description</small>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <strong class="text-dark">৳@item.Amount.ToString("N2")</strong>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : "bg-warning text-dark")">
+                                                                    @item.PaymentStatus
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Bill Action Button -->
+                                    <div class="row mt-3">
+                                        <div class="col-12 text-end">
+                                            <button type="button" class="btn btn-primary pay-bill-btn px-4 py-2 rounded-3 fw-semibold shadow-sm"
+                                                    data-bill-id="@bill.BillId"
+                                                    data-bs-toggle="modal" data-bs-target="#checkoutModal">
+                                                <i class="fa-solid fa-credit-card me-2"></i> Pay Selected Items
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.HasPaymentHistory)
+                {
+                    <!-- Payment History Section -->
+                    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+                        <div class="card-header bg-white border-bottom p-4">
+                            <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                                <i class="fa-solid fa-clock-rotate-left text-success me-2"></i>
+                                Payment History
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Payment Date</th>
+                                            <th>Amount</th>
+                                            <th>Items Paid</th>
+                                            <th>Status</th>
+                                            <th>Receipt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var payment in Model.PaymentHistory)
+                                        {
+                                            <tr>
+                                                <td>@payment.PaymentDate.ToString("MMM dd, yyyy HH:mm")</td>
+                                                <td><strong class="text-success">৳@payment.AmountPaid.ToString("N2")</strong></td>
+                                                <td>
+                                                    <small class="text-muted">@payment.ItemsDescription</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(payment.PaymentStatus == "Completed" ? "bg-success" : "bg-warning text-dark")">
+                                                        @payment.PaymentStatus
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if (payment.PaymentId > 0)
+                                                    {
+                                                        <a href="/Resident/Receipt/@payment.PaymentId" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                            <i class="fa-solid fa-file-arrow-down me-1"></i> Receipt
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-muted">N/A</small>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Checkout Modal with Stripe Integration -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold" id="checkoutModalLabel">
+                    <i class="fa-solid fa-credit-card me-2"></i> Secure Payment Checkout
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="paymentForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <!-- Selected Items Summary -->
+                    <div class="alert alert-info border-0 rounded-3">
+                        <strong class="d-block mb-2"><i class="fa-solid fa-list-check me-1"></i> Selected Charges for Payment:</strong>
+                        <div id="checkoutItemsList">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Total Amount Display -->
+                    <div class="d-flex justify-content-between align-items-center my-3 p-3 bg-light rounded-3">
+                        <h5 class="mb-0 fw-bold">Total Payment Amount:</h5>
+                        <h4 id="checkoutTotal" class="mb-0 text-success fw-bold">৳0.00</h4>
+                    </div>
+
+                    <!-- Stripe Card Element -->
+                    <div class="mb-3">
+                        <label for="cardElement" class="form-label fw-bold small">Card Information (Powered by Stripe)</label>
+                        <div id="cardElement" class="form-control p-3" style="min-height: 48px; border: 1px solid #ced4da; border-radius: 8px; background: #fff;">
+                            <!-- Stripe Card Element will be inserted here -->
+                        </div>
+                        <div id="cardErrors" class="alert alert-danger mt-2 py-2 small" style="display: none;"></div>
+                    </div>
+
+                    <!-- Stripe Test Card Helper Info -->
+                    <div class="alert alert-light border small text-muted py-2 px-3 rounded-3 mb-3">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                            <div>
+                                <i class="fa-solid fa-credit-card text-primary me-1"></i>
+                                <strong>Stripe Test Card:</strong> <code class="user-select-all text-dark fw-bold">4242 4242 4242 4242</code>
+                            </div>
+                            <div>
+                                <span>Exp: <code>12/34</code></span> · <span>CVC: <code>123</code></span> · <span>ZIP: <code>12345</code></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Processing Message -->
+                    <div id="paymentProcessing" class="alert alert-warning py-2 small" style="display: none;">
+                        <i class="fa-solid fa-circle-notch fa-spin me-2"></i>
+                        Processing your payment securely with Stripe, please wait...
+                    </div>
+
+                    <!-- Hidden inputs for bill and items -->
+                    <input type="hidden" id="billIdInput" name="billId">
+                    <input type="hidden" id="selectedItemsInput" name="selectedItemIds">
+                </div>
+                <div class="modal-footer p-4 border-top">
+                    <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal" id="cancelPaymentBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-3 fw-bold" id="submitPaymentBtn">
+                        <i class="fa-solid fa-lock me-1"></i> Pay Securely Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Stripe.js library -->
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <script>
+        const stripePublicKey = '@Html.Raw(ViewBag.StripePublicKey ?? "pk_test_YOUR_STRIPE_PUBLIC_KEY_HERE")';
+        let stripe = null;
+        let elements = null;
+        let cardElement = null;
+
+        try {
+            if (stripePublicKey && !stripePublicKey.includes("YOUR_STRIPE")) {
+                stripe = Stripe(stripePublicKey);
+                elements = stripe.elements();
+                cardElement = elements.create('card');
+                cardElement.mount('#cardElement');
+
+                cardElement.on('change', function (event) {
+                    const displayError = document.getElementById('cardErrors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                        displayError.style.display = 'block';
+                    } else {
+                        displayError.textContent = '';
+                        displayError.style.display = 'none';
+                    }
+                });
+            } else {
+                document.getElementById('cardElement').innerHTML = '<div class="text-muted small py-1"><i class="fa-solid fa-info-circle text-primary me-1"></i> Stripe test mode active (Configure Stripe:PublicKey in appsettings.json for live checkout).</div>';
+            }
+        } catch (e) {
+            console.error("Stripe initialization:", e);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setupCheckboxHandlers();
+            setupSelectAllHandlers();
+            setupPayBillButtons();
+        });
+
+        function setupCheckboxHandlers() {
+            document.querySelectorAll('.bill-item-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateCheckoutModal);
+            });
+        }
+
+        function setupSelectAllHandlers() {
+            document.querySelectorAll('.bill-select-all').forEach(selectAllCheckbox => {
+                selectAllCheckbox.addEventListener('change', function () {
+                    const billId = this.getAttribute('data-bill-id');
+                    document.querySelectorAll(`.bill-item-checkbox[data-bill-id="${billId}"]`).forEach(cb => {
+                        cb.checked = selectAllCheckbox.checked;
+                    });
+                    updateCheckoutModal();
+                });
+            });
+        }
+
+        function setupPayBillButtons() {
+            document.querySelectorAll('.pay-bill-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const billId = this.getAttribute('data-bill-id');
+                    document.getElementById('billIdInput').value = billId;
+                    
+                    // If no item in this bill is checked, auto check all items for this bill
+                    const checkedInBill = document.querySelectorAll(`.bill-item-checkbox[data-bill-id="${billId}"]:checked`);
+                    if (checkedInBill.length === 0) {
+                        document.querySelectorAll(`.bill-item-checkbox[data-bill-id="${billId}"]`).forEach(cb => {
+                            cb.checked = true;
+                        });
+                        const selectAll = document.querySelector(`.bill-select-all[data-bill-id="${billId}"]`);
+                        if (selectAll) selectAll.checked = true;
+                    }
+                    
+                    updateCheckoutModal();
+                });
+            });
+        }
+
+        function updateCheckoutModal() {
+            const billId = document.getElementById('billIdInput').value;
+            const selectedCheckboxes = document.querySelectorAll(billId ? `.bill-item-checkbox[data-bill-id="${billId}"]:checked` : '.bill-item-checkbox:checked');
+            const itemsList = document.getElementById('checkoutItemsList');
+            let totalAmount = 0;
+
+            itemsList.innerHTML = '';
+
+            if (selectedCheckboxes.length === 0) {
+                itemsList.innerHTML = '<p class="text-muted mb-0"><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> No items selected. Please check at least one charge item.</p>';
+            } else {
+                selectedCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const description = row.querySelector('td:nth-child(2) strong')?.textContent || 'Charge Item';
+                    const amount = parseFloat(checkbox.getAttribute('data-amount')) || 0;
+
+                    totalAmount += amount;
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'd-flex justify-content-between py-1 border-bottom border-light';
+                    itemDiv.innerHTML = `
+                        <span>${description}</span>
+                        <span><strong>৳${amount.toFixed(2)}</strong></span>
+                    `;
+                    itemsList.appendChild(itemDiv);
+                });
+            }
+
+            document.getElementById('checkoutTotal').textContent = '৳' + totalAmount.toFixed(2);
+            document.getElementById('selectedItemsInput').value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+        }
+
+        document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const billId = document.getElementById('billIdInput').value;
+            const selectedItemsStr = document.getElementById('selectedItemsInput').value;
+            const selectedItemIds = selectedItemsStr
+                .split(',')
+                .map(id => parseInt(id.trim()))
+                .filter(id => !isNaN(id));
+
+            if (!billId || selectedItemIds.length === 0) {
+                alert('Please select at least one charge item to pay.');
+                return;
+            }
+
+            document.getElementById('paymentProcessing').style.display = 'block';
+            document.getElementById('submitPaymentBtn').disabled = true;
+            document.getElementById('cancelPaymentBtn').disabled = true;
+
+            try {
+                const token = document.querySelector('[name="__RequestVerificationToken"]')?.value || '';
+                const intentResponse = await fetch('/api/payment/create-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        billId: parseInt(billId),
+                        selectedItemIds: selectedItemIds
+                    })
+                });
+
+                let intentData = null;
+                const rawText = await intentResponse.text();
+                try {
+                    intentData = rawText ? JSON.parse(rawText) : {};
+                } catch (jsonErr) {
+                    intentData = { success: false, message: `Server error (${intentResponse.status}): ${rawText.substring(0, 100)}` };
+                }
+
+                if (!intentResponse.ok || !intentData || !intentData.success) {
+                    throw new Error(intentData?.message || `Failed to initialize payment (${intentResponse.status}).`);
+                }
+
+                if (stripe && cardElement) {
+                    const { paymentIntent, error } = await stripe.confirmCardPayment(
+                        intentData.clientSecret,
+                        { payment_method: { card: cardElement } }
+                    );
+
+                    if (error) throw new Error(error.message);
+
+                    if (paymentIntent.status === 'succeeded') {
+                        document.getElementById('paymentProcessing').innerHTML = `
+                            <i class="fa-solid fa-circle-check text-success me-2"></i>
+                            Payment approved! Generating your official money receipt...
+                        `;
+
+                        const confirmResp = await fetch('/api/payment/confirm-payment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify({
+                                paymentIntentId: paymentIntent.id
+                            })
+                        });
+
+                        let confirmData = null;
+                        const confirmRaw = await confirmResp.text();
+                        try {
+                            confirmData = confirmRaw ? JSON.parse(confirmRaw) : {};
+                        } catch (e) {
+                            confirmData = {};
+                        }
+
+                        if (confirmData && confirmData.success && confirmData.paymentId > 0) {
+                            window.location.href = `/Resident/Receipt/${confirmData.paymentId}`;
+                        } else {
+                            alert('Payment succeeded and recorded! Updating your bills...');
+                            window.location.reload();
+                        }
+                    } else {
+                        throw new Error(`Payment status: ${paymentIntent.status}`);
+                    }
+                } else {
+                    alert('Payment intent created! Please configure valid Stripe keys in appsettings.json.');
+                    window.location.reload();
+                }
+            } catch (err) {
+                const errorBox = document.getElementById('cardErrors');
+                errorBox.textContent = err.message;
+                errorBox.style.display = 'block';
+                document.getElementById('paymentProcessing').style.display = 'none';
+                document.getElementById('submitPaymentBtn').disabled = false;
+                document.getElementById('cancelPaymentBtn').disabled = false;
+            }
+        });
+    </script>
+}

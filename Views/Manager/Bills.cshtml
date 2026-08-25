@@ -1,0 +1,509 @@
+@model ADHUNIK_BARI.ViewModels.ManagerBillsPageViewModel
+@{
+    ViewData["Title"] = "Billing Management";
+}
+
+<div class="dashboard-container fade-in">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="dashboard-title mb-1">
+                Billing & Invoices Management
+            </h1>
+            <p class="dashboard-subtitle mb-0">
+                Generate monthly utility invoices and monitor collection
+            </p>
+        </div>
+        <a asp-controller="Manager" asp-action="Dashboard" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- METRICS BAR -->
+    <div class="metrics-bar mb-4">
+        <div class="metric-card">
+            <div class="metric-number">
+                ৳@Model.TotalBilledAmount.ToString("N0")
+            </div>
+            <div class="metric-label">
+                Total Billed
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-number text-success">
+                ৳@Model.TotalCollectedAmount.ToString("N0")
+            </div>
+            <div class="metric-label">
+                Collected Revenue
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-number text-danger">
+                ৳@Model.TotalDueAmount.ToString("N0")
+            </div>
+            <div class="metric-label">
+                Total Outstanding
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-number text-warning">
+                @Model.TotalUnpaidBills
+            </div>
+            <div class="metric-label">
+                Pending / Unpaid Bills
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- GENERATOR CARD -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4 h-100 p-4 bg-white">
+                <div class="mb-3">
+                    <h4 class="mb-0 fw-bold">Generate Monthly Bills</h4>
+                    <small class="text-muted">Calculates bills for all @Model.TotalActiveAssignments active flats or selected resident</small>
+                </div>
+
+                <form asp-controller="Manager" asp-action="GenerateMonthlyBills" method="post" id="generateBillsForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- TARGET RESIDENT / FLAT SELECTION -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Target Resident / Flat</label>
+                        <select asp-for="GenerateRequest.TargetAssignmentId" class="form-select" id="targetResidentSelect">
+                            <option value="" data-type="All">All Active Residents & Flats (@Model.TotalActiveAssignments Units)</option>
+                            @foreach (var assign in Model.ActiveAssignments)
+                            {
+                                <option value="@assign.AssignmentId" 
+                                        data-rent="@(assign.Flat?.MonthlyRent ?? 0)" 
+                                        data-type="@assign.ResidentType" 
+                                        data-flat="@(assign.Flat?.FlatNumber ?? "")"
+                                        data-user="@(assign.User?.FullName ?? "")">
+                                    Flat @(assign.Flat?.FlatNumber ?? "N/A") — @(assign.User?.FullName ?? "Resident") (@assign.ResidentType)
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Billing Month</label>
+                            <select asp-for="GenerateRequest.Month" class="form-select">
+                                @for (int m = 1; m <= 12; m++)
+                                {
+                                    <option value="@m" selected="@(m == DateTime.Now.Month)">
+                                        @(new DateTime(2026, m, 1).ToString("MMMM")) (@m)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Billing Year</label>
+                            <input asp-for="GenerateRequest.Year" class="form-control" type="number" min="2020" max="2035" />
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-secondary mb-3 mt-4 border-bottom pb-2 small text-uppercase">
+                        Per-Unit Utility & Service Charges (৳)
+                    </h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6" id="houseRentContainer">
+                            <label class="form-label small" id="houseRentLabel">House Rent (Tenants Only)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.MonthlyRent" class="form-control" type="number" step="100" placeholder="0" id="monthlyRentInput" />
+                            </div>
+                            <small class="text-muted d-block mt-1" id="houseRentHelp" style="font-size: 0.75rem;">
+                                Applied only to Tenants. Flat Owners are exempt.
+                            </small>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Service Charge</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.ServiceCharge" class="form-control" type="number" step="10" />
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Gas Bill</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.GasCharge" class="form-control" type="number" step="10" />
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Water Bill</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.WaterCharge" class="form-control" type="number" step="10" />
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Electricity Charge</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.ElectricityCharge" class="form-control" type="number" step="10" />
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Maintenance Fee</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.MaintenanceCharge" class="form-control" type="number" step="10" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-bold mt-3 shadow-sm" id="generateSubmitBtn">
+                        <i class="fa-solid fa-file-invoice-dollar me-2"></i> Generate & Issue Invoices
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- APARTMENT OVERVIEW TABLE -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-4 h-100 p-4 bg-white">
+                <div class="mb-3">
+                    <h4 class="mb-0 fw-bold">Flat Billing Status</h4>
+                    <small class="text-muted">Breakdown by flat and resident residency</small>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Flat #</th>
+                                <th>Type</th>
+                                <th>Total Invoices</th>
+                                <th>Paid Invoices</th>
+                                <th>Pending</th>
+                                <th>Total Paid</th>
+                                <th>Outstanding</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OverviewList.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        No billing data available.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.OverviewList)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong class="text-primary">Flat @item.FlatNumber</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge @(item.ResidentType == "Tenant" ? "bg-primary-subtle text-primary border border-primary-subtle" : "bg-info-subtle text-info border border-info-subtle")">
+                                                @item.ResidentType
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold">@item.TotalBills</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-success fw-bold">@item.PaidCount</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-warning fw-bold">@item.UnpaidCount</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-success fw-semibold">৳@item.TotalAmountPaid.ToString("N0")</span>
+                                        </td>
+                                        <td>
+                                            <span class="@(item.OutstandingAmount > 0 ? "text-danger fw-bold" : "text-muted")">
+                                                ৳@item.OutstandingAmount.ToString("N0")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (item.OutstandingAmount == 0 && item.TotalBills > 0)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Clear
+                                                </span>
+                                            }
+                                            else if (item.TotalBills == 0)
+                                            {
+                                                <span class="badge bg-light text-muted border">No Invoices</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                    <i class="fa-solid fa-clock me-1"></i> Due
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE RESIDENT PAYMENTS FEED -->
+    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white mb-5">
+        <div class="mb-3">
+            <h4 class="mb-0 fw-bold">Live Resident Payment Transactions</h4>
+            <small class="text-muted">Real-time payment audit log & digital receipts</small>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Receipt #</th>
+                        <th>Date & Time</th>
+                        <th>Resident</th>
+                        <th>Flat</th>
+                        <th>Amount Paid</th>
+                        <th>Payment Intent</th>
+                        <th>Status</th>
+                        <th class="text-end">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentPayments.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                No online payments recorded yet.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var payment in Model.RecentPayments)
+                        {
+                            <tr>
+                                <td>
+                                    <strong class="text-primary">#RCP@(payment.PaymentId.ToString("D6"))</strong>
+                                </td>
+                                <td>
+                                    <small class="text-dark">@payment.PaymentDate.ToString("dd MMM yyyy, hh:mm tt")</small>
+                                </td>
+                                <td>
+                                    <strong>@(payment.User?.FullName ?? "Unknown")</strong>
+                                    <small class="d-block text-muted">@(payment.User?.Email ?? "")</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        Flat @(payment.Bill?.Assignment?.Flat?.FlatNumber ?? "N/A")
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong class="text-success fs-6">৳@payment.AmountPaid.ToString("N2")</strong>
+                                </td>
+                                <td>
+                                    <code class="small text-muted">@(string.IsNullOrEmpty(payment.StripePaymentIntentId) ? "N/A" : payment.StripePaymentIntentId)</code>
+                                </td>
+                                <td>
+                                    <span class="badge @(payment.PaymentStatus == "Completed" ? "bg-success" : "bg-warning text-dark")">
+                                        <i class="fa-solid fa-circle-check me-1"></i> @payment.PaymentStatus
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Resident" asp-action="Receipt" asp-route-paymentId="@payment.PaymentId" class="btn btn-sm btn-outline-primary rounded-3">
+                                        <i class="fa-solid fa-receipt me-1"></i> View Receipt
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RECENT INVOICES LIST TABLE -->
+    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+        <div class="mb-3">
+            <h4 class="mb-0 fw-bold">Recent Issued Invoices</h4>
+            <small class="text-muted">All generated monthly bills and itemized details</small>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bill #</th>
+                        <th>Period</th>
+                        <th>Flat & Resident</th>
+                        <th>Items Breakdown</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Deadline</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentBills.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                No bills generated yet. Use the generator above to create invoices.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var bill in Model.RecentBills)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>#@(bill.BillId)</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @(new DateTime(bill.BillYear, bill.BillMonth, 1).ToString("MMM yyyy"))
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>Flat @(bill.Assignment?.Flat?.FlatNumber ?? "N/A")</strong>
+                                    <small class="d-block text-muted">
+                                        @(bill.Assignment?.User?.FullName ?? "Unknown") (@(bill.Assignment?.ResidentType ?? "Resident"))
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var item in bill.BillItems)
+                                        {
+                                             <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : "bg-light text-dark border")" title="৳@item.Amount.ToString("N0") - @item.PaymentStatus">
+                                                @item.ItemType: ৳@item.Amount.ToString("N0")
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong class="text-dark">৳@bill.TotalAmount.ToString("N2")</strong>
+                                    @if (bill.PaidAmount > 0)
+                                    {
+                                        <small class="d-block text-success">Paid: ৳@bill.PaidAmount.ToString("N2")</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(bill.BillStatus == "Paid" ? "bg-success" : (bill.BillStatus == "Unpaid" ? "bg-danger" : "bg-warning text-dark")) px-2 py-1">
+                                        @bill.BillStatus
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @bill.Deadline.ToString("dd MMM yyyy")
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    @if (bill.BillStatus != "Paid" && bill.PaidAmount == 0)
+                                    {
+                                        <form asp-controller="Manager" asp-action="DeleteBill" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove Bill #@(bill.BillId) for Flat @(bill.Assignment?.Flat?.FlatNumber)?');">
+                                            <input type="hidden" name="billId" value="@bill.BillId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Remove this bill">
+                                                <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border" title="Paid bills cannot be deleted for accounting audit compliance">
+                                            <i class="fa-solid fa-lock me-1"></i> Paid
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const residentSelect = document.getElementById('targetResidentSelect');
+            const rentInput = document.getElementById('monthlyRentInput');
+            const rentLabel = document.getElementById('houseRentLabel');
+            const rentHelp = document.getElementById('houseRentHelp');
+            const submitBtn = document.getElementById('generateSubmitBtn');
+
+            function handleSelectionChange() {
+                if (!residentSelect || !rentInput) return;
+                const selected = residentSelect.options[residentSelect.selectedIndex];
+                const residentType = selected.getAttribute('data-type') || 'All';
+                const defaultRent = parseFloat(selected.getAttribute('data-rent')) || 0;
+                const flatNum = selected.getAttribute('data-flat');
+
+                if (residentType === 'FlatOwner') {
+                    // Flat Owners are strictly exempt from House Rent
+                    rentInput.value = '0';
+                    rentInput.readOnly = true;
+                    if (rentLabel) rentLabel.innerHTML = 'House Rent <span class="badge bg-light text-muted border ms-1">Exempt</span>';
+                    if (rentHelp) rentHelp.innerHTML = '<span class="text-success"><i class="fa-solid fa-circle-info me-1"></i>Flat Owners do not pay House Rent. Only service & utility charges apply.</span>';
+                    if (submitBtn) {
+                        submitBtn.innerHTML = `<i class="fa-solid fa-file-invoice-dollar me-2"></i> Generate Invoice for Flat ${flatNum} (Owner)`;
+                    }
+                } else if (residentType === 'Tenant') {
+                    // Tenant - House Rent is applied and editable
+                    rentInput.readOnly = false;
+                    rentInput.value = defaultRent > 0 ? defaultRent : (rentInput.value && rentInput.value !== '0' ? rentInput.value : '15000');
+                    if (rentLabel) rentLabel.innerHTML = 'House Rent (৳)';
+                    if (rentHelp) rentHelp.innerHTML = '<span class="text-muted">Monthly rent applied to this tenant.</span>';
+                    if (submitBtn) {
+                        submitBtn.innerHTML = `<i class="fa-solid fa-file-invoice-dollar me-2"></i> Generate Invoice for Flat ${flatNum} (Tenant)`;
+                    }
+                } else {
+                    // All active flats - Rent is applied only to Tenants, Flat Owners exempt
+                    rentInput.readOnly = false;
+                    if (!rentInput.value || rentInput.value === '0') {
+                        rentInput.value = '15000';
+                    }
+                    if (rentLabel) rentLabel.innerHTML = 'House Rent (Tenants Only)';
+                    if (rentHelp) rentHelp.innerHTML = '<span class="text-muted">Applied to Tenants (or flat\'s configured rent). Flat Owners are automatically exempt.</span>';
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fa-solid fa-file-invoice-dollar me-2"></i> Generate & Issue Invoices';
+                    }
+                }
+            }
+
+            if (residentSelect) {
+                residentSelect.addEventListener('change', handleSelectionChange);
+                handleSelectionChange();
+            }
+        });
+    </script>
+}

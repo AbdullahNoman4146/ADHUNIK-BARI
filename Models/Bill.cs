@@ -33,5 +33,7 @@ namespace ADHUNIK_BARI.Models
         public FlatAssignment? Assignment { get; set; }
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+        public ICollection<BillItem> BillItems { get; set; } = new List<BillItem>();
     }
 }
