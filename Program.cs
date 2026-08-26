@@ -1,8 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using ADHUNIK_BARI;
 using ADHUNIK_BARI.Data;
 using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 // Register Billing and Payment Services
 builder.Services.AddScoped<IBillingService, ADHUNIK_BARI.Services.BillingService>();
 builder.Services.AddScoped<IPaymentService, ADHUNIK_BARI.Services.PaymentService>();
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<
+    IAIComplaintSummaryService,
+    GeminiComplaintSummaryService>();
 
 builder.Services.AddControllersWithViews();
 
@@ -57,7 +64,11 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
     await DbInitializer.SeedRoles(roleManager);
+    
+
 }
+
+
 
 app.MapControllerRoute(
     name: "default",

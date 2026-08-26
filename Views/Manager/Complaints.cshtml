@@ -3,9 +3,28 @@
     ViewData["Title"] = "Complaint Center";
 }
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div><h1 class="mb-1">Complaint Center</h1><p class="text-muted mb-0">Review and resolve resident complaints.</p></div>
-    </div>
+
+        <div>
+            <h1 class="mb-1">
+                Complaint Center
+            </h1>
+
+            <p class="text-muted">
+                Review and resolve resident complaints.
+            </p>
+
+        </div>
+
+
+        <a asp-action="ComplaintAISummary"
+           class="btn btn-success">
+
+            <i class="fa-solid fa-robot me-2"></i>
+
+            See AI Summary
+
+        </a>
+        </div>
     <div class="card shadow-sm border-0 mb-4"><div class="card-body">
         <form asp-action="Complaints" method="get" class="row g-3 align-items-end">
             <div class="col-md-5"><label asp-for="FlatNumber" class="form-label">Search by flat number</label><input asp-for="FlatNumber" class="form-control" placeholder="e.g. A-101" /></div>
@@ -24,4 +43,3 @@
         @if (!Model.Complaints.Any()) { <tr><td colspan="6" class="text-center text-muted py-5">No complaints match the selected filters.</td></tr> }
         </tbody>
     </table></div></div>
-</div>

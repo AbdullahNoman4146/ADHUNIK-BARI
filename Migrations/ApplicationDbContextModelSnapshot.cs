@@ -152,6 +152,45 @@ namespace ADHUNIK_BARI.Migrations
                     b.ToTable("Bills");
                 });
 
+            modelBuilder.Entity("ADHUNIK_BARI.Models.BillItem", b =>
+                {
+                    b.Property<int>("BillItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BillItemId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("BillItemId");
+
+                    b.HasIndex("BillId");
+
+                    b.ToTable("BillItems");
+                });
+
             modelBuilder.Entity("ADHUNIK_BARI.Models.Complaint", b =>
                 {
                     b.Property<int>("ComplaintId")
@@ -229,6 +268,10 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.Property<int>("FloorNumber")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("MonthlyRent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("FlatId");
 
@@ -340,8 +383,19 @@ namespace ADHUNIK_BARI.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("AmountPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("BillId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaidItemsJson")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
@@ -353,6 +407,14 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.Property<string>("Reference")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("StripeReceiptUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -511,6 +573,17 @@ namespace ADHUNIK_BARI.Migrations
                     b.Navigation("Assignment");
                 });
 
+            modelBuilder.Entity("ADHUNIK_BARI.Models.BillItem", b =>
+                {
+                    b.HasOne("ADHUNIK_BARI.Models.Bill", "Bill")
+                        .WithMany("BillItems")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bill");
+                });
+
             modelBuilder.Entity("ADHUNIK_BARI.Models.Complaint", b =>
                 {
                     b.HasOne("ADHUNIK_BARI.Models.Flat", "Flat")
@@ -657,6 +730,8 @@ namespace ADHUNIK_BARI.Migrations
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Bill", b =>
                 {
+                    b.Navigation("BillItems");
+
                     b.Navigation("Payments");
                 });
 
