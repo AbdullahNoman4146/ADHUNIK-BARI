@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using ADHUNIK_BARI.Models;
-using ADHUNIK_BARI.ViewModels;
 using ADHUNIK_BARI.Data;
+using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.Services;
+using ADHUNIK_BARI.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ADHUNIK_BARI.Controllers
@@ -16,17 +16,20 @@ namespace ADHUNIK_BARI.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly IBillingService billingService;
         private readonly IPaymentService paymentService;
+        private readonly IAIComplaintSummaryService aiService;
 
         public ManagerController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext dbContext,
-            IBillingService billingService,
-            IPaymentService paymentService)
+    UserManager<ApplicationUser> userManager,
+    ApplicationDbContext dbContext,
+    IBillingService billingService,
+    IPaymentService paymentService,
+    IAIComplaintSummaryService aiService)
         {
             this.userManager = userManager;
             this.dbContext = dbContext;
             this.billingService = billingService;
             this.paymentService = paymentService;
+            this.aiService = aiService;
         }
 
         [HttpGet]
@@ -199,8 +202,8 @@ namespace ADHUNIK_BARI.Controllers
 
             dbContext.FlatAssignments.Add(new FlatAssignment
             {
-                FlatId = flat.FlatId,
-                UserId = resident.Id,
+                FlatId = flat!.FlatId,
+                UserId = resident!.Id,
                 ResidentType = model.ResidentType,
                 AssignmentDate = DateTime.Now,
                 IsActive = true
@@ -301,7 +304,11 @@ namespace ADHUNIK_BARI.Controllers
                 Title = notice.Title,
                 Description = notice.Description,
                 NoticeType = notice.NoticeType,
-                TargetFlatIds = notice.Targets.Select(target => target.FlatId).Where(id => id.HasValue).Select(id => id.Value).ToList()
+                TargetFlatIds = notice.Targets
+    .Select(target => target.FlatId)
+    .Where(id => id.HasValue)
+    .Select(id => id!.Value)
+    .ToList()
             }));
         }
 
@@ -662,6 +669,92 @@ namespace ADHUNIK_BARI.Controllers
 
             TempData["Success"] = $"Bill #{billId} was removed successfully.";
             return RedirectToAction(nameof(Bills));
+        }
+
+        [HttpGet]
+        public IActionResult ComplaintAISummary()
+        {
+            return View();
+        }
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> ComplaintAISummary(int months)
+        {
+
+            var startDate =
+                DateTime.Now.AddMonths(-months);
+
+
+
+            var complaints =
+                await dbContext.Complaints
+                .Where(c => c.CreatedAt >= startDate)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+
+
+            if (!complaints.Any())
+            {
+                ViewBag.Error =
+                "No complaints found for this period.";
+
+                return View();
+            }
+
+
+
+            var complaintText =
+                string.Join("\n\n",
+                complaints.Select(c =>
+                $@"
+Category:
+{c.Category}
+
+Status:
+{c.ComplaintStatus}
+
+Complaint:
+{c.Description}
+
+Date:
+{c.CreatedAt}
+"
+                ));
+
+
+
+            AIComplaintReport report;
+
+            try
+            {
+                report =
+                    await aiService.GenerateComplaintSummary(
+                        complaintText);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error =
+                    "AI service error: " + ex.Message;
+
+                return View();
+            }
+
+
+
+            var model =
+            new ComplaintAISummaryViewModel
+            {
+                Months = months,
+                TotalComplaints = complaints.Count,
+                Report = report
+            };
+
+
+            return View(model);
+
         }
 
         [HttpGet]

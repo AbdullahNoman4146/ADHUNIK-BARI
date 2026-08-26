@@ -6,21 +6,33 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ADHUNIK_BARI.Migrations
 {
     /// <inheritdoc />
-    public partial class AddComplaintBillingEntities : Migration
+    public partial class BillingAndPaymentSystem : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<decimal>(
+                name: "MonthlyRent",
+                table: "Flats",
+                type: "decimal(18,2)",
+                precision: 18,
+                scale: 2,
+                nullable: false,
+                defaultValue: 0m);
+
             migrationBuilder.CreateTable(
                 name: "Bills",
                 columns: table => new
                 {
                     BillId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    FlatId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AssignmentId = table.Column<int>(type: "int", nullable: false),
+                    BillMonth = table.Column<int>(type: "int", nullable: false),
+                    BillYear = table.Column<int>(type: "int", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    DueAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     BillStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -28,10 +40,10 @@ namespace ADHUNIK_BARI.Migrations
                 {
                     table.PrimaryKey("PK_Bills", x => x.BillId);
                     table.ForeignKey(
-                        name: "FK_Bills_Flats_FlatId",
-                        column: x => x.FlatId,
-                        principalTable: "Flats",
-                        principalColumn: "FlatId",
+                        name: "FK_Bills_FlatAssignments_AssignmentId",
+                        column: x => x.AssignmentId,
+                        principalTable: "FlatAssignments",
+                        principalColumn: "AssignmentId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -76,18 +88,46 @@ namespace ADHUNIK_BARI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BillItems",
+                columns: table => new
+                {
+                    BillItemId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BillId = table.Column<int>(type: "int", nullable: false),
+                    ItemType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    PaymentStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BillItems", x => x.BillItemId);
+                    table.ForeignKey(
+                        name: "FK_BillItems_Bills_BillId",
+                        column: x => x.BillId,
+                        principalTable: "Bills",
+                        principalColumn: "BillId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payments",
                 columns: table => new
                 {
                     PaymentId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     BillId = table.Column<int>(type: "int", nullable: false),
-                    FlatId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    AmountPaid = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PaymentStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    StripeReceiptUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    PaidItemsJson = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,18 +144,17 @@ namespace ADHUNIK_BARI.Migrations
                         principalTable: "Bills",
                         principalColumn: "BillId",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Payments_Flats_FlatId",
-                        column: x => x.FlatId,
-                        principalTable: "Flats",
-                        principalColumn: "FlatId",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bills_FlatId",
+                name: "IX_BillItems_BillId",
+                table: "BillItems",
+                column: "BillId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bills_AssignmentId",
                 table: "Bills",
-                column: "FlatId");
+                column: "AssignmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Complaints_FlatId",
@@ -138,11 +177,6 @@ namespace ADHUNIK_BARI.Migrations
                 column: "BillId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_FlatId",
-                table: "Payments",
-                column: "FlatId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Payments_UserId",
                 table: "Payments",
                 column: "UserId");
@@ -152,6 +186,9 @@ namespace ADHUNIK_BARI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BillItems");
+
+            migrationBuilder.DropTable(
                 name: "Complaints");
 
             migrationBuilder.DropTable(
@@ -159,6 +196,10 @@ namespace ADHUNIK_BARI.Migrations
 
             migrationBuilder.DropTable(
                 name: "Bills");
+
+            migrationBuilder.DropColumn(
+                name: "MonthlyRent",
+                table: "Flats");
         }
     }
 }
