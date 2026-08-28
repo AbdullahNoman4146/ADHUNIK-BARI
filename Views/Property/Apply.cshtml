@@ -1,0 +1,101 @@
+@model ADHUNIK_BARI.ViewModels.PropertyApplicationViewModel
+@{
+    ViewData["Title"] = "Apply / Pay Advance";
+    var listing = ViewBag.Listing as ADHUNIK_BARI.ViewModels.PublicPropertyListingDetailsViewModel;
+    var isToLet = listing?.ListingType == PropertyListingTypes.ToLet;
+}
+
+<div class="public-marketplace-page">
+    <main class="container py-4 py-lg-5">
+        <div class="mb-4">
+            <a asp-action="Details" asp-route-id="@Model.PropertyListingId" class="public-back-link"><i class="fa-solid fa-arrow-left me-2"></i>Back to property</a>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="property-eyebrow"><i class="fa-solid fa-file-signature me-2"></i>Property application</div>
+                        <h1 class="h2 fw-bold mt-2">@(isToLet ? "Apply for this To-Let" : "Reserve this flat for sale")</h1>
+                        @if (listing != null)
+                        {
+                            <p class="text-muted">@listing.Title · Flat @listing.FlatNumber</p>
+                            <div class="alert alert-primary border-0 rounded-4">
+                                Advance payable now: <strong>৳@listing.AdvanceAmount.ToString("N0")</strong>. The amount is loaded from the server and cannot be changed from the browser.
+                            </div>
+                        }
+
+                        <form asp-action="Apply" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+                            <input asp-for="PropertyListingId" type="hidden" />
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FullName" class="form-label fw-semibold"></label>
+                                    <input asp-for="FullName" class="form-control" />
+                                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Email" class="form-label fw-semibold"></label>
+                                    <input asp-for="Email" class="form-control" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Phone" class="form-label fw-semibold"></label>
+                                    <input asp-for="Phone" class="form-control" />
+                                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Profession" class="form-label fw-semibold">Profession (optional)</label>
+                                    <input asp-for="Profession" class="form-control" />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="CurrentAddress" class="form-label fw-semibold">Current address</label>
+                                    <textarea asp-for="CurrentAddress" class="form-control" rows="2"></textarea>
+                                    <span asp-validation-for="CurrentAddress" class="text-danger small"></span>
+                                </div>
+
+                                @if (isToLet)
+                                {
+                                    <div class="col-md-6">
+                                        <label asp-for="NumberOfOccupants" class="form-label fw-semibold">Number of occupants</label>
+                                        <input asp-for="NumberOfOccupants" class="form-control" min="1" />
+                                        <span asp-validation-for="NumberOfOccupants" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ExpectedMoveInDate" class="form-label fw-semibold">Expected move-in date</label>
+                                        <input asp-for="ExpectedMoveInDate" type="date" class="form-control" />
+                                        <span asp-validation-for="ExpectedMoveInDate" class="text-danger small"></span>
+                                    </div>
+                                }
+
+                                <div class="col-12">
+                                    <label asp-for="Message" class="form-label fw-semibold">Message (optional)</label>
+                                    <textarea asp-for="Message" class="form-control" rows="3"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check p-3 border rounded-3">
+                                        <input asp-for="TermsAccepted" class="form-check-input ms-0 me-2" />
+                                        <label asp-for="TermsAccepted" class="form-check-label">
+                                            I understand that this is an advance payment. For a flat sale, final ownership/legal transfer is completed offline with management.
+                                        </label>
+                                        <div><span asp-validation-for="TermsAccepted" class="text-danger small"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill w-100 mt-4 fw-semibold">
+                                Continue to secure payment <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

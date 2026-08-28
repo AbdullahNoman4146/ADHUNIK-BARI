@@ -20,6 +20,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 // Register Billing and Payment Services
 builder.Services.AddScoped<IBillingService, ADHUNIK_BARI.Services.BillingService>();
 builder.Services.AddScoped<IPaymentService, ADHUNIK_BARI.Services.PaymentService>();
+builder.Services.AddScoped<IPropertyPaymentService, PropertyPaymentService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 builder.Services.AddHttpClient();
 

@@ -1,0 +1,197 @@
+@model ADHUNIK_BARI.ViewModels.EditPropertyListingViewModel
+@{
+    ViewData["Title"] = "Edit Property Listing";
+}
+
+<div class="property-page container py-4 py-lg-5">
+    <div class="property-page-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <div class="property-eyebrow"><i class="fa-solid fa-pen-to-square me-2"></i>Listing management</div>
+            <h1 class="fw-bold mb-1">Edit Property Listing</h1>
+            <p class="text-muted mb-0">Update the property information without changing its publication status.</p>
+        </div>
+        <span class="badge rounded-pill property-status-large">@Model.ListingStatus</span>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input asp-for="PropertyListingId" type="hidden" />
+        <input asp-for="FlatId" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-4"></div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="property-section-heading mb-4">
+                            <span class="property-section-icon"><i class="fa-solid fa-house"></i></span>
+                            <div><h2 class="h5 fw-bold mb-1">Property information</h2><p class="text-muted small mb-0">The assigned flat cannot be changed after the listing is created.</p></div>
+                        </div>
+
+                        <div class="property-flat-reference rounded-3 p-3 mb-4">
+                            <i class="fa-solid fa-building text-primary me-2"></i>
+                            <strong>Flat @Model.FlatNumber</strong><span class="text-muted ms-2">Floor @Model.FloorNumber</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ListingType" class="form-label fw-semibold">Listing type</label>
+                            <select asp-for="ListingType" class="form-select">
+                                <option value="ToLet">To-Let</option>
+                                <option value="ForSale">For Sale</option>
+                            </select>
+                            <span asp-validation-for="ListingType" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold">Listing title</label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ShortDescription" class="form-label fw-semibold">Short description</label>
+                            <input asp-for="ShortDescription" class="form-control" />
+                            <span asp-validation-for="ShortDescription" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-0">
+                            <label asp-for="Description" class="form-label fw-semibold">Full description</label>
+                            <textarea asp-for="Description" class="form-control" rows="6"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="property-section-heading mb-4">
+                            <span class="property-section-icon"><i class="fa-solid fa-coins"></i></span>
+                            <div><h2 class="h5 fw-bold mb-1">Pricing and details</h2><p class="text-muted small mb-0">Keep the advance amount accurate for the future checkout flow.</p></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Price" class="form-label fw-semibold">Rent / sale price (৳)</label>
+                                <input asp-for="Price" class="form-control" type="number" min="0.01" step="0.01" />
+                                <span asp-validation-for="Price" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="AdvanceAmount" class="form-label fw-semibold">Advance amount (৳)</label>
+                                <input asp-for="AdvanceAmount" class="form-control" type="number" min="0.01" step="0.01" />
+                                <span asp-validation-for="AdvanceAmount" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Bedrooms" class="form-label fw-semibold">Bedrooms</label>
+                                <input asp-for="Bedrooms" class="form-control" type="number" min="0" />
+                                <span asp-validation-for="Bedrooms" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Bathrooms" class="form-label fw-semibold">Bathrooms</label>
+                                <input asp-for="Bathrooms" class="form-control" type="number" min="0" />
+                                <span asp-validation-for="Bathrooms" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Balconies" class="form-label fw-semibold">Balconies</label>
+                                <input asp-for="Balconies" class="form-control" type="number" min="0" />
+                                <span asp-validation-for="Balconies" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="AreaSqFt" class="form-label fw-semibold">Area (sq ft)</label>
+                                <input asp-for="AreaSqFt" class="form-control" type="number" min="0" step="0.01" />
+                                <span asp-validation-for="AreaSqFt" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="FurnishingStatus" class="form-label fw-semibold">Furnishing</label>
+                                <select asp-for="FurnishingStatus" class="form-select">
+                                    <option value="">Not specified</option>
+                                    <option>Unfurnished</option>
+                                    <option>Semi-furnished</option>
+                                    <option>Furnished</option>
+                                </select>
+                                <span asp-validation-for="FurnishingStatus" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Facing" class="form-label fw-semibold">Facing</label>
+                                <input asp-for="Facing" class="form-control" />
+                                <span asp-validation-for="Facing" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Features" class="form-label fw-semibold">Features / amenities</label>
+                                <textarea asp-for="Features" class="form-control" rows="3"></textarea>
+                                <span asp-validation-for="Features" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4 property-sticky-card">
+                    <div class="card-body p-4">
+                        <div class="property-section-heading mb-4">
+                            <span class="property-section-icon"><i class="fa-solid fa-images"></i></span>
+                            <div><h2 class="h5 fw-bold mb-1">Images</h2><p class="text-muted small mb-0">Upload replacements only when needed.</p></div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentRoomLayoutImagePath))
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Current room layout</label>
+                                <img src="@Model.CurrentRoomLayoutImagePath" class="property-current-image" alt="Current room layout" />
+                            </div>
+                        }
+                        <div class="mb-4">
+                            <label asp-for="RoomLayoutImage" class="form-label fw-semibold">Replace room-layout image <span class="text-muted fw-normal">(optional)</span></label>
+                            <input asp-for="RoomLayoutImage" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            <div class="form-text">The existing image remains if no replacement is selected.</div>
+                            <span asp-validation-for="RoomLayoutImage" class="text-danger small"></span>
+                            <div id="roomLayoutPreview" class="property-upload-preview d-none mt-3"><img id="roomLayoutPreviewImage" alt="New room layout preview" /></div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentCoverImagePath))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Current cover image</label>
+                                <img src="@Model.CurrentCoverImagePath" class="property-current-image" alt="Current cover image" />
+                            </div>
+                        }
+                        <div>
+                            <label asp-for="CoverImage" class="form-label fw-semibold">Replace cover image <span class="text-muted fw-normal">(optional)</span></label>
+                            <input asp-for="CoverImage" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            <span asp-validation-for="CoverImage" class="text-danger small"></span>
+                            <div id="coverPreview" class="property-upload-preview d-none mt-3"><img id="coverPreviewImage" alt="New cover preview" /></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.PropertyListingId" class="btn btn-outline-secondary rounded-pill px-3">Cancel</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fa-solid fa-floppy-disk me-2"></i>Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function bindImagePreview(inputId, wrapperId, imageId) {
+            const input = document.getElementById(inputId);
+            const wrapper = document.getElementById(wrapperId);
+            const image = document.getElementById(imageId);
+            input?.addEventListener('change', function () {
+                const file = this.files?.[0];
+                if (!file || !file.type.startsWith('image/')) {
+                    wrapper?.classList.add('d-none');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = event => {
+                    image.src = event.target.result;
+                    wrapper.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        bindImagePreview('RoomLayoutImage', 'roomLayoutPreview', 'roomLayoutPreviewImage');
+        bindImagePreview('CoverImage', 'coverPreview', 'coverPreviewImage');
+    </script>
+}

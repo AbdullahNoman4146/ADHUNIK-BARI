@@ -23,6 +23,12 @@
         <div class="collapse navbar-collapse" id="navbarMenu">
             <ul class="navbar-nav ms-auto align-items-center gap-1">
 
+                <li class="nav-item">
+                    <a class="nav-link px-2 fw-semibold text-primary" asp-controller="Property" asp-action="Index">
+                        <i class="fa-solid fa-house-chimney-window me-1"></i> To-Let &amp; Sale
+                    </a>
+                </li>
+
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
                     @if (User.IsInRole("Manager") || User.IsInRole("Admin"))

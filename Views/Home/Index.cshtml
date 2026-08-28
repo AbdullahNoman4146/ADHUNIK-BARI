@@ -1,4 +1,5 @@
-﻿@{
+﻿@model ADHUNIK_BARI.ViewModels.HomePageViewModel
+@{
     ViewData["Title"] = "Home";
 }
 
@@ -127,6 +128,36 @@
 </div>
 
 
+</section>
+
+<section class="home-marketplace-section">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+            <div>
+                <div class="property-eyebrow"><i class="fa-solid fa-building-circle-check me-2"></i>Find your next home</div>
+                <h2 class="fw-bold mb-1">Available Flats — To-Let &amp; For Sale</h2>
+                <p class="text-muted mb-0">Explore the latest published properties in the ADHUNIK BARI community.</p>
+            </div>
+            <a asp-controller="Property" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">View all properties <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+
+        @if (Model.LatestPropertyListings.Count > 0)
+        {
+            <div class="public-property-grid home-property-grid">
+                @foreach (var listing in Model.LatestPropertyListings)
+                {
+                    <partial name="_PublicPropertyCard" model="listing" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="home-marketplace-empty rounded-4 p-4 p-md-5 text-center">
+                <i class="fa-solid fa-house-circle-check"></i>
+                <p class="mb-0 mt-2 text-muted">New To-Let and For-Sale properties will appear here as they are published.</p>
+            </div>
+        }
+    </div>
 </section>
 
 

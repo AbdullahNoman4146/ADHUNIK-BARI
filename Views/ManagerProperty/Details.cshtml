@@ -1,0 +1,133 @@
+@model ADHUNIK_BARI.Models.PropertyListing
+@{
+    ViewData["Title"] = "Listing Preview";
+    var isToLet = Model.ListingType == PropertyListingTypes.ToLet;
+    var listingTypeClass = isToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple";
+    var listingTypeLabel = isToLet ? "To-Let" : "For Sale";
+    var statusClass = Model.ListingStatus switch
+    {
+        PropertyListingStatuses.Published => "bg-success-subtle text-success",
+        PropertyListingStatuses.Draft => "bg-warning-subtle text-warning-emphasis",
+        PropertyListingStatuses.Archived => "bg-secondary-subtle text-secondary",
+        PropertyListingStatuses.CheckoutReserved or PropertyListingStatuses.SaleReserved => "bg-info-subtle text-info-emphasis",
+        PropertyListingStatuses.Rented => "bg-primary-subtle text-primary",
+        _ => "bg-light text-dark"
+    };
+}
+
+<div class="property-page container py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <div class="property-eyebrow"><i class="fa-solid fa-magnifying-glass me-2"></i>Manager preview</div>
+            <h1 class="fw-bold mb-1">@Model.Title</h1>
+            <p class="text-muted mb-0">Flat @Model.Flat?.FlatNumber · Floor @Model.Flat?.FloorNumber</p>
+        </div>
+        <span class="badge rounded-pill property-status-large @statusClass">@Model.ListingStatus</span>
+    </div>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success rounded-4 border-0 shadow-sm"><i class="fa-solid fa-circle-check me-2"></i>@successMessage</div>
+    }
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm"><i class="fa-solid fa-circle-exclamation me-2"></i>@errorMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
+                {
+                    <img src="@Model.CoverImagePath" class="property-detail-cover" alt="@Model.Title cover image" />
+                }
+                <div class="p-3 bg-light-subtle">
+                    <div class="small text-muted fw-semibold mb-2">ROOM LAYOUT</div>
+                    <img src="@Model.RoomLayoutImagePath" class="property-detail-layout" alt="@Model.Title room layout" />
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <span class="badge rounded-pill @listingTypeClass">@listingTypeLabel</span>
+                            <h2 class="h4 fw-bold mt-3 mb-1">৳@Model.Price.ToString("N0")</h2>
+                            <div class="text-muted small">Advance amount: <strong class="text-dark">৳@Model.AdvanceAmount.ToString("N0")</strong></div>
+                        </div>
+                        <span class="property-detail-flat-icon"><i class="fa-solid fa-building"></i></span>
+                    </div>
+                    <p class="text-muted mb-0">@Model.ShortDescription</p>
+                </div>
+            </div>
+
+            <div class="property-stats-grid mb-4">
+                <div class="property-stat"><i class="fa-solid fa-bed"></i><strong>@Model.Bedrooms</strong><span>Bedrooms</span></div>
+                <div class="property-stat"><i class="fa-solid fa-bath"></i><strong>@Model.Bathrooms</strong><span>Bathrooms</span></div>
+                <div class="property-stat"><i class="fa-solid fa-vector-square"></i><strong>@Model.AreaSqFt.ToString("N0")</strong><span>Sq ft</span></div>
+                <div class="property-stat"><i class="fa-solid fa-door-open"></i><strong>@Model.Balconies</strong><span>Balconies</span></div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold mb-3">Listing timeline</h2>
+                    <div class="property-timeline-item"><span>Created</span><strong>@Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</strong></div>
+                    <div class="property-timeline-item"><span>Published</span><strong>@(Model.PublishedAt?.ToString("dd MMM yyyy, hh:mm tt") ?? "Not published")</strong></div>
+                    <div class="property-timeline-item"><span>Applications</span><strong>@Model.Applications.Count</strong></div>
+                    <div class="property-timeline-item"><span>Created by</span><strong>@(Model.CreatedByUser?.FullName ?? Model.CreatedByUser?.Email ?? "Manager")</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4 p-lg-5">
+                    <h2 class="h5 fw-bold mb-3">About this property</h2>
+                    <div class="property-description">@Model.Description</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Features))
+                    {
+                        <h3 class="h6 fw-bold mt-4 mb-2">Features and amenities</h3>
+                        <div class="property-features">@Model.Features</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3">Manager actions</h2>
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.PropertyListingId" class="btn btn-outline-primary rounded-3"><i class="fa-solid fa-pen me-2"></i>Edit listing</a>
+                        @if (Model.ListingStatus == PropertyListingStatuses.Draft)
+                        {
+                            <form asp-action="Publish" asp-route-id="@Model.PropertyListingId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-success rounded-3 w-100"><i class="fa-solid fa-paper-plane me-2"></i>Publish listing</button>
+                            </form>
+                        }
+                        else if (Model.ListingStatus == PropertyListingStatuses.Published)
+                        {
+                            <form asp-action="Unpublish" asp-route-id="@Model.PropertyListingId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-warning rounded-3 w-100"><i class="fa-solid fa-eye-slash me-2"></i>Unpublish listing</button>
+                            </form>
+                        }
+                        @if (Model.ListingStatus != PropertyListingStatuses.Archived)
+                        {
+                            <form asp-action="Archive" asp-route-id="@Model.PropertyListingId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger rounded-3 w-100" onclick="return confirm('Archive this listing? Its history will be preserved.');"><i class="fa-solid fa-box-archive me-2"></i>Archive listing</button>
+                            </form>
+                        }
+                        <a asp-action="Applications" asp-route-id="@Model.PropertyListingId" class="btn btn-outline-primary rounded-3"><i class="fa-solid fa-users me-2"></i>Applications (@Model.Applications.Count)</a>
+                        <a asp-action="Index" class="btn btn-link text-decoration-none">Back to all listings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

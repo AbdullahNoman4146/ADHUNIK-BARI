@@ -1,0 +1,63 @@
+@model ADHUNIK_BARI.ViewModels.PublicPropertyListingsViewModel
+@{
+    ViewData["Title"] = "To-Let & For Sale";
+    var allFilterClass = Model.SelectedType == null ? "active" : string.Empty;
+    var toLetFilterClass = Model.SelectedType == PropertyListingTypes.ToLet ? "active" : string.Empty;
+    var forSaleFilterClass = Model.SelectedType == PropertyListingTypes.ForSale ? "active" : string.Empty;
+}
+
+<div class="public-marketplace-page">
+    <section class="public-marketplace-hero">
+        <div class="container py-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <span class="public-hero-badge"><i class="fa-solid fa-sparkles me-2"></i>ADHUNIK BARI Marketplace</span>
+                    <h1 class="display-4 fw-bold mt-3 mb-3">Find a place that feels like home.</h1>
+                    <p class="lead text-muted mb-0">Explore carefully prepared To-Let and For-Sale homes managed by your apartment community.</p>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <div class="public-hero-art">
+                        <div class="public-hero-art-circle"><i class="fa-solid fa-house-chimney-window"></i></div>
+                        <div class="public-hero-art-card"><i class="fa-solid fa-location-dot text-primary me-2"></i>Community-managed properties</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main id="properties" class="container py-5">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+            <div>
+                <div class="property-eyebrow"><i class="fa-solid fa-building-circle-check me-2"></i>Available homes</div>
+                <h2 class="h1 fw-bold mb-1">To-Let & For Sale</h2>
+                <p class="text-muted mb-0">Browse currently published properties and view every detail before you apply.</p>
+            </div>
+            <div class="public-property-count"><strong>@Model.Listings.Count</strong> @(Model.Listings.Count == 1 ? "property" : "properties")</div>
+        </div>
+
+        <div class="public-filter-bar mb-4" role="navigation" aria-label="Property type filters">
+            <a asp-action="Index" class="public-filter-pill @allFilterClass"><i class="fa-solid fa-border-all me-2"></i>All</a>
+            <a asp-action="Index" asp-route-type="ToLet" class="public-filter-pill @toLetFilterClass"><i class="fa-solid fa-key me-2"></i>To-Let</a>
+            <a asp-action="Index" asp-route-type="ForSale" class="public-filter-pill @forSaleFilterClass"><i class="fa-solid fa-tag me-2"></i>For Sale</a>
+        </div>
+
+        @if (Model.Listings.Count > 0)
+        {
+            <div class="public-property-grid">
+                @foreach (var listing in Model.Listings)
+                {
+                    <partial name="_PublicPropertyCard" model="listing" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="public-empty-state card border-0 shadow-sm rounded-4 text-center p-5">
+                <div class="public-empty-icon"><i class="fa-solid fa-house-circle-exclamation"></i></div>
+                <h2 class="h4 fw-bold mt-3">No properties match this filter</h2>
+                <p class="text-muted mb-4">Try viewing all published properties or check back soon for new availability.</p>
+                <a asp-action="Index" class="btn btn-primary rounded-pill px-4">View all properties</a>
+            </div>
+        }
+    </main>
+</div>

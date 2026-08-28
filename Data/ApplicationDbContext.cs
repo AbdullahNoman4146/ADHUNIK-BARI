@@ -27,6 +27,8 @@ namespace ADHUNIK_BARI.Data
         public DbSet<Bill> Bills { get; set; }
         public DbSet<BillItem> BillItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<PropertyListing> PropertyListings { get; set; }
+        public DbSet<PropertyApplication> PropertyApplications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -142,6 +144,82 @@ namespace ADHUNIK_BARI.Data
                     .WithMany()
                     .HasForeignKey(payment => payment.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<PropertyListing>(b =>
+            {
+                b.HasKey(listing => listing.PropertyListingId);
+                b.Property(listing => listing.ListingType).HasMaxLength(20).IsRequired();
+                b.Property(listing => listing.Title).HasMaxLength(200).IsRequired();
+                b.Property(listing => listing.ShortDescription).HasMaxLength(500).IsRequired();
+                b.Property(listing => listing.Description).IsRequired();
+                b.Property(listing => listing.Price).HasPrecision(18, 2);
+                b.Property(listing => listing.AdvanceAmount).HasPrecision(18, 2);
+                b.Property(listing => listing.AreaSqFt).HasPrecision(18, 2);
+                b.Property(listing => listing.FurnishingStatus).HasMaxLength(50);
+                b.Property(listing => listing.Facing).HasMaxLength(50);
+                b.Property(listing => listing.Features).HasMaxLength(2000);
+                b.Property(listing => listing.CoverImagePath).HasMaxLength(500);
+                b.Property(listing => listing.RoomLayoutImagePath).HasMaxLength(500).IsRequired();
+                b.Property(listing => listing.ListingStatus).HasMaxLength(30).IsRequired();
+                b.Property(listing => listing.CreatedByUserId).IsRequired();
+
+                b.HasOne(listing => listing.Flat)
+                    .WithMany()
+                    .HasForeignKey(listing => listing.FlatId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(listing => listing.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(listing => listing.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasMany(listing => listing.Applications)
+                    .WithOne(application => application.PropertyListing)
+                    .HasForeignKey(application => application.PropertyListingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(listing => listing.FlatId);
+                b.HasIndex(listing => listing.CreatedByUserId);
+                b.HasIndex(listing => new { listing.ListingStatus, listing.ListingType });
+                b.HasIndex(listing => listing.FlatId)
+                    .IsUnique()
+                    .HasFilter("[ListingStatus] <> 'Draft' AND [ListingStatus] <> 'Closed' AND [ListingStatus] <> 'Archived'");
+            });
+
+            builder.Entity<PropertyApplication>(b =>
+            {
+                b.HasKey(application => application.PropertyApplicationId);
+                b.Property(application => application.FullName).HasMaxLength(200).IsRequired();
+                b.Property(application => application.Email).HasMaxLength(256).IsRequired();
+                b.Property(application => application.Phone).HasMaxLength(50).IsRequired();
+                b.Property(application => application.CurrentAddress).HasMaxLength(1000).IsRequired();
+                b.Property(application => application.Profession).HasMaxLength(150);
+                b.Property(application => application.Message).HasMaxLength(2000);
+                b.Property(application => application.ApplicationType).HasMaxLength(20).IsRequired();
+                b.Property(application => application.Status).HasMaxLength(40).IsRequired();
+                b.Property(application => application.AdvanceAmount).HasPrecision(18, 2);
+                b.Property(application => application.StripePaymentIntentId).HasMaxLength(255);
+                b.Property(application => application.PaymentStatus).HasMaxLength(30).IsRequired();
+                b.Property(application => application.CreatedResidentUserId).HasMaxLength(450);
+                b.Property(application => application.FailureReason).HasMaxLength(2000);
+
+                b.HasOne(application => application.PropertyListing)
+                    .WithMany(listing => listing.Applications)
+                    .HasForeignKey(application => application.PropertyListingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(application => application.CreatedResidentUser)
+                    .WithMany()
+                    .HasForeignKey(application => application.CreatedResidentUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasIndex(application => application.PropertyListingId);
+                b.HasIndex(application => new { application.Status, application.PaymentStatus });
+                b.HasIndex(application => application.CreatedResidentUserId);
+                b.HasIndex(application => application.StripePaymentIntentId)
+                    .IsUnique()
+                    .HasFilter("[StripePaymentIntentId] IS NOT NULL");
             });
 
         }

@@ -1,0 +1,105 @@
+@model ADHUNIK_BARI.ViewModels.PublicPropertyListingDetailsViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var isToLet = Model.ListingType == PropertyListingTypes.ToLet;
+    var listingTypeClass = isToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple";
+    var listingTypeLabel = isToLet ? "To-Let" : "For Sale";
+}
+
+<div class="public-marketplace-page">
+    <main class="container py-4 py-lg-5">
+        <div class="mb-4">
+            <a asp-action="Index" class="public-back-link"><i class="fa-solid fa-arrow-left me-2"></i>Back to properties</a>
+        </div>
+
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-7">
+                <div class="public-details-gallery card border-0 shadow-sm rounded-4 overflow-hidden">
+                    @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
+                    {
+                        <img src="@Model.CoverImagePath" class="public-details-cover" alt="@Model.Title cover image" />
+                    }
+                    else
+                    {
+                        <div class="public-details-cover public-image-fallback"><i class="fa-solid fa-house-chimney"></i><span>ADHUNIK BARI HOME</span></div>
+                    }
+                    <div class="public-layout-panel p-3 p-md-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <div class="property-eyebrow mb-1">Mandatory property plan</div>
+                                <h2 class="h5 fw-bold mb-0">Room layout</h2>
+                            </div>
+                            <span class="public-image-label"><i class="fa-solid fa-ruler-combined me-1"></i>Layout</span>
+                        </div>
+                        <img src="@Model.RoomLayoutImagePath" class="public-details-layout" alt="@Model.Title room layout" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="public-details-summary card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <span class="badge rounded-pill @listingTypeClass"><i class="fa-solid @(isToLet ? "fa-key" : "fa-tag") me-1"></i>@listingTypeLabel</span>
+                        <h1 class="h2 fw-bold mt-3 mb-2">@Model.Title</h1>
+                        <p class="text-muted mb-4">@Model.ShortDescription</p>
+
+                        <div class="public-price-panel rounded-4 p-3 mb-4">
+                            <span class="small text-muted d-block">@(isToLet ? "Monthly rent" : "Sale price")</span>
+                            <strong>৳@Model.Price.ToString("N0")</strong>
+                            <span class="small text-muted d-block mt-1">Advance amount: <b class="text-dark">৳@Model.AdvanceAmount.ToString("N0")</b></span>
+                        </div>
+
+                        <div class="public-flat-reference rounded-3 p-3 mb-4">
+                            <i class="fa-solid fa-building text-primary me-2"></i>
+                            <strong>Flat @Model.FlatNumber</strong><span class="text-muted ms-2">Floor @Model.FloorNumber</span>
+                        </div>
+
+                        <div class="public-details-stats mb-4">
+                            <div><i class="fa-solid fa-bed"></i><strong>@Model.Bedrooms</strong><span>Bedrooms</span></div>
+                            <div><i class="fa-solid fa-bath"></i><strong>@Model.Bathrooms</strong><span>Bathrooms</span></div>
+                            <div><i class="fa-solid fa-vector-square"></i><strong>@Model.AreaSqFt.ToString("N0")</strong><span>Sq ft</span></div>
+                            <div><i class="fa-solid fa-door-open"></i><strong>@Model.Balconies</strong><span>Balconies</span></div>
+                        </div>
+
+                        <a asp-controller="Property" asp-action="Apply" asp-route-id="@Model.PropertyListingId" class="btn btn-primary btn-lg rounded-pill w-100 fw-semibold">
+                            <i class="fa-solid fa-paper-plane me-2"></i>Apply / Pay Advance
+                        </a>
+                        <div class="public-coming-soon mt-3">
+                            <i class="fa-solid fa-lock me-2"></i>The advance amount is verified from the server and processed securely through Stripe.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-lg-8">
+                <section class="public-details-section card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h2 class="h4 fw-bold mb-3">About this property</h2>
+                        <div class="public-description">@Model.Description</div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Features))
+                        {
+                            <h3 class="h6 fw-bold mt-4 mb-2"><i class="fa-solid fa-list-check text-primary me-2"></i>Features and amenities</h3>
+                            <div class="public-features">@Model.Features</div>
+                        }
+                    </div>
+                </section>
+            </div>
+            <div class="col-lg-4">
+                <section class="public-details-section card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h2 class="h5 fw-bold mb-3">Property information</h2>
+                        <dl class="public-information-list mb-0">
+                            <div><dt>Availability</dt><dd><span class="badge bg-success-subtle text-success rounded-pill">Available</span></dd></div>
+                            <div><dt>Furnishing</dt><dd>@(Model.FurnishingStatus ?? "Not specified")</dd></div>
+                            <div><dt>Facing</dt><dd>@(Model.Facing ?? "Not specified")</dd></div>
+                            <div><dt>Published</dt><dd>@(Model.PublishedAt?.ToString("dd MMM yyyy") ?? "Recently")</dd></div>
+                        </dl>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
