@@ -1,0 +1,107 @@
+@model ADHUNIK_BARI.ViewModels.PropertyCheckoutViewModel
+@{
+    ViewData["Title"] = "Pay Property Advance";
+}
+
+<div class="public-marketplace-page">
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="property-eyebrow"><i class="fa-brands fa-stripe me-2"></i>Secure advance payment</div>
+                        <h1 class="h2 fw-bold mt-2">@Model.ListingTitle</h1>
+                        <p class="text-muted">Flat @Model.FlatNumber · Application #@Model.PropertyApplicationId</p>
+
+                        <div class="public-price-panel rounded-4 p-3 mb-4">
+                            <span class="small text-muted d-block">Advance amount</span>
+                            <strong>৳@Model.AdvanceAmount.ToString("N0")</strong>
+                        </div>
+
+                        <div class="alert alert-warning border-0 rounded-4">
+                            <i class="fa-solid fa-clock me-2"></i>
+                            This reservation expires at <strong>@Model.ReservationExpiresAt?.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</strong>.
+                        </div>
+
+                        @if (string.IsNullOrWhiteSpace(Model.PublishableKey))
+                        {
+                            <div class="alert alert-danger">Stripe publishable key is not configured.</div>
+                        }
+                        else
+                        {
+                            <form id="payment-form">
+                                @Html.AntiForgeryToken()
+                                <div id="card-element" class="form-control p-3"></div>
+                                <div id="payment-message" class="text-danger small mt-2"></div>
+                                <button id="pay-button" type="submit" class="btn btn-primary btn-lg rounded-pill w-100 mt-4 fw-semibold">
+                                    Pay ৳@Model.AdvanceAmount.ToString("N0")
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        (() => {
+            const form = document.getElementById('payment-form');
+            if (!form) return;
+
+            const stripe = Stripe('@Model.PublishableKey');
+            const elements = stripe.elements();
+            const card = elements.create('card');
+            card.mount('#card-element');
+
+            const button = document.getElementById('pay-button');
+            const message = document.getElementById('payment-message');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                button.disabled = true;
+                message.textContent = '';
+
+                const result = await stripe.confirmCardPayment('@Model.ClientSecret', {
+                    payment_method: { card: card }
+                });
+
+                if (result.error) {
+                    message.textContent = result.error.message || 'Payment could not be completed.';
+                    button.disabled = false;
+                    return;
+                }
+
+                if (!result.paymentIntent || result.paymentIntent.status !== 'succeeded') {
+                    message.textContent = 'Stripe has not confirmed the payment yet.';
+                    button.disabled = false;
+                    return;
+                }
+
+                const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+                const body = new URLSearchParams();
+                body.append('__RequestVerificationToken', token);
+                body.append('applicationId', '@Model.PropertyApplicationId');
+                body.append('paymentIntentId', result.paymentIntent.id);
+
+                const response = await fetch('@Url.Action("Confirm", "PropertyPayment")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                    body: body.toString()
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    message.textContent = data.message || 'Payment was received but finalization needs management review.';
+                    button.disabled = false;
+                    return;
+                }
+
+                window.location.href = data.redirectUrl;
+            });
+        })();
+    </script>
+}

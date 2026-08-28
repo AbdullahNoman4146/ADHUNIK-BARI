@@ -15,17 +15,20 @@ namespace ADHUNIK_BARI.Controllers
         private readonly IPaymentService _paymentService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IPropertyPaymentService _propertyPaymentService;
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
             IPaymentService paymentService,
             UserManager<ApplicationUser> userManager,
             IConfiguration configuration,
+            IPropertyPaymentService propertyPaymentService,
             ILogger<PaymentController> logger)
         {
             _paymentService = paymentService;
             _userManager = userManager;
             _configuration = configuration;
+            _propertyPaymentService = propertyPaymentService;
             _logger = logger;
         }
 
@@ -130,11 +133,14 @@ namespace ADHUNIK_BARI.Controllers
                     {
                         _logger.LogInformation($"Processing payment_intent.succeeded: {paymentIntent.Id}");
 
-                        var success = await _paymentService.ProcessPaymentSuccessAsync(
-                            paymentIntent.Id,
-                            paymentIntent.Amount,
-                            paymentIntent.Metadata
-                        );
+                        var isPropertyAdvance = paymentIntent.Metadata.TryGetValue("PaymentPurpose", out var purpose)
+                            && string.Equals(purpose, "PropertyAdvance", StringComparison.Ordinal);
+
+                        var success = isPropertyAdvance
+                            ? await _propertyPaymentService.ProcessPaymentSuccessAsync(
+                                paymentIntent.Id, paymentIntent.Amount, paymentIntent.Metadata)
+                            : await _paymentService.ProcessPaymentSuccessAsync(
+                                paymentIntent.Id, paymentIntent.Amount, paymentIntent.Metadata);
 
                         if (!success)
                         {

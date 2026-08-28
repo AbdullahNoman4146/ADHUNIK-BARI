@@ -1,0 +1,172 @@
+@model IEnumerable<ADHUNIK_BARI.Models.PropertyListing>
+@{
+    ViewData["Title"] = "Property Marketplace";
+}
+
+<div class="property-page container-fluid px-3 px-lg-4 py-4">
+    <div class="property-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <div class="property-eyebrow"><i class="fa-solid fa-building-circle-check me-2"></i>Manager workspace</div>
+            <h1 class="fw-bold mb-1">Property Marketplace</h1>
+            <p class="text-muted mb-0">Create and manage To-Let and For-Sale listings for available flats.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 fw-semibold">
+            <i class="fa-solid fa-plus me-2"></i>Create Listing
+        </a>
+    </div>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@successMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@errorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="property-summary-grid mb-4">
+        <div class="property-summary-card">
+            <span class="property-summary-icon bg-primary-subtle text-primary"><i class="fa-solid fa-list"></i></span>
+            <div><strong>@Model.Count()</strong><span>Total listings</span></div>
+        </div>
+        <div class="property-summary-card">
+            <span class="property-summary-icon bg-success-subtle text-success"><i class="fa-solid fa-eye"></i></span>
+            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Published)</strong><span>Published</span></div>
+        </div>
+        <div class="property-summary-card">
+            <span class="property-summary-icon bg-warning-subtle text-warning"><i class="fa-solid fa-pen-ruler"></i></span>
+            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Draft)</strong><span>Drafts</span></div>
+        </div>
+        <div class="property-summary-card">
+            <span class="property-summary-icon bg-secondary-subtle text-secondary"><i class="fa-solid fa-box-archive"></i></span>
+            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Archived)</strong><span>Archived</span></div>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table property-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Property</th>
+                            <th>Listing type</th>
+                            <th>Price & advance</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                            <th>Dates</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var listing in Model)
+                    {
+                        var imagePath = listing.CoverImagePath ?? listing.RoomLayoutImagePath;
+                        var isPublished = listing.ListingStatus == PropertyListingStatuses.Published;
+                        var isDraft = listing.ListingStatus == PropertyListingStatuses.Draft;
+                        var listingTypeClass = listing.ListingType == PropertyListingTypes.ToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple";
+                        var listingTypeIcon = listing.ListingType == PropertyListingTypes.ToLet ? "fa-key" : "fa-tag";
+                        var listingTypeLabel = listing.ListingType == PropertyListingTypes.ToLet ? "To-Let" : "For Sale";
+                        var statusClass = listing.ListingStatus switch
+                        {
+                            PropertyListingStatuses.Published => "bg-success-subtle text-success",
+                            PropertyListingStatuses.Draft => "bg-warning-subtle text-warning-emphasis",
+                            PropertyListingStatuses.Archived => "bg-secondary-subtle text-secondary",
+                            PropertyListingStatuses.CheckoutReserved or PropertyListingStatuses.SaleReserved => "bg-info-subtle text-info-emphasis",
+                            PropertyListingStatuses.Rented => "bg-primary-subtle text-primary",
+                            _ => "bg-light text-dark"
+                        };
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="@imagePath" class="property-image-thumb" alt="@listing.Title" />
+                                    <div>
+                                        <div class="fw-bold text-dark">@listing.Title</div>
+                                        <div class="small text-muted">Flat @listing.Flat?.FlatNumber · Floor @listing.Flat?.FloorNumber</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill @(listing.ListingType == PropertyListingTypes.ToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple")">
+                                    <i class="fa-solid @(listing.ListingType == PropertyListingTypes.ToLet ? "fa-key" : "fa-tag") me-1"></i>
+                                    @(listing.ListingType == PropertyListingTypes.ToLet ? "To-Let" : "For Sale")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">৳@listing.Price.ToString("N0")</div>
+                                <div class="small text-muted">Advance ৳@listing.AdvanceAmount.ToString("N0")</div>
+                            </td>
+                            <td>
+                                <div class="small text-muted">
+                                    <span class="me-2"><i class="fa-solid fa-bed me-1"></i>@listing.Bedrooms</span>
+                                    <span><i class="fa-solid fa-vector-square me-1"></i>@listing.AreaSqFt.ToString("N0") sq ft</span>
+                                </div>
+                                <div class="small text-muted mt-1">@listing.Applications.Count application(s)</div>
+                            </td>
+                            <td><span class="badge rounded-pill @statusClass">@listing.ListingStatus</span></td>
+                            <td>
+                                <div class="small">Created @listing.CreatedAt.ToString("dd MMM yyyy")</div>
+                                <div class="small text-muted">@(listing.PublishedAt.HasValue ? $"Published {listing.PublishedAt.Value:dd MMM yyyy}" : "Not published")</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                    <a asp-action="Details" asp-route-id="@listing.PropertyListingId" class="btn btn-sm btn-outline-primary rounded-3" title="Preview listing">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@listing.PropertyListingId" class="btn btn-sm btn-outline-secondary rounded-3" title="Edit listing">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    @if (isDraft)
+                                    {
+                                        <form asp-action="Publish" asp-route-id="@listing.PropertyListingId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success rounded-3" title="Publish listing">
+                                                <i class="fa-solid fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (isPublished)
+                                    {
+                                        <form asp-action="Unpublish" asp-route-id="@listing.PropertyListingId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning rounded-3" title="Unpublish listing">
+                                                <i class="fa-solid fa-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (listing.ListingStatus != PropertyListingStatuses.Archived)
+                                    {
+                                        <form asp-action="Archive" asp-route-id="@listing.PropertyListingId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Archive listing" onclick="return confirm('Archive this listing? Its history will be preserved.');">
+                                                <i class="fa-solid fa-box-archive"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="property-empty-state card border-0 shadow-sm rounded-4 text-center p-5">
+            <div class="property-empty-icon"><i class="fa-solid fa-house-circle-check"></i></div>
+            <h2 class="h4 fw-bold mt-3">No property listings yet</h2>
+            <p class="text-muted mb-4">Start by advertising an available and unassigned flat.</p>
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4"><i class="fa-solid fa-plus me-2"></i>Create first listing</a>
+        </div>
+    }
+</div>
