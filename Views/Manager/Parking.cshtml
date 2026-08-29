@@ -1,0 +1,183 @@
+﻿@model IEnumerable<ADHUNIK_BARI.Models.ParkingSpot>
+
+
+@{
+    ViewData["Title"] = "Parking Management";
+}
+
+
+<div class="container mt-4">
+
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+
+        <h2>
+            <i class="fa-solid fa-square-parking"></i>
+            Parking Management
+        </h2>
+
+
+        <a asp-action="CreateParking"
+           class="btn btn-primary">
+
+            <i class="fa fa-plus"></i>
+            Create Parking Spot
+
+        </a>
+
+
+    </div>
+
+
+
+
+    <table class="table table-bordered shadow">
+
+
+        <thead class="table-dark">
+
+
+            <tr>
+
+                <th>
+                    Spot Number
+                </th>
+
+
+                <th>
+                    Type
+                </th>
+
+
+                <th>
+                    Monthly Fee
+                </th>
+
+
+                <th>
+                    Status
+                </th>
+
+
+                <th>
+                    Assigned Flat
+                </th>
+
+
+                <th>
+                    Action
+                </th>
+
+
+            </tr>
+
+
+        </thead>
+
+
+
+        <tbody>
+
+
+
+        @foreach(var parking in Model)
+        {
+
+            <tr>
+
+
+                <td>
+                    @parking.SpotNumber
+                </td>
+
+
+                <td>
+                    @parking.ParkingType
+                </td>
+
+
+                <td>
+                    ৳ @parking.ParkingFee
+                </td>
+
+
+                <td>
+
+
+                    @if(parking.IsAvailable)
+                    {
+
+                        <span class="badge bg-success">
+                            Available
+                        </span>
+
+                    }
+                    else
+                    {
+
+                        <span class="badge bg-danger">
+                            Assigned
+                        </span>
+
+                    }
+
+
+                </td>
+
+
+                <td>
+
+
+                    @if(parking.Flat != null)
+                    {
+
+                        @parking.Flat.FlatNumber
+
+                    }
+                    else
+                    {
+
+                        <span>
+                            Not Assigned
+                        </span>
+
+                    }
+
+
+                </td>
+
+
+
+                <td>
+
+
+                    @if(parking.Flat == null)
+                    {
+
+                        <a asp-action="AssignParking"
+                           asp-route-id="@parking.ParkingSpotId"
+                           class="btn btn-warning btn-sm">
+
+                            Assign
+
+                        </a>
+
+                    }
+
+
+                </td>
+
+
+            </tr>
+
+        }
+
+
+        </tbody>
+
+
+    </table>
+
+
+</div>

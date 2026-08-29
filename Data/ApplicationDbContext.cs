@@ -21,6 +21,7 @@ namespace ADHUNIK_BARI.Data
         // DbSets for application entities
         public DbSet<Flat> Flats { get; set; }
         public DbSet<FlatAssignment> FlatAssignments { get; set; }
+        public DbSet<ParkingSpot> ParkingSpots { get; set; }
         public DbSet<Notice> Notices { get; set; }
         public DbSet<NoticeTarget> NoticeTargets { get; set; }
         public DbSet<Complaint> Complaints { get; set; }

@@ -30,15 +30,15 @@ body {
   text-align: start;
 }
 
+
+
 :root {
-    --primary: #E87500;
-    --secondary: #FFB347;
+    --orange: #E87500;
+    --light-orange: #FFB347;
+    --dark: #343434;
     --cream: #F8E7D0;
     --gray: #A7A7A7;
-    --dark: #343434;
 }
-
-
 
 body {
     font-family: 'Segoe UI',sans-serif;
@@ -47,110 +47,148 @@ body {
 
 
 
-/* HEADER */
+/* ===============================
+   ADHUNIK BARI HEADER
+================================ */
 
 
-.main-header {
-    background: white;
-    box-shadow: 0 3px 15px rgba(0,0,0,.08);
+.ab-navbar {
+    height: 90px;
+    background: #111 !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,.25);
 }
 
 
 
-.brand-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-
-
-.logo-circle {
-    width: 45px;
-    height: 45px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
+.ab-logo-button {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border: none;
+    background: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
 }
 
 
 
-.brand-wrapper h4 {
-    margin: 0;
-    color: var(--dark);
-    font-size: 18px;
+.ab-logo-thumbnail {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
 
 
-.brand-wrapper small {
-    color: #777;
-}
-
-
-
-.nav-link {
-    color: #444 !important;
-    margin: 0 10px;
-    font-weight: 500;
-}
-
-
-
-.login-btn {
-    background: var(--primary);
-    color: white;
-    padding: 10px 25px;
-    border-radius: 25px;
-    text-decoration: none;
-}
-
-
-
-    .login-btn:hover {
-        background: #c75f00;
-        color: white;
+    .ab-logo-thumbnail img {
+        width: 55px;
+        height: 55px;
+        object-fit: contain;
+        display: block;
     }
 
 
 
-.profile-btn {
-    font-size: 32px;
-    color: var(--primary);
+.ab-brand-text h5 {
+    color: #E87500;
+    font-size: 21px;
+    font-weight: 800;
 }
 
 
 
+.ab-brand-text small {
+    color: #ddd;
+}
+
+
+
+
+.ab-nav-link {
+    color: white !important;
+    font-weight: 600;
+    margin-left: 15px;
+}
+
+
+
+    .ab-nav-link:hover {
+        color: #E87500 !important;
+    }
+
+
+
+
+.ab-login-btn {
+    background: #E87500;
+    color: white !important;
+    padding: 12px 25px;
+    border-radius: 30px;
+}
+
+
+
+    .ab-login-btn:hover {
+        background: #FFB347;
+    }
+
+
+
+.ab-profile-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #E87500;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+
+
+
+
+
+
+/* LOGO POPUP */
+
+
+.ab-logo-modal {
+    border-radius: 30px;
+}
+
+
+
+.ab-large-logo {
+    max-width: 450px;
+    width: 90%;
+}
+
+
+
+.ab-logo-hint {
+    color: #777;
+}
 
 
 /* FOOTER */
 
 
-.main-footer {
-    margin-top: 80px;
-    padding: 30px 0;
-    background: #343434;
-    color: white;
+
+
+
+
+.main-footer h4 {
+    color: var(--light-orange);
 }
 
-
-
-    .main-footer h4 {
-        color: var(--secondary);
-    }
-
-
-:root {
-    --orange: #E87500;
-    --light-orange: #FFB347;
-    --cream: #F8E7D0;
-    --gray: #A7A7A7;
-    --dark: #343434;
-}
 
 
 
@@ -162,97 +200,10 @@ body {
 
 
 
-/* =====================
- HEADER
-===================== */
 
 
-.site-header {
-    background: white;
-    height: 80px;
-    box-shadow: 0 4px 15px rgba(0,0,0,.08);
-    display: flex;
-    align-items: center;
-}
+   
 
-
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-
-
-.brand-logo {
-    height: 48px;
-    width: 48px;
-    border-radius: 50%;
-    background: var(--orange);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 20px;
-}
-
-
-
-.brand-text h5 {
-    margin: 0;
-    color: var(--dark);
-    font-weight: 700;
-}
-
-
-
-.brand-text span {
-    font-size: 13px;
-    color: #777;
-}
-
-
-
-.nav-link {
-    color: var(--dark) !important;
-    font-weight: 600;
-    margin-left: 25px;
-}
-
-
-
-    .nav-link:hover {
-        color: var(--orange) !important;
-    }
-
-
-
-
-.login-button {
-    background: var(--orange);
-    color: white !important;
-    padding: 10px 28px;
-    border-radius: 25px;
-    margin-left: 25px;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-
-
-    .login-button:hover {
-        background: #c75e00;
-    }
-
-
-
-.profile-icon {
-    margin-left: 25px;
-    font-size: 35px;
-    color: var(--orange);
-}
 
 
 
@@ -317,61 +268,12 @@ html, body {
 
 
 
-.navbar {
-    height: 90px;
-}
 
 
 
-.logo-circle {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: #f39c12;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 20px;
-}
 
 
 
-.nav-link {
-    font-size: 17px;
-    font-weight: 500;
-    margin-left: 25px;
-    color: #333 !important;
-}
-
-
-
-    .nav-link:hover {
-        color: #f39c12 !important;
-    }
-
-
-
-.profile-btn {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: #f39c12;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    font-size: 20px;
-}
-
-
-
-    .profile-btn:hover {
-        background: #d68910;
-        color: white;
-    }
 
 
 
@@ -400,27 +302,7 @@ html, body {
     }
 
 
-/* HEADER */
 
-
-.navbar {
-    height: 90px;
-}
-
-
-
-.logo-circle {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #f39c12;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: bold;
-}
 
 
 
@@ -438,18 +320,9 @@ html, body {
 
 
 
-.nav-link {
-    margin-left: 25px;
-    font-size: 16px;
-    font-weight: 500;
-    color: #333 !important;
-}
 
 
 
-    .nav-link:hover {
-        color: #f39c12 !important;
-    }
 
 
 
@@ -458,26 +331,7 @@ html, body {
 /* PROFILE ICON */
 
 
-.profile-btn {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: #f39c12;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-decoration: none;
-    font-size: 18px;
-}
 
-
-
-
-    .profile-btn:hover {
-        background: #d68910;
-        color: white;
-    }
 
 
 
@@ -486,7 +340,7 @@ html, body {
 /* LOGOUT ICON */
 
 
-.logout-btn {
+.ab-logout-btn {
     width: 45px;
     height: 45px;
     border-radius: 50%;
@@ -502,10 +356,9 @@ html, body {
 
 
 
-    .logout-btn:hover {
+    .ab-logout-btn:hover {
         background: #bb2d3b;
     }
-
 /* ===========================
    ADHUNIK BARI HOMEPAGE
 =========================== */
@@ -2168,83 +2021,6 @@ color:#7BC47F;
 
 
 
-
-.login-button{
-
-
-width:100%;
-
-
-padding:16px;
-
-
-border:none;
-
-
-border-radius:30px;
-
-
-font-size:18px;
-
-
-font-weight:bold;
-
-
-color:white;
-
-
-cursor:pointer;
-
-
-
-background:
-
-
-linear-gradient(
-90deg,
-#7BC47F,
-#F6A21A
-);
-
-
-
-transition:.3s;
-
-
-}
-
-
-
-
-
-.login-button:hover{
-
-
-transform:
-
-translateY(-3px);
-
-
-box-shadow:
-
-
-0 15px 35px rgba(246,162,26,.4);
-
-
-
-}
-
-
-
-.login-button:active{
-
-
-transform:
-
-scale(.98);
-
-
-}
 
 
 
