@@ -57,6 +57,10 @@ namespace ADHUNIK_BARI.Controllers
                 LatestPropertyListings = latestListings
             });
         }
+        public IActionResult Contact()
+        {
+            return View();
+        }
 
         public IActionResult Privacy()
         {
