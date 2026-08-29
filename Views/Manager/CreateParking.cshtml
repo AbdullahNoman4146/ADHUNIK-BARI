@@ -1,0 +1,102 @@
+﻿@model ADHUNIK_BARI.Models.ParkingSpot
+
+
+
+<div class="container mt-4">
+
+
+<h2>
+Create Parking Spot
+</h2>
+
+
+
+<form asp-action="CreateParking"
+      method="post">
+
+
+
+<div class="mb-3">
+
+
+<label>
+Parking Spot Number
+</label>
+
+
+<input asp-for="SpotNumber"
+       class="form-control"/>
+
+
+</div>
+
+
+
+
+<div class="mb-3">
+
+
+<label>
+Parking Type
+</label>
+
+
+<select asp-for="ParkingType"
+        class="form-control">
+
+
+<option value="Car">
+Car
+</option>
+
+
+<option value="Bike">
+Bike
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+<div class="mb-3">
+
+
+<label>
+Monthly Parking Fee
+</label>
+
+
+<input asp-for="ParkingFee"
+       class="form-control"/>
+
+
+</div>
+
+
+
+
+<button class="btn btn-success">
+
+Save Parking
+
+</button>
+
+
+<a asp-action="Parking"
+   class="btn btn-secondary">
+
+Cancel
+
+</a>
+
+
+
+</form>
+
+
+</div>

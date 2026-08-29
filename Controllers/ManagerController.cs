@@ -782,5 +782,188 @@ Date:
         {
             return status is "Pending" or "In Progress" or "Resolved" or "Closed";
         }
+        // ==========================================
+        // PARKING MANAGEMENT
+        // ==========================================
+
+
+        [HttpGet]
+        public async Task<IActionResult> Parking()
+        {
+            var parkingSpots = await dbContext.ParkingSpots
+                .Include(p => p.Flat)
+                .AsNoTracking()
+                .OrderBy(p => p.SpotNumber)
+                .ToListAsync();
+
+
+            return View(parkingSpots);
+        }
+
+
+
+
+        // CREATE PARKING PAGE
+
+        [HttpGet]
+        public IActionResult CreateParking()
+        {
+            return View();
+        }
+
+
+
+
+
+        // SAVE PARKING SPOT
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateParking(ParkingSpot model)
+        {
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+
+
+            if (await dbContext.ParkingSpots
+                .AnyAsync(p => p.SpotNumber == model.SpotNumber))
+            {
+                ModelState.AddModelError(
+                    nameof(model.SpotNumber),
+                    "Parking spot number already exists."
+                );
+
+                return View(model);
+            }
+
+
+
+            model.IsAvailable = true;
+            model.CreatedAt = DateTime.Now;
+
+
+
+            dbContext.ParkingSpots.Add(model);
+
+
+            await dbContext.SaveChangesAsync();
+
+
+
+            TempData["Success"] =
+                "Parking spot created successfully.";
+
+
+            return RedirectToAction(nameof(Parking));
+
+        }
+
+
+
+
+
+        // ASSIGN PARKING PAGE
+
+        [HttpGet]
+        public async Task<IActionResult> AssignParking(int id)
+        {
+
+            var parking =
+                await dbContext.ParkingSpots
+                .Include(p => p.Flat)
+                .FirstOrDefaultAsync(
+                    p => p.ParkingSpotId == id);
+
+
+
+            if (parking == null)
+            {
+                return NotFound();
+            }
+
+
+
+            ViewBag.Flats =
+                await dbContext.Flats
+                .Where(f =>
+                    f.FlatStatus == "Occupied")
+                .OrderBy(f => f.FlatNumber)
+                .ToListAsync();
+
+
+
+            return View(parking);
+
+        }
+
+
+
+
+
+
+        // SAVE PARKING ASSIGNMENT
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignParking(
+            int ParkingSpotId,
+            int FlatId)
+        {
+
+
+            var parking =
+                await dbContext.ParkingSpots
+                .FirstOrDefaultAsync(
+                    p => p.ParkingSpotId == ParkingSpotId);
+
+
+
+            if (parking == null)
+            {
+                return NotFound();
+            }
+
+
+
+            var flat =
+                await dbContext.Flats
+                .FirstOrDefaultAsync(
+                    f => f.FlatId == FlatId);
+
+
+
+            if (flat == null)
+            {
+                TempData["Error"] =
+                    "Invalid flat selected.";
+
+                return RedirectToAction(nameof(Parking));
+            }
+
+
+
+            parking.FlatId = flat.FlatId;
+
+            parking.IsAvailable = false;
+
+
+
+            await dbContext.SaveChangesAsync();
+
+
+
+            TempData["Success"] =
+                $"Parking {parking.SpotNumber} assigned successfully.";
+
+
+
+            return RedirectToAction(nameof(Parking));
+
+        }
+
     }
 }

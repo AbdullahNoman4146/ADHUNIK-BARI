@@ -1,129 +1,518 @@
-@using Microsoft.AspNetCore.Identity
+<nav class="navbar navbar-expand-lg navbar-dark ab-navbar shadow-sm sticky-top">
 
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container-fluid px-4 px-md-5">
 
-        <!-- WEBSITE BRAND -->
-        <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
-            <div class="logo-circle">
-                AB
-            </div>
-            <div class="brand-text ms-3">
-                <h5 class="mb-0 fw-bold">ADHUNIK BARI</h5>
-                <small class="text-muted">Smart Apartment Management</small>
-            </div>
-        </a>
 
-        <!-- MOBILE MENU BUTTON -->
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <!-- ===========================
+             LOGO + BRAND
+        ============================ -->
+
+        <div class="d-flex align-items-center">
+
+            <!-- Clickable Logo -->
+            <button type="button"
+                    class="ab-logo-button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#logoPreviewModal">
+
+                <span class="ab-logo-thumbnail">
+
+                    <img src="~/images/adhunik-logo.png"
+                         alt="ADHUNIK BARI Logo" />
+
+                </span>
+
+            </button>
+
+
+            <!-- Brand Text -->
+
+            <a class="ab-brand-text ms-3 text-decoration-none"
+               asp-controller="Home"
+               asp-action="Index">
+
+                <h5 class="mb-0">
+                    ADHUNIK BARI
+                </h5>
+
+                <small>
+                    Smart Apartment Management
+                </small>
+
+            </a>
+
+        </div>
+
+
+
+
+        <!-- MOBILE BUTTON -->
+
+        <button class="navbar-toggler border-0"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarMenu">
+
             <span class="navbar-toggler-icon"></span>
+
         </button>
 
-        <!-- NAVIGATION MENU -->
-        <div class="collapse navbar-collapse" id="navbarMenu">
-            <ul class="navbar-nav ms-auto align-items-center gap-1">
+
+
+
+
+        <!-- NAVIGATION -->
+
+        <div class="collapse navbar-collapse"
+             id="navbarMenu">
+
+
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+
+
+
+                <!-- PUBLIC PROPERTY -->
 
                 <li class="nav-item">
-                    <a class="nav-link px-2 fw-semibold text-primary" asp-controller="Property" asp-action="Index">
-                        <i class="fa-solid fa-house-chimney-window me-1"></i> To-Let &amp; Sale
+
+                    <a class="nav-link ab-nav-link"
+                       asp-controller="Property"
+                       asp-action="Index">
+
+                        <i class="fa-solid fa-house-chimney-window me-1"></i>
+
+                        To-Let &amp; Sale
+
                     </a>
+
                 </li>
+
+
+
 
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
-                    @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
+
+
+                    if (User.IsInRole("Manager") || User.IsInRole("Admin"))
                     {
+
+
+                        <!-- MANAGER DASHBOARD -->
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Dashboard">
-                                <i class="fa-solid fa-gauge-high me-1 text-primary"></i> Dashboard
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Manager"
+                               asp-action="Dashboard">
+
+                                <i class="fa-solid fa-gauge-high me-1"></i>
+
+                                Dashboard
+
                             </a>
+
                         </li>
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Flats">
-                                <i class="fa-solid fa-building me-1 text-secondary"></i> Flats
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Manager"
+                               asp-action="Flats">
+
+                                <i class="fa-solid fa-building me-1"></i>
+
+                                Flats
+
                             </a>
+
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Notices">
-                                <i class="fa-solid fa-bullhorn me-1 text-info"></i> Notices
-                            </a>
-                        </li>
+
+                          <a class="nav-link ab-nav-link"
+                                    asp-controller="Manager"
+                                    asp-action="Parking">
+
+                                      <i class="fa-solid fa-square-parking me-1"></i>
+
+                                        Parking
+
+                          </a>
+
+                       </li>
+
+                        
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Manager" asp-action="Complaints">
-                                <i class="fa-solid fa-screwdriver-wrench me-1 text-warning"></i> Complaints
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Manager"
+                               asp-action="Notices">
+
+                                <i class="fa-solid fa-bullhorn me-1"></i>
+
+                                Notices
+
                             </a>
+
                         </li>
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2 fw-semibold text-primary" asp-controller="Manager" asp-action="Bills">
-                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> Bills & Invoices
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Manager"
+                               asp-action="Complaints">
+
+                                <i class="fa-solid fa-screwdriver-wrench me-1"></i>
+
+                                Complaints
+
                             </a>
+
                         </li>
+
+
+
+
+                        <li class="nav-item">
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Manager"
+                               asp-action="Bills">
+
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i>
+
+                                Bills &amp; Invoices
+
+                            </a>
+
+                        </li>
+
+
                     }
+
+
+
                     else if (User.IsInRole("Tenant") || User.IsInRole("FlatOwner"))
                     {
+
+
+
+                        <!-- RESIDENT DASHBOARD -->
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Resident" asp-action="Dashboard">
-                                <i class="fa-solid fa-house me-1 text-primary"></i> Dashboard
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Resident"
+                               asp-action="Dashboard">
+
+
+                                <i class="fa-solid fa-house me-1"></i>
+
+                                Dashboard
+
+
                             </a>
+
                         </li>
+
+
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2 fw-semibold text-success" asp-controller="Resident" asp-action="MyBills">
-                                <i class="fa-solid fa-credit-card me-1"></i> My Bills
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Resident"
+                               asp-action="MyBills">
+
+
+                                <i class="fa-solid fa-credit-card me-1"></i>
+
+                                My Bills
+
+
                             </a>
+
                         </li>
+
+
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Resident" asp-action="Notices">
-                                <i class="fa-solid fa-bullhorn me-1 text-info"></i> Notices
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Resident"
+                               asp-action="Notices">
+
+
+                                <i class="fa-solid fa-bullhorn me-1"></i>
+
+                                Notices
+
+
                             </a>
+
                         </li>
+
+
+
+
+
                         <li class="nav-item">
-                            <a class="nav-link px-2" asp-controller="Resident" asp-action="MyComplaints">
-                                <i class="fa-solid fa-screwdriver-wrench me-1 text-warning"></i> Complaints
+
+                            <a class="nav-link ab-nav-link"
+                               asp-controller="Resident"
+                               asp-action="MyComplaints">
+
+
+                                <i class="fa-solid fa-screwdriver-wrench me-1"></i>
+
+                                Complaints
+
+
                             </a>
+
                         </li>
+
+
+
                     }
 
-                    <!-- PROFILE ICON -->
+
+
+
+
+                    <!-- PROFILE -->
+
+
                     <li class="nav-item ms-lg-2">
-                        <a class="profile-btn" title="Go to Dashboard" href="@(
-                            (User.IsInRole("Manager") || User.IsInRole("Admin"))
-                            ? Url.Action("Dashboard", "Manager")
-                            : Url.Action("Dashboard", "Resident")
-                        )">
+
+
+                        <a class="ab-profile-btn"
+
+                           href="@(
+                           (User.IsInRole("Manager") || User.IsInRole("Admin"))
+                           ? Url.Action("Dashboard","Manager")
+                           : Url.Action("Dashboard","Resident")
+                           )">
+
+
                             <i class="fa-solid fa-user"></i>
+
+
                         </a>
+
+
                     </li>
 
-                    <!-- LOGOUT ICON -->
+
+
+
+
+                    <!-- LOGOUT -->
+
+
                     <li class="nav-item ms-1">
-                        <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+
+
+                        <form method="post"
+                              asp-controller="Account"
+                              asp-action="Logout">
+
+
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="logout-btn" title="Logout">
+
+
+                            <button type="submit"
+                                    class="ab-logout-btn">
+
+
                                 <i class="fa-solid fa-right-from-bracket"></i>
+
+
                             </button>
+
+
                         </form>
+
+
                     </li>
+
+
+
+
                 }
+
+
+
+
                 else
                 {
+
+
+                    <!-- HOME -->
+
+
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/#features">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/#contact">Contact</a>
-                    </li>
-                    <li class="nav-item ms-lg-3">
-                        <a class="btn btn-primary px-3 py-2 rounded-pill fw-semibold shadow-sm" asp-controller="Account" asp-action="Login">
-                            <i class="fa-solid fa-right-to-bracket me-1"></i> Login Portal
+
+
+                        <a class="nav-link ab-nav-link"
+                           asp-controller="Home"
+                           asp-action="Index">
+
+
+                            Home
+
+
                         </a>
+
+
                     </li>
+
+
+
+
+
+                    <li class="nav-item">
+
+
+                        <a class="nav-link ab-nav-link"
+                           href="/#features">
+
+
+                            Features
+
+
+                        </a>
+
+
+                    </li>
+
+
+
+
+
+                    <li class="nav-item">
+
+
+                        <a class="nav-link ab-nav-link"
+                           href="/#contact">
+
+
+                            Contact
+
+
+                        </a>
+
+
+                    </li>
+
+
+
+
+
+                    <li class="nav-item ms-lg-3">
+
+
+                        <a class="ab-login-btn"
+                           asp-controller="Account"
+                           asp-action="Login">
+
+
+                            <i class="fa-solid fa-right-to-bracket me-1"></i>
+
+                            Login Portal
+
+
+                        </a>
+
+
+                    </li>
+
+
+
                 }
 
+
+
             </ul>
+
+
         </div>
 
+
     </div>
+
+
 </nav>
+
+
+
+
+
+
+
+<!-- ===========================
+     LOGO PREVIEW MODAL
+=========================== -->
+
+
+<div class="modal fade"
+     id="logoPreviewModal"
+     tabindex="-1">
+
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+
+        <div class="modal-content ab-logo-modal">
+
+
+
+            <button type="button"
+                    class="btn-close ab-logo-close"
+                    data-bs-dismiss="modal">
+
+            </button>
+
+
+
+
+            <div class="modal-body text-center">
+
+
+                <img src="~/images/adhunik-logo.png"
+                     class="ab-large-logo"
+                     alt="ADHUNIK BARI Logo"
+                     data-bs-dismiss="modal" />
+
+
+
+                <p class="ab-logo-hint">
+
+                    Click logo to minimize
+
+                </p>
+
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
