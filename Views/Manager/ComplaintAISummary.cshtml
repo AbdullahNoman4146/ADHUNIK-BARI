@@ -1,37 +1,11 @@
 ﻿@model ADHUNIK_BARI.ViewModels.ComplaintAISummaryViewModel
 
-<div class="container-fluid py-4">
-
-
-    <!-- Header -->
-    <div class="card shadow-sm border-0 mb-4"
-         style="background: linear-gradient(135deg,#2563eb,#7c3aed);">
-
-        <div class="card-body text-white p-4">
-
-            <div class="d-flex align-items-center">
-
-                <div style="font-size:45px;">
-                    🤖
-                </div>
-
-                <div class="ms-3">
-
-                    <h2 class="mb-1">
-                        AI Complaint Intelligence
-                    </h2>
-
-                    <p class="mb-0 opacity-75">
-                        Smart analysis of resident complaints using Artificial Intelligence
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
+@{ ViewData["Title"] = "AI service brief"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact">
+        <div><div class="ab-page-kicker"><span></span>Operational intelligence</div><h1>AI service <em>brief.</em></h1><p>Turn resident request patterns into clear property-management priorities.</p></div>
+        <a asp-action="Complaints" class="ab-app-btn ab-app-btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back to requests</a>
+    </header>
 
 
 

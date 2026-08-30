@@ -120,7 +120,7 @@
                         {
                             <form asp-action="Archive" asp-route-id="@Model.PropertyListingId" method="post">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-danger rounded-3 w-100" onclick="return confirm('Archive this listing? Its history will be preserved.');"><i class="fa-solid fa-box-archive me-2"></i>Archive listing</button>
+                                <button type="submit" class="btn btn-outline-danger rounded-3 w-100" data-confirm="Archive this listing? Its history will be preserved."><i class="fa-solid fa-box-archive me-2"></i>Archive listing</button>
                             </form>
                         }
                         <a asp-action="Applications" asp-route-id="@Model.PropertyListingId" class="btn btn-outline-primary rounded-3"><i class="fa-solid fa-users me-2"></i>Applications (@Model.Applications.Count)</a>

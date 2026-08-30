@@ -1,9 +1,7 @@
 @model IEnumerable<ADHUNIK_BARI.Models.Notice>
 @{ ViewData["Title"] = "Notices"; }
-<div class="container py-4"><div class="mb-4"><h1 class="mb-1">Notices</h1><p class="text-muted mb-0">Updates for your apartment community.</p></div>
-@foreach (var notice in Model)
-{
-    <article class="card shadow-sm border-0 mb-3"><div class="card-body p-4"><div class="d-flex justify-content-between gap-3"><h2 class="h5 mb-2">@notice.Title</h2><span class="badge @(notice.NoticeType == "General" ? "text-bg-success" : "text-bg-info")">@(notice.NoticeType == "General" ? "General" : "My Flat")</span></div><p class="mb-2">@notice.Description</p><small class="text-muted">Published @notice.CreatedAt.ToString("dd MMM yyyy")</small></div></article>
-}
-@if (!Model.Any()) { <div class="card shadow-sm border-0"><div class="card-body text-center text-muted py-5">There are no notices for you at this time.</div></div> }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Your community</div><h1>Stay in the <em>know.</em></h1><p>Building announcements and updates selected for your apartment.</p></div></header>
+    @if (Model.Any()) { <section class="ab-notice-grid">@foreach (var notice in Model) { <article class="ab-notice-card"><div class="ab-notice-card-head"><span class="ab-notice-kind"><i class="fa-solid @(notice.NoticeType == "General" ? "fa-earth-asia" : "fa-house")"></i>@(notice.NoticeType == "General" ? "Community" : "Your flat")</span><time datetime="@notice.CreatedAt.ToString("O")">@notice.CreatedAt.ToString("dd MMM yyyy")</time></div><h2>@notice.Title</h2><p>@notice.Description</p><footer class="ab-notice-card-foot"><span class="ab-notice-audience"><i class="fa-solid fa-building-shield"></i>ADHUNIK BARI</span><span class="ab-status ab-status-success"><i></i>New update</span></footer></article> }</section> }
+    else { <section class="ab-panel ab-empty-state-app"><i class="fa-solid fa-bell-slash"></i><h2>All quiet for now</h2><p>There are no active notices for your apartment. New updates will appear here.</p></section> }
 </div>

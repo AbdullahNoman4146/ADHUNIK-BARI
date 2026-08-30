@@ -1,515 +1,56 @@
-<nav class="navbar navbar-expand-lg navbar-dark ab-navbar shadow-sm sticky-top">
-
-    <div class="container-fluid px-4 px-md-5">
-
-
-        <!-- ===========================
-             LOGO + BRAND
-        ============================ -->
-
-        <div class="d-flex align-items-center">
-
-            <!-- Clickable Logo -->
-            <button type="button"
-                    class="ab-logo-button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#logoPreviewModal">
-
-                <span class="ab-logo-thumbnail">
-
-                    <img src="~/images/adhunik-logo.png"
-                         alt="ADHUNIK BARI Logo" />
-
-                </span>
-
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isManager = User.IsInRole("Manager") || User.IsInRole("Admin");
+    var userName = User.Identity?.Name ?? "Account";
+    var userInitial = !string.IsNullOrWhiteSpace(userName) ? userName[..1].ToUpperInvariant() : "A";
+}
+@if (isAuthenticated)
+{
+    <nav class="ab-app-topbar" aria-label="Workspace controls">
+        <div class="ab-topbar-left">
+            <button class="ab-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Open workspace navigation" aria-expanded="false">
+                <i class="fa-solid fa-bars-staggered"></i>
             </button>
-
-
-            <!-- Brand Text -->
-
-            <a class="ab-brand-text ms-3 text-decoration-none"
-               asp-controller="Home"
-               asp-action="Index">
-
-                <h5 class="mb-0">
-                    ADHUNIK BARI
-                </h5>
-
-                <small>
-                    Smart Apartment Management
-                </small>
-
-            </a>
-
-        </div>
-
-
-
-
-        <!-- MOBILE BUTTON -->
-
-        <button class="navbar-toggler border-0"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarMenu">
-
-            <span class="navbar-toggler-icon"></span>
-
-        </button>
-
-
-
-
-
-        <!-- NAVIGATION -->
-
-        <div class="collapse navbar-collapse"
-             id="navbarMenu">
-
-
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
-
-
-
-                <!-- PUBLIC PROPERTY -->
-
-                <li class="nav-item">
-
-                    <a class="nav-link ab-nav-link"
-                       asp-controller="Property"
-                       asp-action="Index">
-
-                        <i class="fa-solid fa-house-chimney-window me-1"></i>
-
-                        To-Let &amp; Sale
-
-                    </a>
-
-                </li>
-
-
-
-
-                @if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
-
-
-                    if (User.IsInRole("Manager") || User.IsInRole("Admin"))
-                    {
-
-
-                        <!-- MANAGER DASHBOARD -->
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Manager"
-                               asp-action="Dashboard">
-
-                                <i class="fa-solid fa-gauge-high me-1"></i>
-
-                                Dashboard
-
-                            </a>
-
-                        </li>
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Manager"
-                               asp-action="Flats">
-
-                                <i class="fa-solid fa-building me-1"></i>
-
-                                Flats
-
-                            </a>
-
-                        </li>
-
-                        <li class="nav-item">
-
-                          <a class="nav-link ab-nav-link"
-                                    asp-controller="Manager"
-                                    asp-action="Parking">
-
-                                      <i class="fa-solid fa-square-parking me-1"></i>
-
-                                        Parking
-
-                          </a>
-
-                       </li>
-
-                        
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Manager"
-                               asp-action="Notices">
-
-                                <i class="fa-solid fa-bullhorn me-1"></i>
-
-                                Notices
-
-                            </a>
-
-                        </li>
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Manager"
-                               asp-action="Complaints">
-
-                                <i class="fa-solid fa-screwdriver-wrench me-1"></i>
-
-                                Complaints
-
-                            </a>
-
-                        </li>
-
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Manager"
-                               asp-action="Bills">
-
-                                <i class="fa-solid fa-file-invoice-dollar me-1"></i>
-
-                                Bills &amp; Invoices
-
-                            </a>
-
-                        </li>
-
-
-                    }
-
-
-
-                    else if (User.IsInRole("Tenant") || User.IsInRole("FlatOwner"))
-                    {
-
-
-
-                        <!-- RESIDENT DASHBOARD -->
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Resident"
-                               asp-action="Dashboard">
-
-
-                                <i class="fa-solid fa-house me-1"></i>
-
-                                Dashboard
-
-
-                            </a>
-
-                        </li>
-
-
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Resident"
-                               asp-action="MyBills">
-
-
-                                <i class="fa-solid fa-credit-card me-1"></i>
-
-                                My Bills
-
-
-                            </a>
-
-                        </li>
-
-
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Resident"
-                               asp-action="Notices">
-
-
-                                <i class="fa-solid fa-bullhorn me-1"></i>
-
-                                Notices
-
-
-                            </a>
-
-                        </li>
-
-
-
-
-
-                        <li class="nav-item">
-
-                            <a class="nav-link ab-nav-link"
-                               asp-controller="Resident"
-                               asp-action="MyComplaints">
-
-
-                                <i class="fa-solid fa-screwdriver-wrench me-1"></i>
-
-                                Complaints
-
-
-                            </a>
-
-                        </li>
-
-
-
-                    }
-
-
-
-
-
-                    <!-- PROFILE -->
-
-
-                    <li class="nav-item ms-lg-2">
-
-
-                        <a class="ab-profile-btn"
-
-                           href="@(
-                           (User.IsInRole("Manager") || User.IsInRole("Admin"))
-                           ? Url.Action("Dashboard","Manager")
-                           : Url.Action("Dashboard","Resident")
-                           )">
-
-
-                            <i class="fa-solid fa-user"></i>
-
-
-                        </a>
-
-
-                    </li>
-
-
-
-
-
-                    <!-- LOGOUT -->
-
-
-                    <li class="nav-item ms-1">
-
-
-                        <form method="post"
-                              asp-controller="Account"
-                              asp-action="Logout">
-
-
-                            @Html.AntiForgeryToken()
-
-
-                            <button type="submit"
-                                    class="ab-logout-btn">
-
-
-                                <i class="fa-solid fa-right-from-bracket"></i>
-
-
-                            </button>
-
-
-                        </form>
-
-
-                    </li>
-
-
-
-
-                }
-
-
-
-
-                else
-                {
-
-
-                    <!-- HOME -->
-
-
-                    <li class="nav-item">
-
-
-                        <a class="nav-link ab-nav-link"
-                           asp-controller="Home"
-                           asp-action="Index">
-
-
-                            Home
-
-
-                        </a>
-
-
-                    </li>
-
-
-
-
-
-                    <li class="nav-item">
-
-
-                        <a class="nav-link ab-nav-link"
-                           href="/#features">
-
-
-                            Features
-
-
-                        </a>
-
-
-                    </li>
-
-
-
-
-
-                    <li class="nav-item">
-
-                        <a class="nav-link ab-nav-link"
-                           asp-controller="Home"
-                           asp-action="Contact">
-
-                            Contact
-
-                        </a>
-
-                    </li>
-
-
-
-
-
-                    <li class="nav-item ms-lg-3">
-
-
-                        <a class="ab-login-btn"
-                           asp-controller="Account"
-                           asp-action="Login">
-
-
-                            <i class="fa-solid fa-right-to-bracket me-1"></i>
-
-                            Login Portal
-
-
-                        </a>
-
-
-                    </li>
-
-
-
-                }
-
-
-
-            </ul>
-
-
-        </div>
-
-
-    </div>
-
-
-</nav>
-
-
-
-
-
-
-
-<!-- ===========================
-     LOGO PREVIEW MODAL
-=========================== -->
-
-
-<div class="modal fade"
-     id="logoPreviewModal"
-     tabindex="-1">
-
-
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-
-
-        <div class="modal-content ab-logo-modal">
-
-
-
-            <button type="button"
-                    class="btn-close ab-logo-close"
-                    data-bs-dismiss="modal">
-
-            </button>
-
-
-
-
-            <div class="modal-body text-center">
-
-
-                <img src="~/images/adhunik-logo.png"
-                     class="ab-large-logo"
-                     alt="ADHUNIK BARI Logo"
-                     data-bs-dismiss="modal" />
-
-
-
-                <p class="ab-logo-hint">
-
-                    Click logo to minimize
-
-                </p>
-
-
-
+            <div class="ab-topbar-context">
+                <small>@(isManager ? "MANAGEMENT WORKSPACE" : "RESIDENT SPACE")</small>
+                <strong>@ViewData["Title"]</strong>
             </div>
-
-
         </div>
-
-
-    </div>
-
-
-</div>
+        <div class="ab-topbar-actions">
+            <div class="ab-topbar-date d-none d-md-flex"><i class="fa-regular fa-calendar"></i><span data-current-date>@DateTime.Now.ToString("ddd, dd MMM")</span></div>
+            <a class="ab-topbar-market" asp-controller="Property" asp-action="Index" title="Open public marketplace"><i class="fa-solid fa-arrow-up-right-from-square"></i><span class="d-none d-lg-inline">Marketplace</span></a>
+            <div class="dropdown">
+                <button class="ab-topbar-profile dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open account menu">
+                    <span class="ab-topbar-avatar">@userInitial</span>
+                    <span class="ab-topbar-user d-none d-sm-grid"><strong>@userName</strong><small>@(isManager ? "Manager" : "Resident")</small></span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end ab-dropdown ab-topbar-dropdown">
+                    <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="fa-solid fa-shield-halved"></i> Account security</a></li>
+                    <li><a class="dropdown-item" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-globe"></i> Public website</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><form method="post" asp-controller="Account" asp-action="Logout">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item ab-logout-item"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out</button></form></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+}
+else
+{
+    <nav class="navbar navbar-expand-xl adhunik-nav sticky-top" aria-label="Primary navigation" data-site-nav>
+        <div class="container-fluid ab-nav-inner">
+            <a class="navbar-brand ab-brand" asp-controller="Home" asp-action="Index" aria-label="ADHUNIK BARI home"><span class="ab-brand-mark" aria-hidden="true"><span>AB</span><i></i></span><span class="ab-brand-copy"><strong>ADHUNIK BARI</strong><small>Connected living</small></span></a>
+            <button class="navbar-toggler ab-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Open navigation menu"><span></span><span></span></button>
+            <div class="collapse navbar-collapse" id="navbarMenu">
+                <ul class="navbar-nav ms-auto align-items-xl-center ab-nav-links">
+                    <li class="nav-item"><a class="nav-link" asp-controller="Property" asp-action="Index"><i class="fa-solid fa-building" aria-hidden="true"></i> Marketplace</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#features">Platform</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#how-it-works">How it works</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Contact">Contact</a></li>
+                    <li class="nav-item ab-nav-cta-item"><a class="ab-button ab-button-small ab-button-light" asp-controller="Account" asp-action="Login">Open portal <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+}

@@ -1,12 +1,11 @@
 @model ADHUNIK_BARI.ViewModels.NoticeViewModel
-@{ ViewData["Title"] = "Create Notice"; }
-<div class="container py-4"><div class="row justify-content-center"><div class="col-lg-8">
-<div class="card shadow-sm border-0"><div class="card-body p-4"><h1 class="h3 mb-4">Create Notice</h1>
-<form asp-action="CreateNotice" method="post"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-<div class="mb-3"><label asp-for="Title" class="form-label">Title</label><input asp-for="Title" class="form-control" /><span asp-validation-for="Title" class="text-danger"></span></div>
-<div class="mb-3"><label asp-for="Description" class="form-label">Description</label><textarea asp-for="Description" class="form-control" rows="5"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
-<div class="mb-3"><label asp-for="NoticeType" class="form-label">Audience</label><select asp-for="NoticeType" class="form-select" id="noticeType"><option value="General">Everyone</option><option value="SpecificFlats">Selected flats</option></select></div>
-<div class="mb-4" id="flatTargets"><label class="form-label">Select flats</label><div class="row">@foreach (var flat in Model.Flats) { <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="TargetFlatIds" value="@flat.FlatId" id="flat-@flat.FlatId" /><label class="form-check-label" for="flat-@flat.FlatId">@flat.FlatNumber (Floor @flat.FloorNumber)</label></div></div> }</div><span asp-validation-for="TargetFlatIds" class="text-danger"></span></div>
-<a asp-action="Notices" class="btn btn-outline-secondary">Cancel</a> <button type="submit" class="btn btn-primary">Publish Notice</button>
-</form></div></div></div></div></div>
-@section Scripts { <partial name="_ValidationScriptsPartial" /><script>function toggleTargets(){document.getElementById('flatTargets').style.display=document.getElementById('noticeType').value==='General'?'none':'block';}document.getElementById('noticeType').addEventListener('change',toggleTargets);toggleTargets();</script> }
+@{ ViewData["Title"] = "Create notice"; }
+<div class="ab-app-page"><header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Publish an update</div><h1>Write a clear <em>notice.</em></h1><p>Choose the right audience and keep the message concise and useful.</p></div></header>
+<section class="ab-panel ab-form-shell"><aside class="ab-form-aside"><i class="fa-solid fa-bullhorn"></i><small>Community signal</small><h2>The right message, to the right homes.</h2><p>General notices reach everyone. Selected-flat notices remain visible only to the residents you choose.</p></aside>
+<form asp-action="CreateNotice" method="post" class="ab-form-body"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
+<div class="ab-field-span-2"><label asp-for="Title" class="form-label">Notice title</label><input asp-for="Title" class="form-control" placeholder="A short, actionable headline" /><span asp-validation-for="Title" class="text-danger small"></span></div>
+<div class="ab-field-span-2"><label asp-for="Description" class="form-label">Message</label><textarea asp-for="Description" class="form-control" rows="6" placeholder="Give residents the relevant details…"></textarea><span asp-validation-for="Description" class="text-danger small"></span></div>
+<div class="ab-field-span-2"><label asp-for="NoticeType" class="form-label">Audience</label><select asp-for="NoticeType" class="form-select" data-notice-type><option value="General">Everyone</option><option value="SpecificFlats">Selected flats</option></select></div>
+<div class="ab-field-span-2" data-notice-targets><label class="form-label">Select apartments</label><div class="row g-2">@foreach (var flat in Model.Flats) { <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="TargetFlatIds" value="@flat.FlatId" id="flat-@flat.FlatId" /><label class="form-check-label" for="flat-@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber</label></div></div> }</div><span asp-validation-for="TargetFlatIds" class="text-danger small"></span></div>
+</div><div class="ab-form-actions"><a asp-action="Notices" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-paper-plane"></i>Publish notice</button></div></form></section></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

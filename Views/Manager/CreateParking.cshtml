@@ -1,102 +1,15 @@
-﻿@model ADHUNIK_BARI.Models.ParkingSpot
-
-
-
-<div class="container mt-4">
-
-
-<h2>
-Create Parking Spot
-</h2>
-
-
-
-<form asp-action="CreateParking"
-      method="post">
-
-
-
-<div class="mb-3">
-
-
-<label>
-Parking Spot Number
-</label>
-
-
-<input asp-for="SpotNumber"
-       class="form-control"/>
-
-
+@model ADHUNIK_BARI.Models.ParkingSpot
+@{ ViewData["Title"] = "Create parking"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Parking inventory</div><h1>Add a new <em>space.</em></h1><p>Define the parking identity, vehicle type, and recurring monthly fee.</p></div></header>
+    <section class="ab-panel ab-form-shell">
+        <aside class="ab-form-aside"><i class="fa-solid fa-square-parking"></i><small>Space setup</small><h2>Make every arrival effortless.</h2><p>Use a short, visible spot number that residents and the management team can identify at a glance.</p></aside>
+        <form asp-action="CreateParking" method="post" class="ab-form-body"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
+            <div class="ab-field-span-2"><label asp-for="SpotNumber" class="form-label">Parking spot number</label><input asp-for="SpotNumber" class="form-control" placeholder="e.g. P-01" autocomplete="off" /><span asp-validation-for="SpotNumber" class="text-danger small"></span></div>
+            <div><label asp-for="ParkingType" class="form-label">Vehicle type</label><select asp-for="ParkingType" class="form-select"><option value="Car">Car</option><option value="Bike">Bike</option></select><span asp-validation-for="ParkingType" class="text-danger small"></span></div>
+            <div><label asp-for="ParkingFee" class="form-label">Monthly parking fee</label><div class="input-group"><span class="input-group-text">৳</span><input asp-for="ParkingFee" class="form-control" type="number" min="0" step="100" placeholder="e.g. 2500" /></div><span asp-validation-for="ParkingFee" class="text-danger small"></span></div>
+            <div class="ab-field-span-2 ab-field-note"><i class="fa-solid fa-circle-info"></i><span>The new space starts as available and can be assigned from the parking directory.</span></div>
+        </div><div class="ab-form-actions"><a asp-action="Parking" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Create space</button></div></form>
+    </section>
 </div>
-
-
-
-
-<div class="mb-3">
-
-
-<label>
-Parking Type
-</label>
-
-
-<select asp-for="ParkingType"
-        class="form-control">
-
-
-<option value="Car">
-Car
-</option>
-
-
-<option value="Bike">
-Bike
-</option>
-
-
-</select>
-
-
-</div>
-
-
-
-
-<div class="mb-3">
-
-
-<label>
-Monthly Parking Fee
-</label>
-
-
-<input asp-for="ParkingFee"
-       class="form-control"/>
-
-
-</div>
-
-
-
-
-<button class="btn btn-success">
-
-Save Parking
-
-</button>
-
-
-<a asp-action="Parking"
-   class="btn btn-secondary">
-
-Cancel
-
-</a>
-
-
-
-</form>
-
-
-</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

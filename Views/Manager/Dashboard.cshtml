@@ -1,286 +1,68 @@
+@using ADHUNIK_BARI.Models
 @{
-    ViewData["Title"] = "Manager Dashboard";
+    ViewData["Title"] = "Overview";
+    var activeFlats = (int?)ViewBag.ActiveFlatsCount ?? 0;
+    var pendingComplaints = (int?)ViewBag.PendingComplaintsCount ?? 0;
+    var collectionRate = Convert.ToInt32(ViewBag.CollectionRate ?? 0);
+    var revenue = ViewBag.TotalCollectedRevenue is decimal totalRevenue ? totalRevenue : 0m;
+    var recentPayments = ViewBag.RecentPayments as IEnumerable<Payment> ?? Enumerable.Empty<Payment>();
 }
+<div class="ab-app-page ab-dashboard-page">
+    @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i><span>@TempData["Success"]</span></div> }
 
+    <header class="ab-page-heading" data-reveal>
+        <div><div class="ab-page-kicker"><span></span> Live operations</div><h1>Good @((DateTime.Now.Hour < 12) ? "morning" : (DateTime.Now.Hour < 18 ? "afternoon" : "evening")), <em>Manager.</em></h1><p>Here is what is happening across ADHUNIK BARI right now.</p></div>
+        <div class="ab-page-heading-actions"><a class="ab-app-btn ab-app-btn-secondary" asp-controller="ManagerProperty" asp-action="Create"><i class="fa-solid fa-plus"></i> New listing</a><a class="ab-app-btn ab-app-btn-primary" asp-action="CreateResident"><i class="fa-solid fa-user-plus"></i> Add resident</a></div>
+    </header>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success dashboard-alert">
-        @TempData["Success"]
-    </div>
-}
+    <section class="ab-kpi-grid" aria-label="Building overview" data-reveal>
+        <article class="ab-kpi ab-kpi-dark"><div class="ab-kpi-head"><span>Active flats</span><i class="fa-solid fa-building"></i></div><strong data-counter="@activeFlats">@activeFlats</strong><small><i></i> Current occupied portfolio</small><div class="ab-kpi-visual ab-visual-buildings"><b></b><b></b><b></b><b></b><b></b></div></article>
+        <article class="ab-kpi"><div class="ab-kpi-head"><span>Open requests</span><i class="fa-solid fa-screwdriver-wrench"></i></div><strong data-counter="@pendingComplaints">@pendingComplaints</strong><small class="@(pendingComplaints > 0 ? "ab-attention" : "")"><i></i> @(pendingComplaints > 0 ? "Needs review" : "All clear")</small><div class="ab-kpi-ring" data-ring-value="@Math.Min(pendingComplaints * 12, 100)"><span></span></div></article>
+        <article class="ab-kpi"><div class="ab-kpi-head"><span>Collection rate</span><i class="fa-solid fa-chart-line"></i></div><strong><span data-counter="@collectionRate">@collectionRate</span><sup>%</sup></strong><small><i></i> Resident billing performance</small><div class="ab-kpi-progress"><span data-progress-value="@Math.Clamp(collectionRate, 0, 100)"></span></div></article>
+        <article class="ab-kpi ab-kpi-revenue"><div class="ab-kpi-head"><span>Revenue collected</span><i class="fa-solid fa-wallet"></i></div><strong><sup>৳</sup>@revenue.ToString("N0")</strong><small><i></i> Verified resident payments</small><div class="ab-revenue-spark"><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+    </section>
 
-
-
-<div class="dashboard-container fade-in">
-
-    <h1 class="dashboard-title">
-        Welcome back, Manager
-    </h1>
-
-    <p class="dashboard-subtitle">
-        ADHUNIK BARI Management Dashboard
-    </p>
-
-    <!-- METRICS -->
-    <div class="metrics-bar">
-        <div class="metric-card">
-            <div class="metric-number counter" data-target="@(ViewBag.ActiveFlatsCount ?? 0)">
-                @(ViewBag.ActiveFlatsCount ?? 0)
+    <div class="ab-dashboard-layout">
+        <section class="ab-panel ab-operations-panel" data-reveal>
+            <div class="ab-panel-head"><div><span class="ab-panel-kicker">OPERATIONS</span><h2>Move work forward</h2></div><span class="ab-panel-status"><i></i> Workspace ready</span></div>
+            <div class="ab-action-grid">
+                <a asp-action="Flats"><span class="ab-action-icon"><i class="fa-solid fa-building-user"></i></span><div><strong>Flats & occupancy</strong><small>Manage units, rent and assignments</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-action="Bills"><span class="ab-action-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span><div><strong>Billing center</strong><small>Generate invoices and track collection</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-action="Notices"><span class="ab-action-icon"><i class="fa-solid fa-bullhorn"></i></span><div><strong>Community notices</strong><small>Publish targeted resident updates</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-action="Complaints"><span class="ab-action-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span><div><strong>Service requests</strong><small>Resolve resident issues transparently</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-action="Parking"><span class="ab-action-icon"><i class="fa-solid fa-square-parking"></i></span><div><strong>Parking management</strong><small>Create spaces and allocate them to flats</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-controller="ManagerProperty" asp-action="Index"><span class="ab-action-icon"><i class="fa-solid fa-house-circle-check"></i></span><div><strong>Property marketplace</strong><small>Publish and manage available homes</small></div><i class="fa-solid fa-arrow-right"></i></a>
+                <a asp-action="CreateResident"><span class="ab-action-icon"><i class="fa-solid fa-user-plus"></i></span><div><strong>Resident accounts</strong><small>Onboard tenants and flat owners</small></div><i class="fa-solid fa-arrow-right"></i></a>
             </div>
-            <div class="metric-label">
-                Active Flats
-            </div>
-        </div>
+        </section>
 
-        <div class="metric-card">
-            <div class="metric-number counter" data-target="@(ViewBag.PendingComplaintsCount ?? 0)">
-                @(ViewBag.PendingComplaintsCount ?? 0)
-            </div>
-            <div class="metric-label">
-                Pending Complaints
-            </div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-number counter percent" data-target="@(ViewBag.CollectionRate ?? 0)">
-                @(ViewBag.CollectionRate ?? 0)
-            </div>
-            <div class="metric-label">
-                Rent Collection Rate
-            </div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-number text-success fw-bold">
-                ৳@((ViewBag.TotalCollectedRevenue != null ? ((decimal)ViewBag.TotalCollectedRevenue).ToString("N0") : "0"))
-            </div>
-            <div class="metric-label">
-                Total Revenue Collected
-            </div>
-        </div>
-    </div>
-
-    <h2 class="section-title">
-        Quick Actions
-    </h2>
-
-    <div class="dashboard-grid">
-
-        <!-- RESIDENTS -->
-        <div class="dashboard-action-card reveal-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-users text-primary me-2"></i>Residents
-            </h3>
-            <p>
-                Create Tenant and Flat Owner accounts
-            </p>
-            <div class="expand-content">
-                <a class="dashboard-btn"
-                   asp-controller="Manager"
-                   asp-action="CreateResident">
-                    Manage Residents
-                </a>
-            </div>
-        </div>
-
-        <!-- NOTICES -->
-        <div class="dashboard-action-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-bullhorn text-warning me-2"></i>Notices
-            </h3>
-            <p>
-                Publish resident announcements
-            </p>
-            <div class="expand-content">
-                <a class="dashboard-btn"
-                   asp-controller="Manager"
-                   asp-action="Notices">
-                    Manage Notices
-                </a>
-            </div>
-        </div>
-
-        <!-- FLATS -->
-        <div class="dashboard-action-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-building text-info me-2"></i>Flats
-            </h3>
-            <p>
-                Manage apartment flats
-            </p>
-            <div class="expand-content">
-                <a class="dashboard-btn"
-                   asp-controller="Manager"
-                   asp-action="Flats">
-                    View Flats
-                </a>
-            </div>
-        </div>
-         <!-- PARKING NEW -->
-
-        <div class="dashboard-action-card"
-             onclick="toggleCard(this)">
-
-
-
-            <h3>
-
-                <i class="fa-solid fa-square-parking text-primary me-2"></i>
-                Parking
-
-            </h3>
-
-
-
-            <p>
-                Manage parking spots and resident parking allocation
-            </p>
-
-
-
-            <div class="expand-content">
-
-
-                <a class="dashboard-btn"
-                   asp-controller="Manager"
-                   asp-action="Parking">
-
-                    Manage Parking
-
-                </a>
-
-
-            </div>
-
-
-        </div>
-
-        <!-- PROPERTY MARKETPLACE -->
-        <div class="dashboard-action-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-house-circle-check text-primary me-2"></i>Property Marketplace
-            </h3>
-            <p>
-                Publish To-Let and For-Sale listings
-            </p>
-            <div class="expand-content">
-                <a class="dashboard-btn"
-                   asp-controller="ManagerProperty"
-                   asp-action="Index">
-                    Manage Listings
-                </a>
-            </div>
-        </div>
-
-        <!-- BILLS -->
-        <div class="dashboard-action-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-file-invoice-dollar text-success me-2"></i>Bills & Invoices
-            </h3>
-            <p>
-                Generate & manage monthly bills
-            </p>
-            <div class="expand-content">
-                <a class="dashboard-btn"
-                   asp-controller="Manager"
-                   asp-action="Bills">
-                    Manage Invoices
-                </a>
-            </div>
-        </div>
-
-        <!-- COMPLAINTS -->
-        <div class="dashboard-action-card" onclick="toggleCard(this)">
-            <h3>
-                <i class="fa-solid fa-wrench text-danger me-2"></i>Complaints
-            </h3>
-            <p>
-                Review complaints
-            </p>
-            <div class="expand-content">
+        <aside class="ab-panel ab-pulse-panel" data-reveal>
+            <div class="ab-panel-head"><div><span class="ab-panel-kicker">COMMUNITY PULSE</span><h2>Recent requests</h2></div><a asp-action="Complaints">View all</a></div>
+            <div class="ab-request-feed">
                 @if (ViewBag.RecentComplaints != null)
                 {
                     foreach (var complaint in ViewBag.RecentComplaints)
                     {
-                        <div class="small mb-2"><strong>@(complaint.Flat?.FlatNumber ?? "Unknown flat")</strong> · @(complaint.User?.FullName ?? "Unknown resident")<br /><span>@complaint.Category</span> · <span>@complaint.ComplaintStatus</span> · @complaint.CreatedAt.ToString("dd MMM yyyy")</div>
+                        <a asp-action="ComplaintDetails" asp-route-id="@complaint.ComplaintId" class="ab-feed-item"><span class="ab-feed-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span><div><strong>@complaint.Category</strong><small>Flat @(complaint.Flat?.FlatNumber ?? "—") · @(complaint.User?.FullName ?? "Resident")</small></div><time>@complaint.CreatedAt.ToString("dd MMM")</time></a>
                     }
                 }
-                <a class="dashboard-btn" asp-controller="Manager" asp-action="Complaints">Open Complaint Center</a>
+                else { <div class="ab-mini-empty"><i class="fa-solid fa-circle-check"></i><strong>No recent requests</strong><span>The request queue is currently clear.</span></div> }
             </div>
-        </div>
+            <a class="ab-ai-insight" asp-action="ComplaintAISummary"><span><i class="fa-solid fa-sparkles"></i></span><div><strong>AI complaint intelligence</strong><small>Spot patterns across resident requests</small></div><i class="fa-solid fa-arrow-right"></i></a>
+        </aside>
     </div>
 
-    <!-- RECENT RESIDENT PAYMENTS FEED -->
-    <div class="mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="section-title mb-0">
-                <i class="fa-solid fa-receipt text-success me-2"></i>Recent Resident Payments & Receipts
-            </h2>
-            <a asp-controller="Manager" asp-action="Bills" class="btn btn-outline-primary btn-sm rounded-3">
-                <i class="fa-solid fa-arrow-right me-1"></i> Full Billing & Invoices
-            </a>
-        </div>
-
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Receipt #</th>
-                            <th>Resident</th>
-                            <th>Flat</th>
-                            <th>Amount Paid</th>
-                            <th>Date & Time</th>
-                            <th>Status</th>
-                            <th class="text-end pe-4">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (ViewBag.RecentPayments != null && ((IEnumerable<ADHUNIK_BARI.Models.Payment>)ViewBag.RecentPayments).Any())
-                        {
-                            foreach (var payment in (IEnumerable<ADHUNIK_BARI.Models.Payment>)ViewBag.RecentPayments)
-                            {
-                                <tr>
-                                    <td class="ps-4">
-                                        <span class="badge bg-secondary font-monospace">RCP@(payment.PaymentId.ToString("D6"))</span>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold">@(payment.User?.FullName ?? "Resident")</div>
-                                        <div class="text-muted small">@(payment.User?.Email ?? "")</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">Flat @(payment.Bill?.Assignment?.Flat?.FlatNumber ?? "N/A")</span>
-                                    </td>
-                                    <td>
-                                        <span class="text-success fw-bold fs-6">৳@payment.AmountPaid.ToString("N2")</span>
-                                    </td>
-                                    <td>
-                                        <span class="small text-muted">@((payment.PaymentDate != default ? payment.PaymentDate : payment.CreatedAt).ToString("dd MMM yyyy, hh:mm tt"))</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Paid & Cleared</span>
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <a href="/Resident/Receipt/@payment.PaymentId" target="_blank" class="btn btn-sm btn-outline-success rounded-3">
-                                            <i class="fa-solid fa-receipt me-1"></i> View Receipt
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    <i class="fa-solid fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
-                                    No resident payment transactions recorded yet.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <section class="ab-panel ab-data-panel" data-reveal>
+        <div class="ab-panel-head"><div><span class="ab-panel-kicker">TRANSACTIONS</span><h2>Recent resident payments</h2></div><a class="ab-app-btn ab-app-btn-secondary ab-app-btn-small" asp-action="Bills">Full billing center <i class="fa-solid fa-arrow-right"></i></a></div>
+        <div class="table-responsive"><table class="table ab-app-table align-middle mb-0"><thead><tr><th>Receipt</th><th>Resident</th><th>Flat</th><th>Amount</th><th>Payment date</th><th>Status</th><th class="text-end">Action</th></tr></thead><tbody>
+        @if (recentPayments.Any())
+        {
+            foreach (var payment in recentPayments)
+            {
+                <tr><td><span class="ab-mono-tag">RCP@(payment.PaymentId.ToString("D6"))</span></td><td><div class="ab-table-person"><span><i class="fa-solid fa-user"></i></span><div><strong>@(payment.User?.FullName ?? "Resident")</strong><small>@(payment.User?.Email ?? "")</small></div></div></td><td><span class="ab-unit-pill">@((payment.Bill?.Assignment?.Flat?.FlatNumber ?? "N/A"))</span></td><td><strong class="ab-money">৳@payment.AmountPaid.ToString("N2")</strong></td><td><span>@((payment.PaymentDate != default ? payment.PaymentDate : payment.CreatedAt).ToString("dd MMM yyyy"))</span><small class="ab-table-sub">@((payment.PaymentDate != default ? payment.PaymentDate : payment.CreatedAt).ToString("hh:mm tt"))</small></td><td><span class="ab-status ab-status-success"><i></i> Paid</span></td><td class="text-end"><a asp-controller="Resident" asp-action="Receipt" asp-route-id="@payment.PaymentId" class="ab-icon-btn" aria-label="View receipt RCP@(payment.PaymentId.ToString("D6"))"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></td></tr>
+            }
+        }
+        else { <tr><td colspan="7"><div class="ab-table-empty"><i class="fa-solid fa-receipt"></i><strong>No payments recorded yet</strong><span>Completed resident payments will appear here.</span></div></td></tr> }
+        </tbody></table></div>
+    </section>
 </div>

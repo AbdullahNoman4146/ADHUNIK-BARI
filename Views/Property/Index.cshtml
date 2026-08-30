@@ -7,29 +7,28 @@
 }
 
 <div class="public-marketplace-page">
-    <section class="public-marketplace-hero">
-        <div class="container py-5">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-7">
-                    <span class="public-hero-badge"><i class="fa-solid fa-sparkles me-2"></i>ADHUNIK BARI Marketplace</span>
-                    <h1 class="display-4 fw-bold mt-3 mb-3">Find a place that feels like home.</h1>
-                    <p class="lead text-muted mb-0">Explore carefully prepared To-Let and For-Sale homes managed by your apartment community.</p>
-                </div>
-                <div class="col-lg-5 d-none d-lg-block">
-                    <div class="public-hero-art">
-                        <div class="public-hero-art-circle"><i class="fa-solid fa-house-chimney-window"></i></div>
-                        <div class="public-hero-art-card"><i class="fa-solid fa-location-dot text-primary me-2"></i>Community-managed properties</div>
-                    </div>
-                </div>
+    <section class="ab-market-hero">
+        <div class="ab-market-hero-image" aria-hidden="true"></div>
+        <div class="container ab-market-hero-grid">
+            <div data-reveal>
+                <div class="ab-eyebrow ab-eyebrow-light"><span></span> ADHUNIK BARI marketplace</div>
+                <h1>Find a place that already <em>feels like home.</em></h1>
+                <p>Explore to-let and for-sale homes within a professionally managed apartment community.</p>
+                <a class="ab-button ab-button-primary" href="#properties">View available homes <i class="fa-solid fa-arrow-down"></i></a>
+            </div>
+            <div class="ab-market-finder" data-reveal aria-label="Marketplace overview">
+                <div class="ab-finder-top"><span><i class="fa-solid fa-location-crosshairs"></i> Community finder</span><strong>@Model.Listings.Count available</strong></div>
+                <div class="ab-finder-map" aria-hidden="true"><i class="p1"></i><i class="p2"></i><i class="p3"></i><span class="ab-map-home"><i class="fa-solid fa-house"></i></span></div>
+                <div class="ab-finder-tags"><span><i class="fa-solid fa-key"></i> To-let</span><span><i class="fa-solid fa-tag"></i> For sale</span><span><i class="fa-solid fa-shield-halved"></i> Managed</span></div>
             </div>
         </div>
     </section>
 
-    <main id="properties" class="container py-5">
-        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+    <div id="properties" class="container py-5">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4 ab-market-list-heading">
             <div>
-                <div class="property-eyebrow"><i class="fa-solid fa-building-circle-check me-2"></i>Available homes</div>
-                <h2 class="h1 fw-bold mb-1">To-Let & For Sale</h2>
+                <div class="ab-eyebrow"><span></span> Available now</div>
+                <h2 class="h1 fw-bold mt-2 mb-1">To-let &amp; for sale</h2>
                 <p class="text-muted mb-0">Browse currently published properties and view every detail before you apply.</p>
             </div>
             <div class="public-property-count"><strong>@Model.Listings.Count</strong> @(Model.Listings.Count == 1 ? "property" : "properties")</div>
@@ -59,5 +58,5 @@
                 <a asp-action="Index" class="btn btn-primary rounded-pill px-4">View all properties</a>
             </div>
         }
-    </main>
+    </div>
 </div>

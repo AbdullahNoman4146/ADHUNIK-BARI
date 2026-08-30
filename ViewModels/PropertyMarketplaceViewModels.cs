@@ -226,6 +226,25 @@ namespace ADHUNIK_BARI.ViewModels
         public IReadOnlyList<PublicPropertyListingCardViewModel> Listings { get; set; } = Array.Empty<PublicPropertyListingCardViewModel>();
     }
 
+    public class ManagerPropertyListingsViewModel
+    {
+        public string SelectedSection { get; set; } = "active";
+
+        public IReadOnlyList<PropertyListing> Listings { get; set; } = Array.Empty<PropertyListing>();
+
+        public int TotalCount { get; set; }
+
+        public int ActiveCount { get; set; }
+
+        public int PublishedCount { get; set; }
+
+        public int DraftCount { get; set; }
+
+        public int ReservedOrCompletedCount { get; set; }
+
+        public int ArchivedCount { get; set; }
+    }
+
     public class HomePageViewModel
     {
         public IReadOnlyList<PublicPropertyListingCardViewModel> LatestPropertyListings { get; set; } = Array.Empty<PublicPropertyListingCardViewModel>();

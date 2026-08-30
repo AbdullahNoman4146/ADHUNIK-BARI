@@ -1,232 +1,141 @@
-﻿@model ADHUNIK_BARI.ViewModels.HomePageViewModel
+@model ADHUNIK_BARI.ViewModels.HomePageViewModel
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Connected apartment living";
+    ViewData["BodyClass"] = "ab-home-page";
 }
 
-<section class="hero-section">
-
-    <div class="hero-content">
-
-        <span class="hero-badge">
-            Smart Apartment Management
-        </span>
-
-
-        <h1>
-            Live Smarter.
-            <br>
-            Manage Better.
-        </h1>
-
-
-        <p>
-            ADHUNIK BARI connects residents,
-            managers and communities into one
-            intelligent platform.
-        </p>
-
-
-        <div class="hero-buttons">
-
-            <a class="primary-btn"
-               href="/Account/Login">
-                Get Started
-            </a>
-
-
-            <a class="secondary-btn"
-               href="#features">
-                Explore Features
-            </a>
-
+<section class="ab-hero" aria-labelledby="hero-title" data-hero>
+    <div class="ab-hero-image" aria-hidden="true"></div>
+    <div class="ab-hero-wash" aria-hidden="true"></div>
+    <div class="ab-orb ab-orb-one" aria-hidden="true"></div>
+    <div class="ab-orb ab-orb-two" aria-hidden="true"></div>
+    <div class="container ab-hero-grid">
+        <div class="ab-hero-copy" data-reveal>
+            <div class="ab-eyebrow ab-eyebrow-light"><span></span> Built for the rhythm of modern communities</div>
+            <h1 id="hero-title">The operating system for <em>better living.</em></h1>
+            <p>One refined space for homes, people, payments and everyday requests—so residents feel cared for and managers stay effortlessly in control.</p>
+            <div class="ab-hero-actions">
+                <a class="ab-button ab-button-primary" asp-controller="Account" asp-action="Login">Enter your portal <i class="fa-solid fa-arrow-right"></i></a>
+                <a class="ab-button ab-button-ghost" asp-controller="Property" asp-action="Index"><i class="fa-solid fa-location-dot"></i> Discover a home</a>
+            </div>
+            <div class="ab-trust-row" aria-label="Platform highlights">
+                <span><i class="fa-solid fa-shield-halved"></i> Role-based access</span>
+                <span><i class="fa-solid fa-bolt"></i> Real-time visibility</span>
+                <span><i class="fa-solid fa-mobile-screen"></i> Mobile ready</span>
+            </div>
         </div>
 
-    </div>
-
-
-
- <div class="hero-visual">
-
-
-<div class="hero-feature-card">
-
-
-    <!-- Tabs -->
-    <div class="feature-tabs">
-
-
-        <button class="feature-tab active"
-        onmouseenter="changeFeature('flat',this)"
-        onclick="changeFeature('flat',this)">
-
-            🏠 Flat Management
-
-        </button>
-
-
-
-        <button class="feature-tab"
-        onmouseenter="changeFeature('notice',this)"
-        onclick="changeFeature('notice',this)">
-
-            📢 Smart Notices
-
-        </button>
-
-
-
-        <button class="feature-tab"
-        onmouseenter="changeFeature('billing',this)"
-        onclick="changeFeature('billing',this)">
-
-            💳 Digital Billing
-
-        </button>
-
-
-    </div>
-
-
-
-
-    <!-- Dynamic Content -->
-
-    <div class="feature-content"
-         id="featureCard">
-
-
-        <div class="feature-icon"
-             id="featureIcon">
-
-            🏠
-
+        <div class="ab-hero-console" data-tilt data-reveal>
+            <div class="ab-console-top">
+                <div><span class="ab-live-dot"></span><small>Community pulse</small></div>
+                <span class="ab-console-date">Today</span>
+            </div>
+            <div class="ab-console-welcome"><span>Good evening</span><strong>Your building is running smoothly.</strong></div>
+            <div class="ab-console-metrics">
+                <div class="ab-metric-card ab-metric-featured"><span>Occupancy overview</span><strong>Connected</strong><div class="ab-mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+                <div class="ab-metric-card"><span>Open requests</span><strong>03</strong><small><i class="fa-solid fa-arrow-trend-down"></i> Organised by priority</small></div>
+            </div>
+            <div class="ab-console-list">
+                <div class="ab-console-list-head"><strong>Live activity</strong><span>View all</span></div>
+                <div class="ab-activity"><i class="fa-solid fa-file-invoice-dollar"></i><div><strong>Monthly invoice cycle</strong><span>Statements are ready to review</span></div><em>Now</em></div>
+                <div class="ab-activity"><i class="fa-solid fa-screwdriver-wrench"></i><div><strong>Service request updated</strong><span>Plumber visit has been scheduled</span></div><em>12m</em></div>
+                <div class="ab-activity"><i class="fa-solid fa-bullhorn"></i><div><strong>Community notice</strong><span>Lift maintenance window published</span></div><em>1h</em></div>
+            </div>
+            <div class="ab-console-shine" aria-hidden="true"></div>
         </div>
-
-
-
-        <h3 id="featureTitle">
-
-            Flat Management
-
-        </h3>
-
-
-
-        <p id="featureDescription">
-
-            Manage flats, residents and communities from one powerful management platform.
-
-        </p>
-
-
     </div>
-
-
-</div>
-
-
-</div>
-
-
+    <a class="ab-scroll-cue" href="#features"><span>Explore the platform</span><i class="fa-solid fa-arrow-down"></i></a>
 </section>
 
-<section class="home-marketplace-section">
-    <div class="container py-5">
-        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
-            <div>
-                <div class="property-eyebrow"><i class="fa-solid fa-building-circle-check me-2"></i>Find your next home</div>
-                <h2 class="fw-bold mb-1">Available Flats — To-Let &amp; For Sale</h2>
-                <p class="text-muted mb-0">Explore the latest published properties in the ADHUNIK BARI community.</p>
-            </div>
-            <a asp-controller="Property" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">View all properties <i class="fa-solid fa-arrow-right ms-1"></i></a>
-        </div>
+<section class="ab-signal-strip" aria-label="Platform coverage">
+    <div class="container ab-signal-grid">
+        <div><span>01</span><strong>Manage</strong><small>Flats & residents</small></div>
+        <div><span>02</span><strong>Connect</strong><small>Notices & requests</small></div>
+        <div><span>03</span><strong>Transact</strong><small>Billing & payments</small></div>
+        <div><span>04</span><strong>Discover</strong><small>To-let & sale</small></div>
+    </div>
+</section>
 
+<section class="ab-section ab-platform" id="features">
+    <div class="container">
+        <div class="ab-section-heading" data-reveal>
+            <div><div class="ab-eyebrow"><span></span> One building. One clear view.</div><h2>Everything important, beautifully organised.</h2></div>
+            <p>Designed around the real moments of apartment living—not around software menus.</p>
+        </div>
+        <div class="ab-bento-grid">
+            <article class="ab-bento ab-bento-large ab-bento-dark" data-reveal>
+                <div class="ab-bento-icon"><i class="fa-solid fa-building-user"></i></div>
+                <span>Building intelligence</span><h3>Know what needs attention before it becomes noise.</h3>
+                <p>See occupancy, assignments, requests and community activity from a single operational view.</p>
+                <div class="ab-radar-card" aria-hidden="true"><div class="ab-radar-ring"></div><i class="ab-radar-node n1"></i><i class="ab-radar-node n2"></i><i class="ab-radar-node n3"></i><strong>All systems<br />connected</strong></div>
+            </article>
+            <article class="ab-bento ab-bento-warm" data-reveal>
+                <div class="ab-bento-icon"><i class="fa-solid fa-receipt"></i></div><span>Digital finance</span><h3>Bills that make sense at a glance.</h3><p>Create, follow and pay community charges with a clear record at every step.</p>
+                <div class="ab-invoice-chip"><i class="fa-solid fa-circle-check"></i><div><small>Payment status</small><strong>Up to date</strong></div></div>
+            </article>
+            <article class="ab-bento ab-bento-light" data-reveal>
+                <div class="ab-bento-icon"><i class="fa-regular fa-comments"></i></div><span>Resident care</span><h3>Turn complaints into calm, trackable conversations.</h3><p>Residents always know what is happening and managers retain a clean service trail.</p>
+                <div class="ab-chat-preview"><div class="ab-chat-avatar">AB</div><div><strong>Request acknowledged</strong><span>We’ll keep you updated here.</span></div><i class="fa-solid fa-check-double"></i></div>
+            </article>
+            <article class="ab-bento ab-bento-image" data-reveal>
+                <div class="ab-bento-photo"></div><div class="ab-bento-image-copy"><span>Property marketplace</span><h3>Find a home within a community you can trust.</h3><a asp-controller="Property" asp-action="Index">Browse available homes <i class="fa-solid fa-arrow-right"></i></a></div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="ab-section ab-audience-section">
+    <div class="container ab-audience-grid">
+        <div class="ab-audience-copy" data-reveal>
+            <div class="ab-eyebrow"><span></span> Designed around people</div>
+            <h2>One community.<br /><em>Two focused experiences.</em></h2>
+            <p>Every role sees the information and actions that matter—without the clutter that does not.</p>
+            <div class="ab-audience-switch" role="tablist" aria-label="Choose a platform view">
+                <button class="active" type="button" role="tab" aria-selected="true" data-audience="manager">For managers</button>
+                <button type="button" role="tab" aria-selected="false" data-audience="resident">For residents</button>
+            </div>
+        </div>
+        <div class="ab-audience-stage" data-reveal>
+            <div class="ab-audience-panel active" data-audience-panel="manager">
+                <div class="ab-panel-label"><i class="fa-solid fa-chart-line"></i> Manager workspace</div><h3>Run the building with confidence.</h3><p>Coordinate occupancy, invoices, notices, complaints and listings from one composed workspace.</p>
+                <ul><li><i class="fa-solid fa-check"></i> Clear operational overview</li><li><i class="fa-solid fa-check"></i> Faster service coordination</li><li><i class="fa-solid fa-check"></i> Accountable financial records</li></ul>
+            </div>
+            <div class="ab-audience-panel" data-audience-panel="resident" hidden>
+                <div class="ab-panel-label"><i class="fa-solid fa-house-heart"></i> Resident space</div><h3>Your home, quietly under control.</h3><p>View bills, pay securely, follow notices and raise maintenance requests without chasing anyone.</p>
+                <ul><li><i class="fa-solid fa-check"></i> Home details in one place</li><li><i class="fa-solid fa-check"></i> Transparent payment history</li><li><i class="fa-solid fa-check"></i> Updates that never get lost</li></ul>
+            </div>
+            <div class="ab-stage-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>
+    </div>
+</section>
+
+<section class="ab-section ab-marketplace" aria-labelledby="marketplace-heading">
+    <div class="container">
+        <div class="ab-section-heading" data-reveal>
+            <div><div class="ab-eyebrow"><span></span> Places to call home</div><h2 id="marketplace-heading">Fresh from the marketplace.</h2></div>
+            <a class="ab-text-link ab-text-link-dark" asp-controller="Property" asp-action="Index">Explore every listing <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
         @if (Model.LatestPropertyListings.Count > 0)
         {
-            <div class="public-property-grid home-property-grid">
-                @foreach (var listing in Model.LatestPropertyListings)
-                {
-                    <partial name="_PublicPropertyCard" model="listing" />
-                }
+            <div class="public-property-grid home-property-grid ab-property-grid" data-reveal>
+                @foreach (var listing in Model.LatestPropertyListings) { <partial name="_PublicPropertyCard" model="listing" /> }
             </div>
         }
         else
         {
-            <div class="home-marketplace-empty rounded-4 p-4 p-md-5 text-center">
-                <i class="fa-solid fa-house-circle-check"></i>
-                <p class="mb-0 mt-2 text-muted">New To-Let and For-Sale properties will appear here as they are published.</p>
-            </div>
+            <div class="ab-empty-state" data-reveal><span><i class="fa-solid fa-house-chimney"></i></span><div><h3>The next home is being prepared.</h3><p>New to-let and for-sale properties will appear here as soon as they are published.</p></div><a class="ab-button ab-button-dark" asp-controller="Property" asp-action="Index">Open marketplace</a></div>
         }
     </div>
 </section>
 
-
-
-<section id="features"
-         class="features-section">
-
-
-<h2>
-Smart Features For Modern Communities
-</h2>
-
-
-<div class="feature-grid">
-
-
-<div class="feature-card">
-
-<div class="icon">
-🏠
-</div>
-
-<h3>
-Flat Management
-</h3>
-
-<p>
-Manage flats, residents and assignments easily.
-</p>
-
-</div>
-
-
-
-<div class="feature-card">
-
-<div class="icon">
-💳
-</div>
-
-<h3>
-Digital Billing
-</h3>
-
-<p>
-Simplify apartment payment management.
-</p>
-
-</div>
-
-
-
-<div class="feature-card">
-
-<div class="icon">
-📢
-</div>
-
-<h3>
-Smart Notices
-</h3>
-
-<p>
-Communicate instantly with residents.
-</p>
-
-</div>
-
-
-</div>
-
+<section class="ab-section ab-process" id="how-it-works">
+    <div class="container">
+        <div class="ab-process-intro" data-reveal><div class="ab-eyebrow ab-eyebrow-light"><span></span> Less friction, every day</div><h2>Complex building operations, made to feel simple.</h2></div>
+        <div class="ab-process-steps">
+            <article data-reveal><span>01</span><i class="fa-solid fa-door-open"></i><h3>Enter your space</h3><p>Secure role-based access opens the right experience for every person.</p></article>
+            <article data-reveal><span>02</span><i class="fa-solid fa-compass"></i><h3>See what matters</h3><p>Important updates, balances and actions are surfaced without searching.</p></article>
+            <article data-reveal><span>03</span><i class="fa-solid fa-wand-magic-sparkles"></i><h3>Move life forward</h3><p>Resolve, communicate, pay and discover—with a clear record behind it.</p></article>
+        </div>
+        <div class="ab-home-cta" data-reveal><div><span>THE MODERN HOME, CONNECTED</span><h2>Make everyday living feel a little more effortless.</h2></div><a class="ab-button ab-button-primary" asp-controller="Account" asp-action="Login">Open ADHUNIK BARI <i class="fa-solid fa-arrow-right"></i></a></div>
+    </div>
 </section>

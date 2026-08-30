@@ -23,6 +23,20 @@ namespace ADHUNIK_BARI.Controllers
             PropertyListingStatuses.SaleReserved
         };
 
+        private static readonly string[] ManagerActiveStatuses =
+        {
+            PropertyListingStatuses.Draft,
+            PropertyListingStatuses.Published
+        };
+
+        private static readonly string[] ManagerReservedOrCompletedStatuses =
+        {
+            PropertyListingStatuses.CheckoutReserved,
+            PropertyListingStatuses.SaleReserved,
+            PropertyListingStatuses.Rented,
+            PropertyListingStatuses.Closed
+        };
+
         private static readonly IReadOnlyDictionary<string, string[]> AllowedContentTypes =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
@@ -50,16 +64,59 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? section)
         {
-            var listings = await dbContext.PropertyListings
+            var selectedSection = NormalizeManagerSection(section);
+
+            var statusCounts = await dbContext.PropertyListings
+                .AsNoTracking()
+                .GroupBy(listing => listing.ListingStatus)
+                .Select(group => new
+                {
+                    Status = group.Key,
+                    Count = group.Count()
+                })
+                .ToDictionaryAsync(item => item.Status, item => item.Count);
+
+            var query = dbContext.PropertyListings
                 .Include(listing => listing.Flat)
                 .Include(listing => listing.Applications)
                 .AsNoTracking()
-                .OrderByDescending(listing => listing.CreatedAt)
+                .AsQueryable();
+
+            query = selectedSection switch
+            {
+                "reserved" => query.Where(listing =>
+                    ManagerReservedOrCompletedStatuses.Contains(listing.ListingStatus)),
+                "archived" => query.Where(listing =>
+                    listing.ListingStatus == PropertyListingStatuses.Archived),
+                "all" => query,
+                _ => query.Where(listing =>
+                    ManagerActiveStatuses.Contains(listing.ListingStatus))
+            };
+
+            var listings = await query
+                .OrderByDescending(listing => listing.UpdatedAt ?? listing.CreatedAt)
                 .ToListAsync();
 
-            return View(listings);
+            int CountFor(string status) => statusCounts.GetValueOrDefault(status);
+
+            var publishedCount = CountFor(PropertyListingStatuses.Published);
+            var draftCount = CountFor(PropertyListingStatuses.Draft);
+            var reservedOrCompletedCount = ManagerReservedOrCompletedStatuses
+                .Sum(CountFor);
+
+            return View(new ManagerPropertyListingsViewModel
+            {
+                SelectedSection = selectedSection,
+                Listings = listings,
+                TotalCount = statusCounts.Values.Sum(),
+                ActiveCount = publishedCount + draftCount,
+                PublishedCount = publishedCount,
+                DraftCount = draftCount,
+                ReservedOrCompletedCount = reservedOrCompletedCount,
+                ArchivedCount = CountFor(PropertyListingStatuses.Archived)
+            });
         }
 
 
@@ -654,6 +711,17 @@ namespace ADHUNIK_BARI.Controllers
         private static string? NormalizeOptional(string? value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
+        private static string NormalizeManagerSection(string? section)
+        {
+            return section?.Trim().ToLowerInvariant() switch
+            {
+                "reserved" => "reserved",
+                "archived" => "archived",
+                "all" => "all",
+                _ => "active"
+            };
         }
     }
 }

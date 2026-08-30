@@ -1,25 +1,11 @@
 @model ADHUNIK_BARI.ViewModels.MyComplaintsViewModel
-@{
-    ViewData["Title"] = "My Complaints";
-}
-
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div><h1 class="mb-1">My Complaints</h1><p class="text-muted mb-0">Track issues submitted for your assigned flat.</p></div>
-        <a asp-action="SubmitComplaint" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>New Complaint</a>
-    </div>
-    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
-    @if (TempData["Error"] != null) { <div class="alert alert-warning">@TempData["Error"]</div> }
-    @if (Model.FlatNumber != null) { <div class="small text-muted mb-3"><i class="fa-solid fa-house me-2"></i>Assigned flat: <strong>@Model.FlatNumber</strong></div> }
-    <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table align-middle mb-0">
-        <thead><tr><th>Complaint</th><th>Description</th><th>Status</th><th>Submitted</th><th>Attachment</th></tr></thead>
-        <tbody>
-        @foreach (var complaint in Model.Complaints)
-        {
-            var statusClass = complaint.ComplaintStatus switch { "Solved" => "text-bg-success", "In Progress" => "text-bg-info", _ => "text-bg-warning" };
-            <tr><td><span class="fw-semibold">@complaint.Category</span></td><td class="text-break" style="min-width:240px;max-width:420px;">@complaint.Description</td><td><span class="badge @statusClass">@complaint.ComplaintStatus</span>@if (!string.IsNullOrWhiteSpace(complaint.ManagerNote)) { <div class="small text-muted mt-1">Note: @complaint.ManagerNote</div> }</td><td>@complaint.CreatedAt.ToString("dd MMM yyyy")</td><td>@if (!string.IsNullOrWhiteSpace(complaint.ImagePath)) { <a href="@complaint.ImagePath" target="_blank" rel="noopener">View image</a> } else { <span class="text-muted">None</span> }</td></tr>
-        }
-        @if (!Model.Complaints.Any()) { <tr><td colspan="5" class="text-center text-muted py-5">No complaints found for your assigned flat.</td></tr> }
-        </tbody>
-    </table></div></div>
-</div>
+@{ ViewData["Title"] = "My requests"; var open = Model.Complaints.Count(c => c.ComplaintStatus != "Solved"); }
+<div class="ab-app-page">
+<header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Resident care</div><h1>Your service <em>requests.</em></h1><p>Track every issue and read the latest response from management.</p></div><a asp-action="SubmitComplaint" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>New request</a></header>
+@if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> } @if (TempData["Error"] != null) { <div class="alert alert-warning">@TempData["Error"]</div> }
+<section class="ab-stat-strip"><article class="ab-stat-chip"><span><i class="fa-solid fa-inbox"></i></span><div><strong>@Model.Complaints.Count()</strong><small>Total requests</small></div></article><article class="ab-stat-chip"><span><i class="fa-solid fa-hourglass-half"></i></span><div><strong>@open</strong><small>Currently open</small></div></article><article class="ab-stat-chip"><span><i class="fa-solid fa-house"></i></span><div><strong>@(Model.FlatNumber ?? "—")</strong><small>Assigned flat</small></div></article></section>
+<section class="ab-panel ab-data-panel"><div class="ab-panel-head"><div class="ab-table-title"><span><i class="fa-solid fa-clipboard-list"></i></span><div><div class="ab-panel-kicker">REQUEST HISTORY</div><h2>Your reported issues</h2></div></div><div class="ab-panel-status"><i></i>Updated</div></div>
+@if (Model.Complaints.Any()) { <div class="table-responsive"><table class="table ab-app-table align-middle"><thead><tr><th>Category</th><th>Description</th><th>Status & response</th><th>Submitted</th><th>File</th></tr></thead><tbody>
+@foreach (var complaint in Model.Complaints) { var statusClass = complaint.ComplaintStatus switch { "Solved" => "ab-status-success", "In Progress" => "ab-status-info", _ => "ab-status-warning" }; <tr><td><strong>@complaint.Category</strong></td><td class="text-break">@complaint.Description</td><td><span class="ab-status @statusClass"><i></i>@complaint.ComplaintStatus</span>@if (!string.IsNullOrWhiteSpace(complaint.ManagerNote)) { <small class="ab-table-sub mt-1">Manager: @complaint.ManagerNote</small> }</td><td>@complaint.CreatedAt.ToString("dd MMM yyyy")</td><td>@if (!string.IsNullOrWhiteSpace(complaint.ImagePath)) { <a href="@complaint.ImagePath" target="_blank" rel="noopener" class="ab-icon-btn" aria-label="View attachment"><i class="fa-solid fa-image"></i></a> } else { <span class="ab-table-sub">None</span> }</td></tr> }
+</tbody></table></div> } else { <div class="ab-empty-state-app"><i class="fa-solid fa-circle-check"></i><h2>No service requests yet</h2><p>When something needs attention, send the management team a detailed request.</p><a asp-action="SubmitComplaint" class="ab-app-btn ab-app-btn-primary">Create request</a></div> }
+</section></div>

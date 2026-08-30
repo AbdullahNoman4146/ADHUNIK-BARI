@@ -23,7 +23,7 @@
             @if (!Model.HasBills && !Model.HasPaymentHistory)
             {
                 <div class="card shadow-sm border-0 rounded-4 p-5 text-center bg-white my-4">
-                    <div class="mb-3 text-success" style="font-size: 3rem;">
+                    <div class="mb-3 text-success ab-icon-display">
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <h3 class="fw-bold">All Cleared!</h3>
@@ -37,21 +37,21 @@
                     <div class="card-body p-4">
                         <div class="row align-items-center g-3">
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Resident Name</small>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Resident Name</small>
                                 <strong class="fs-6 text-dark">@Model.ResidentName</strong>
                             </div>
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Apartment Unit</small>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Apartment Unit</small>
                                 <strong class="fs-6 text-primary">Flat @Model.FlatNumber</strong>
                             </div>
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Resident Type</small>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Resident Type</small>
                                 <span class="badge @(Model.ResidentType == "Tenant" ? "bg-info text-dark" : "bg-secondary")">
                                     @Model.ResidentType
                                 </span>
                             </div>
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Total Outstanding</small>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Total Outstanding</small>
                                 <strong class="fs-5 text-danger">৳@Model.TotalOutstanding.ToString("N2")</strong>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                                         <table class="table table-hover align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width: 50px;" class="text-center">
+                                                    <th class="text-center ab-col-check">
                                                         <input type="checkbox" class="form-check-input bill-select-all" data-bill-id="@bill.BillId" title="Select all unpaid items">
                                                     </th>
                                                     <th>Charge Item</th>
@@ -267,10 +267,10 @@
                     <!-- Stripe Card Element -->
                     <div class="mb-3">
                         <label for="cardElement" class="form-label fw-bold small">Card Information (Powered by Stripe)</label>
-                        <div id="cardElement" class="form-control p-3" style="min-height: 48px; border: 1px solid #ced4da; border-radius: 8px; background: #fff;">
+                        <div id="cardElement" class="form-control p-3 ab-payment-element">
                             <!-- Stripe Card Element will be inserted here -->
                         </div>
-                        <div id="cardErrors" class="alert alert-danger mt-2 py-2 small" style="display: none;"></div>
+                        <div id="cardErrors" class="alert alert-danger mt-2 py-2 small ab-hidden"></div>
                     </div>
 
                     <!-- Stripe Test Card Helper Info -->
@@ -287,7 +287,7 @@
                     </div>
 
                     <!-- Payment Processing Message -->
-                    <div id="paymentProcessing" class="alert alert-warning py-2 small" style="display: none;">
+                    <div id="paymentProcessing" class="alert alert-warning py-2 small ab-hidden">
                         <i class="fa-solid fa-circle-notch fa-spin me-2"></i>
                         Processing your payment securely with Stripe, please wait...
                     </div>

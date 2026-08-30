@@ -1,87 +1,12 @@
-﻿@model ADHUNIK_BARI.Models.ParkingSpot
-
-
-
-<div class="container mt-4">
-
-
-<h2>
-Assign Parking Spot
-</h2>
-
-
-
-<div class="card p-4">
-
-
-<h5>
-
-Parking Spot:
-@Model.SpotNumber
-
-</h5>
-
-
-
-<form asp-action="AssignParking"
-      method="post">
-
-
-
-<input type="hidden"
-       name="ParkingSpotId"
-       value="@Model.ParkingSpotId" />
-
-
-
-<div class="mb-3">
-
-
-<label>
-Select Flat
-</label>
-
-
-<select name="FlatId"
-        class="form-control">
-
-
-<option>
-Select Flat
-</option>
-
-
-@foreach(var flat in ViewBag.Flats)
-{
-
-<option value="@flat.FlatId">
-
-@flat.FlatNumber
-
-</option>
-
-}
-
-
-</select>
-
-
-</div>
-
-
-
-
-<button class="btn btn-primary">
-
-Assign Parking
-
-</button>
-
-
-</form>
-
-
-</div>
-
-
+@model ADHUNIK_BARI.Models.ParkingSpot
+@{ ViewData["Title"] = "Assign parking"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Space @Model.SpotNumber</div><h1>Assign parking <em>with confidence.</em></h1><p>Connect this available space to an apartment in the building.</p></div></header>
+    <section class="ab-panel ab-form-shell">
+        <aside class="ab-form-aside"><i class="fa-solid fa-car-side"></i><small>@(Model.ParkingType ?? "Parking") · ৳@Model.ParkingFee.ToString("N0")/month</small><h2>One space, one clear assignment.</h2><p>The selected apartment will appear in the parking directory immediately after confirmation.</p></aside>
+        <form asp-action="AssignParking" method="post" class="ab-form-body"><input type="hidden" name="ParkingSpotId" value="@Model.ParkingSpotId" /><div class="ab-field-grid">
+            <div class="ab-field-span-2"><label for="FlatId" class="form-label">Select flat</label><select id="FlatId" name="FlatId" class="form-select" required><option value="">Choose an apartment</option>@foreach (var flat in ViewBag.Flats) { <option value="@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber</option> }</select></div>
+            <div class="ab-field-span-2 ab-field-note"><i class="fa-solid fa-shield-halved"></i><span>Only one active flat assignment is stored for this parking space.</span></div>
+        </div><div class="ab-form-actions"><a asp-action="Parking" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-link"></i>Confirm assignment</button></div></form>
+    </section>
 </div>

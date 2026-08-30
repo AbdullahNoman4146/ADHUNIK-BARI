@@ -1,183 +1,22 @@
-﻿@model IEnumerable<ADHUNIK_BARI.Models.ParkingSpot>
-
-
-@{
-    ViewData["Title"] = "Parking Management";
-}
-
-
-<div class="container mt-4">
-
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-
-
-        <h2>
-            <i class="fa-solid fa-square-parking"></i>
-            Parking Management
-        </h2>
-
-
-        <a asp-action="CreateParking"
-           class="btn btn-primary">
-
-            <i class="fa fa-plus"></i>
-            Create Parking Spot
-
-        </a>
-
-
-    </div>
-
-
-
-
-    <table class="table table-bordered shadow">
-
-
-        <thead class="table-dark">
-
-
-            <tr>
-
-                <th>
-                    Spot Number
-                </th>
-
-
-                <th>
-                    Type
-                </th>
-
-
-                <th>
-                    Monthly Fee
-                </th>
-
-
-                <th>
-                    Status
-                </th>
-
-
-                <th>
-                    Assigned Flat
-                </th>
-
-
-                <th>
-                    Action
-                </th>
-
-
-            </tr>
-
-
-        </thead>
-
-
-
-        <tbody>
-
-
-
-        @foreach(var parking in Model)
-        {
-
-            <tr>
-
-
-                <td>
-                    @parking.SpotNumber
-                </td>
-
-
-                <td>
-                    @parking.ParkingType
-                </td>
-
-
-                <td>
-                    ৳ @parking.ParkingFee
-                </td>
-
-
-                <td>
-
-
-                    @if(parking.IsAvailable)
-                    {
-
-                        <span class="badge bg-success">
-                            Available
-                        </span>
-
-                    }
-                    else
-                    {
-
-                        <span class="badge bg-danger">
-                            Assigned
-                        </span>
-
-                    }
-
-
-                </td>
-
-
-                <td>
-
-
-                    @if(parking.Flat != null)
-                    {
-
-                        @parking.Flat.FlatNumber
-
-                    }
-                    else
-                    {
-
-                        <span>
-                            Not Assigned
-                        </span>
-
-                    }
-
-
-                </td>
-
-
-
-                <td>
-
-
-                    @if(parking.Flat == null)
-                    {
-
-                        <a asp-action="AssignParking"
-                           asp-route-id="@parking.ParkingSpotId"
-                           class="btn btn-warning btn-sm">
-
-                            Assign
-
-                        </a>
-
-                    }
-
-
-                </td>
-
-
-            </tr>
-
-        }
-
-
-        </tbody>
-
-
-    </table>
-
-
+@model IEnumerable<ADHUNIK_BARI.Models.ParkingSpot>
+@{ ViewData["Title"] = "Parking"; var total = Model.Count(); var available = Model.Count(p => p.IsAvailable); var assigned = total - available; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact">
+        <div><div class="ab-page-kicker"><span></span>Mobility operations</div><h1>Parking, <em>perfectly allocated.</em></h1><p>Manage every vehicle space and connect available parking to the right apartment.</p></div>
+        <a asp-action="CreateParking" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Create parking spot</a>
+    </header>
+    @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> }
+    <section class="ab-stat-strip" aria-label="Parking summary">
+        <article class="ab-stat-chip"><span><i class="fa-solid fa-square-parking"></i></span><div><strong>@total</strong><small>Total spaces</small></div></article>
+        <article class="ab-stat-chip"><span><i class="fa-solid fa-circle-check"></i></span><div><strong>@available</strong><small>Available now</small></div></article>
+        <article class="ab-stat-chip"><span><i class="fa-solid fa-car-side"></i></span><div><strong>@assigned</strong><small>Assigned spaces</small></div></article>
+    </section>
+    <section class="ab-panel ab-data-panel">
+        <div class="ab-panel-head"><div class="ab-table-title"><span><i class="fa-solid fa-square-parking"></i></span><div><div class="ab-panel-kicker">PARKING INVENTORY</div><h2>Space directory</h2></div></div><div class="ab-panel-status"><i></i>@total records</div></div>
+        @if (Model.Any()) {
+        <div class="table-responsive"><table class="table ab-app-table align-middle"><thead><tr><th>Space</th><th>Vehicle type</th><th>Monthly fee</th><th>Status</th><th>Assigned flat</th><th class="text-end">Action</th></tr></thead><tbody>
+        @foreach (var parking in Model) { <tr><td><div class="ab-unit-name"><span><i class="fa-solid fa-square-parking"></i></span><strong>@parking.SpotNumber</strong></div></td><td><i class="fa-solid @(parking.ParkingType == "Bike" ? "fa-motorcycle" : "fa-car-side") me-2 text-success"></i>@(parking.ParkingType ?? "General")</td><td><strong class="ab-money">৳@parking.ParkingFee.ToString("N0")</strong><small class="ab-table-sub">per month</small></td><td><span class="ab-status @(parking.IsAvailable ? "ab-status-success" : "ab-status-info")"><i></i>@(parking.IsAvailable ? "Available" : "Assigned")</span></td><td>@if (parking.Flat != null) { <span class="ab-unit-pill">@parking.Flat.FlatNumber</span> } else { <span class="ab-table-sub">Not assigned</span> }</td><td class="text-end">@if (parking.IsAvailable) { <a asp-action="AssignParking" asp-route-id="@parking.ParkingSpotId" class="ab-app-btn ab-app-btn-secondary ab-app-btn-small">Assign space<i class="fa-solid fa-arrow-right"></i></a> } else { <span class="ab-status ab-status-neutral"><i></i>In use</span> }</td></tr> }
+        </tbody></table></div>
+        } else { <div class="ab-empty-state-app"><i class="fa-solid fa-square-parking"></i><h2>No parking spaces yet</h2><p>Create the first space, choose its vehicle type, and set the monthly fee.</p><a asp-action="CreateParking" class="ab-app-btn ab-app-btn-primary">Create first space</a></div> }
+    </section>
 </div>

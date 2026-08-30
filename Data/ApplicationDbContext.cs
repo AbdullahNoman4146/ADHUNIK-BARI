@@ -58,6 +58,11 @@ namespace ADHUNIK_BARI.Data
                 b.Property(a => a.ResidentType).HasMaxLength(50);
             });
 
+            builder.Entity<ParkingSpot>(b =>
+            {
+                b.Property(p => p.ParkingFee).HasPrecision(18, 2);
+            });
+
             builder.Entity<Notice>(b =>
             {
                 b.HasKey(n => n.NoticeId);

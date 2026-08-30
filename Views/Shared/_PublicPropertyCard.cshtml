@@ -1,44 +1,19 @@
 @model ADHUNIK_BARI.ViewModels.PublicPropertyListingCardViewModel
 @{
     var isToLet = Model.ListingType == PropertyListingTypes.ToLet;
-    var listingTypeClass = isToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple";
-    var listingTypeLabel = isToLet ? "To-Let" : "For Sale";
-    var listingTypeIcon = isToLet ? "fa-key" : "fa-tag";
+    var listingTypeLabel = isToLet ? "To-let" : "For sale";
 }
-
-<article class="public-property-card">
-    <div class="public-property-card-media">
-        @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
-        {
-            <img src="@Model.CoverImagePath" alt="@Model.Title cover image" loading="lazy" />
-        }
-        else
-        {
-            <div class="public-image-fallback"><i class="fa-solid fa-house-chimney"></i><span>ADHUNIK BARI HOME</span></div>
-        }
-        <span class="badge rounded-pill public-listing-type @listingTypeClass"><i class="fa-solid @listingTypeIcon me-1"></i>@listingTypeLabel</span>
-        <span class="public-available-label"><i class="fa-solid fa-circle-check me-1"></i>Available</span>
-    </div>
-    <div class="public-property-card-body">
-        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-            <div>
-                <h2 class="h5 fw-bold mb-1">@Model.Title</h2>
-                <div class="small text-muted"><i class="fa-solid fa-location-dot me-1"></i>Flat @Model.FlatNumber · Floor @Model.FloorNumber</div>
-            </div>
-            <div class="public-card-price text-end">
-                <strong>৳@Model.Price.ToString("N0")</strong>
-                <span>@(isToLet ? "/ month" : "sale price")</span>
-            </div>
-        </div>
-        <p class="public-card-description">@Model.ShortDescription</p>
-        <div class="public-card-stats">
-            <span><i class="fa-solid fa-bed me-1"></i>@Model.Bedrooms beds</span>
-            <span><i class="fa-solid fa-bath me-1"></i>@Model.Bathrooms baths</span>
-            <span><i class="fa-solid fa-vector-square me-1"></i>@Model.AreaSqFt.ToString("N0") sq ft</span>
-        </div>
-        <div class="public-card-footer">
-            <span class="small text-muted">Advance <strong class="text-dark">৳@Model.AdvanceAmount.ToString("N0")</strong></span>
-            <a asp-controller="Property" asp-action="Details" asp-route-id="@Model.PropertyListingId" class="btn btn-primary btn-sm rounded-pill px-3">View Details <i class="fa-solid fa-arrow-right ms-1"></i></a>
-        </div>
+<article class="public-property-card ab-property-card">
+    <a class="public-property-card-media ab-property-media" asp-controller="Property" asp-action="Details" asp-route-id="@Model.PropertyListingId" aria-label="View @Model.Title">
+        @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath)) { <img src="@Model.CoverImagePath" alt="Exterior or interior view of @Model.Title" loading="lazy" /> }
+        else { <div class="public-image-fallback ab-property-fallback"><i class="fa-solid fa-house-chimney"></i><span>ADHUNIK BARI</span></div> }
+        <span class="ab-listing-type"><i class="fa-solid @(isToLet ? "fa-key" : "fa-tag")"></i>@listingTypeLabel</span>
+        <span class="ab-property-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+    </a>
+    <div class="public-property-card-body ab-property-body">
+        <div class="ab-property-location"><i class="fa-solid fa-location-dot"></i> Flat @Model.FlatNumber · Floor @Model.FloorNumber</div>
+        <h2>@Model.Title</h2>
+        <div class="ab-property-price"><strong>৳@Model.Price.ToString("N0")</strong><span>@(isToLet ? "per month" : "asking price")</span></div>
+        <div class="public-card-stats ab-property-stats"><span><i class="fa-solid fa-bed"></i>@Model.Bedrooms beds</span><span><i class="fa-solid fa-bath"></i>@Model.Bathrooms baths</span><span><i class="fa-solid fa-vector-square"></i>@Model.AreaSqFt.ToString("N0") sq ft</span></div>
     </div>
 </article>
