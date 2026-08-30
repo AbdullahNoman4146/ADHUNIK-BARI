@@ -34,8 +34,14 @@
 }
 
 .property-summary-card strong,
-.property-summary-card span {
+.property-summary-card > div > span {
     display: block;
+}
+
+.property-summary-card > div {
+    align-content: center;
+    display: grid;
+    min-width: 0;
 }
 
 .property-summary-card strong {
@@ -59,6 +65,17 @@
     height: 2.75rem;
     justify-content: center;
     width: 2.75rem;
+}
+
+.property-summary-card .property-summary-icon {
+    display: inline-flex;
+    flex: 0 0 2.75rem;
+}
+
+.property-summary-icon i {
+    line-height: 1;
+    text-align: center;
+    width: 1em;
 }
 
 .property-section-heading {
