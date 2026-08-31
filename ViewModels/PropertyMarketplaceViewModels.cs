@@ -248,5 +248,15 @@ namespace ADHUNIK_BARI.ViewModels
     public class HomePageViewModel
     {
         public IReadOnlyList<PublicPropertyListingCardViewModel> LatestPropertyListings { get; set; } = Array.Empty<PublicPropertyListingCardViewModel>();
+
+        public int AvailableListingCount { get; set; }
+
+        public int ToLetListingCount { get; set; }
+
+        public int ForSaleListingCount { get; set; }
+
+        public decimal? StartingRent { get; set; }
+
+        public decimal? StartingSalePrice { get; set; }
     }
 }

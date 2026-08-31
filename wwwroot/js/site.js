@@ -135,4 +135,112 @@
     };
     noticeType?.addEventListener('change', updateNoticeTargets);
     updateNoticeTargets();
+
+    const cinematicHero = document.querySelector('[data-cinematic-hero]');
+    if (cinematicHero) {
+        const slides = [...cinematicHero.querySelectorAll('[data-story-slide]')];
+        const dots = [...cinematicHero.querySelectorAll('[data-story-dot]')];
+        const back = cinematicHero.querySelector('[data-story-back]');
+        const next = cinematicHero.querySelector('[data-story-next]');
+        const nextLabel = cinematicHero.querySelector('[data-story-next-label]');
+        const currentLabel = cinematicHero.querySelector('[data-story-current]');
+        const progress = cinematicHero.querySelector('[data-story-progress]');
+        const video = cinematicHero.querySelector('[data-hero-video]');
+        const videoToggle = cinematicHero.querySelector('[data-video-toggle]');
+        const videoToggleLabel = cinematicHero.querySelector('[data-video-toggle-label]');
+        let storyIndex = 0;
+
+        const showStory = index => {
+            storyIndex = (index + slides.length) % slides.length;
+            slides.forEach((slide, slideIndex) => {
+                const selected = slideIndex === storyIndex;
+                slide.hidden = !selected;
+                slide.classList.toggle('is-active', selected);
+            });
+            dots.forEach((dot, dotIndex) => {
+                const selected = dotIndex === storyIndex;
+                dot.classList.toggle('is-active', selected);
+                dot.setAttribute('aria-selected', selected.toString());
+            });
+            cinematicHero.dataset.stage = storyIndex.toString();
+            if (currentLabel) currentLabel.textContent = String(storyIndex + 1).padStart(2, '0');
+            if (progress) progress.style.width = `${((storyIndex + 1) / slides.length) * 100}%`;
+            if (back) back.disabled = storyIndex === 0;
+            if (nextLabel) nextLabel.textContent = storyIndex === slides.length - 1 ? 'Start again' : 'Next answer';
+        };
+
+        back?.addEventListener('click', () => showStory(Math.max(0, storyIndex - 1)));
+        next?.addEventListener('click', () => showStory(storyIndex + 1));
+        dots.forEach((dot, index) => dot.addEventListener('click', () => showStory(index)));
+        cinematicHero.addEventListener('keydown', event => {
+            if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+            if (event.key === 'ArrowLeft') { event.preventDefault(); showStory(Math.max(0, storyIndex - 1)); }
+            if (event.key === 'ArrowRight') { event.preventDefault(); showStory(storyIndex + 1); }
+        });
+        const setVideoState = paused => {
+            if (!video || !videoToggle) return;
+            if (paused) video.pause();
+            else video.play().catch(() => cinematicHero.classList.add('is-video-paused'));
+            videoToggle.setAttribute('aria-pressed', paused.toString());
+            videoToggle.setAttribute('aria-label', paused ? 'Play background video' : 'Pause background video');
+            videoToggle.querySelector('i')?.classList.toggle('fa-play', paused);
+            videoToggle.querySelector('i')?.classList.toggle('fa-pause', !paused);
+            if (videoToggleLabel) videoToggleLabel.textContent = paused ? 'Play motion' : 'Pause motion';
+        };
+        videoToggle?.addEventListener('click', () => setVideoState(!video?.paused));
+        setVideoState(prefersReducedMotion);
+        showStory(0);
+    }
+
+    if (!prefersReducedMotion && window.matchMedia('(pointer: fine)').matches) {
+        document.querySelectorAll('[data-spotlight]').forEach(card => {
+            card.addEventListener('pointermove', event => {
+                const bounds = card.getBoundingClientRect();
+                card.style.setProperty('--spot-x', `${event.clientX - bounds.left}px`);
+                card.style.setProperty('--spot-y', `${event.clientY - bounds.top}px`);
+            });
+        });
+    }
+
+    document.querySelectorAll('[data-coverflow]').forEach(coverflow => {
+        const cards = [...coverflow.querySelectorAll('[data-coverflow-card]')];
+        const dots = [...coverflow.querySelectorAll('[data-coverflow-dot]')];
+        const previous = coverflow.querySelector('[data-coverflow-prev]');
+        const next = coverflow.querySelector('[data-coverflow-next]');
+        if (!cards.length) return;
+
+        let currentIndex = 0;
+        let touchStartX = 0;
+        const renderCoverflow = index => {
+            currentIndex = (index + cards.length) % cards.length;
+            cards.forEach((card, cardIndex) => {
+                let offset = cardIndex - currentIndex;
+                if (offset > cards.length / 2) offset -= cards.length;
+                if (offset < -cards.length / 2) offset += cards.length;
+                const position = Math.max(-2, Math.min(2, offset));
+                card.dataset.position = position.toString();
+                card.classList.toggle('is-active', position === 0);
+                card.setAttribute('aria-hidden', (position !== 0).toString());
+                card.querySelectorAll('a, button').forEach(item => { item.tabIndex = position === 0 ? 0 : -1; });
+            });
+            dots.forEach((dot, dotIndex) => {
+                const selected = dotIndex === currentIndex;
+                dot.classList.toggle('is-active', selected);
+                dot.setAttribute('aria-selected', selected.toString());
+            });
+        };
+        previous?.addEventListener('click', () => renderCoverflow(currentIndex - 1));
+        next?.addEventListener('click', () => renderCoverflow(currentIndex + 1));
+        dots.forEach((dot, index) => dot.addEventListener('click', () => renderCoverflow(index)));
+        cards.forEach((card, index) => card.addEventListener('click', event => {
+            if (index === currentIndex || event.target.closest('a')) return;
+            renderCoverflow(index);
+        }));
+        coverflow.addEventListener('touchstart', event => { touchStartX = event.touches[0].clientX; }, { passive: true });
+        coverflow.addEventListener('touchend', event => {
+            const distance = event.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(distance) > 45) renderCoverflow(currentIndex + (distance < 0 ? 1 : -1));
+        }, { passive: true });
+        renderCoverflow(0);
+    });
 })();
