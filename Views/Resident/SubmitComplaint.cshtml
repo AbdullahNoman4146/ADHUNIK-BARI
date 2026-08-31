@@ -1,53 +1,10 @@
 @model ADHUNIK_BARI.ViewModels.SubmitComplaintViewModel
-@{
-    ViewData["Title"] = "Submit Complaint";
-}
-
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="mb-4">
-                <h1 class="mb-1">Submit a Complaint</h1>
-                <p class="text-muted mb-0">Report an issue for your assigned flat.</p>
-            </div>
-            @if (ViewBag.FlatNumber != null)
-            {
-                <div class="alert alert-light border mb-4"><i class="fa-solid fa-house me-2 text-primary"></i>Complaint for <strong>Flat @ViewBag.FlatNumber</strong></div>
-            }
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <form asp-action="SubmitComplaint" method="post" enctype="multipart/form-data">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        <div class="mb-3">
-                            <label asp-for="Category" class="form-label">Category</label>
-                            <select asp-for="Category" class="form-select">
-                                <option value="">-- Select category --</option>
-                                <option>Maintenance</option>
-                                <option>Security</option>
-                                <option>Plumbing</option>
-                                <option>Electrical</option>
-                                <option>Cleanliness</option>
-                                <option>Other</option>
-                            </select>
-                            <span asp-validation-for="Category" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Description" class="form-label">Description</label>
-                            <textarea asp-for="Description" class="form-control" rows="6" placeholder="Describe the issue in detail..."></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
-                        </div>
-                        <div class="mb-4">
-                            <label asp-for="Image" class="form-label">Supporting image <span class="text-muted fw-normal">(optional)</span></label>
-                            <input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-                            <div class="form-text">JPG, JPEG, PNG, or WebP up to 5 MB.</div>
-                            <span asp-validation-for="Image" class="text-danger"></span>
-                        </div>
-                        <a asp-action="MyComplaints" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane me-2"></i>Submit Complaint</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@{ ViewData["Title"] = "New service request"; }
+<div class="ab-app-page"><header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Resident care</div><h1>Tell us what <em>needs attention.</em></h1><p>Submit a detailed request and the management team can start resolving it.</p></div></header>
+<section class="ab-panel ab-form-shell"><aside class="ab-form-aside"><i class="fa-solid fa-screwdriver-wrench"></i><small>@(ViewBag.FlatNumber != null ? $"Flat {ViewBag.FlatNumber}" : "Service desk")</small><h2>A clear report leads to a faster fix.</h2><p>Choose the closest category, describe what happened, and include a photo when it helps explain the issue.</p></aside>
+<form asp-action="SubmitComplaint" method="post" enctype="multipart/form-data" class="ab-form-body"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
+<div class="ab-field-span-2"><label asp-for="Category" class="form-label">Issue category</label><select asp-for="Category" class="form-select"><option value="">Choose the closest category</option><option>Maintenance</option><option>Security</option><option>Plumbing</option><option>Electrical</option><option>Cleanliness</option><option>Other</option></select><span asp-validation-for="Category" class="text-danger small"></span></div>
+<div class="ab-field-span-2"><label asp-for="Description" class="form-label">What happened?</label><textarea asp-for="Description" class="form-control" rows="7" placeholder="Describe the issue, where it is, and how urgent it feels…"></textarea><span asp-validation-for="Description" class="text-danger small"></span></div>
+<div class="ab-field-span-2"><label asp-for="Image" class="form-label">Supporting image <span class="text-muted">· optional</span></label><div class="ab-upload-field"><i class="fa-solid fa-cloud-arrow-up"></i><input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.webp" /><small class="text-muted">JPG, PNG, or WebP · maximum 5 MB</small></div><span asp-validation-for="Image" class="text-danger small"></span></div>
+</div><div class="ab-form-actions"><a asp-action="MyComplaints" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-paper-plane"></i>Submit request</button></div></form></section></div>
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

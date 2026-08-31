@@ -23,6 +23,29 @@ namespace ADHUNIK_BARI.Controllers
             PropertyListingStatuses.SaleReserved
         };
 
+        private static readonly string[] NewListingBlockingStatuses =
+        {
+            PropertyListingStatuses.Draft,
+            PropertyListingStatuses.Published,
+            PropertyListingStatuses.CheckoutReserved,
+            PropertyListingStatuses.Rented,
+            PropertyListingStatuses.SaleReserved
+        };
+
+        private static readonly string[] ManagerActiveStatuses =
+        {
+            PropertyListingStatuses.Draft,
+            PropertyListingStatuses.Published
+        };
+
+        private static readonly string[] ManagerReservedOrCompletedStatuses =
+        {
+            PropertyListingStatuses.CheckoutReserved,
+            PropertyListingStatuses.SaleReserved,
+            PropertyListingStatuses.Rented,
+            PropertyListingStatuses.Closed
+        };
+
         private static readonly IReadOnlyDictionary<string, string[]> AllowedContentTypes =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
@@ -50,16 +73,59 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? section)
         {
-            var listings = await dbContext.PropertyListings
+            var selectedSection = NormalizeManagerSection(section);
+
+            var statusCounts = await dbContext.PropertyListings
+                .AsNoTracking()
+                .GroupBy(listing => listing.ListingStatus)
+                .Select(group => new
+                {
+                    Status = group.Key,
+                    Count = group.Count()
+                })
+                .ToDictionaryAsync(item => item.Status, item => item.Count);
+
+            var query = dbContext.PropertyListings
                 .Include(listing => listing.Flat)
                 .Include(listing => listing.Applications)
                 .AsNoTracking()
-                .OrderByDescending(listing => listing.CreatedAt)
+                .AsQueryable();
+
+            query = selectedSection switch
+            {
+                "reserved" => query.Where(listing =>
+                    ManagerReservedOrCompletedStatuses.Contains(listing.ListingStatus)),
+                "archived" => query.Where(listing =>
+                    listing.ListingStatus == PropertyListingStatuses.Archived),
+                "all" => query,
+                _ => query.Where(listing =>
+                    ManagerActiveStatuses.Contains(listing.ListingStatus))
+            };
+
+            var listings = await query
+                .OrderByDescending(listing => listing.UpdatedAt ?? listing.CreatedAt)
                 .ToListAsync();
 
-            return View(listings);
+            int CountFor(string status) => statusCounts.GetValueOrDefault(status);
+
+            var publishedCount = CountFor(PropertyListingStatuses.Published);
+            var draftCount = CountFor(PropertyListingStatuses.Draft);
+            var reservedOrCompletedCount = ManagerReservedOrCompletedStatuses
+                .Sum(CountFor);
+
+            return View(new ManagerPropertyListingsViewModel
+            {
+                SelectedSection = selectedSection,
+                Listings = listings,
+                TotalCount = statusCounts.Values.Sum(),
+                ActiveCount = publishedCount + draftCount,
+                PublishedCount = publishedCount,
+                DraftCount = draftCount,
+                ReservedOrCompletedCount = reservedOrCompletedCount,
+                ArchivedCount = CountFor(PropertyListingStatuses.Archived)
+            });
         }
 
 
@@ -90,6 +156,24 @@ namespace ADHUNIK_BARI.Controllers
             return View(await PopulateCreateModel(new CreatePropertyListingViewModel()));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> AvailableFlats()
+        {
+            var flats = await GetAvailableFlatsQuery()
+                .OrderBy(flat => flat.FloorNumber)
+                .ThenBy(flat => flat.FlatNumber)
+                .Select(flat => new
+                {
+                    flat.FlatId,
+                    flat.FlatNumber,
+                    flat.FloorNumber,
+                    flat.MonthlyRent
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, flats });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequestSizeLimit(MaximumRequestSize)]
@@ -106,7 +190,7 @@ namespace ADHUNIK_BARI.Controllers
             var flat = await GetAvailableFlat(model.FlatId);
             if (flat == null)
             {
-                ModelState.AddModelError(nameof(model.FlatId), "Select an available and unassigned flat.");
+                ModelState.AddModelError(nameof(model.FlatId), "Select a flat that is available, unassigned, and not tied to another open listing.");
             }
 
             var createdByUserId = userManager.GetUserId(User);
@@ -117,6 +201,11 @@ namespace ADHUNIK_BARI.Controllers
 
             if (!ModelState.IsValid)
             {
+                if (WantsJsonResponse())
+                {
+                    return ValidationJson("Review the highlighted fields and try again.");
+                }
+
                 return View(await PopulateCreateModel(model));
             }
 
@@ -131,7 +220,7 @@ namespace ADHUNIK_BARI.Controllers
                     coverImagePath = await SaveImageAsync(model.CoverImage);
                 }
 
-                dbContext.PropertyListings.Add(new PropertyListing
+                var listing = new PropertyListing
                 {
                     FlatId = flat!.FlatId,
                     ListingType = model.ListingType,
@@ -152,10 +241,26 @@ namespace ADHUNIK_BARI.Controllers
                     ListingStatus = PropertyListingStatuses.Draft,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = createdByUserId
-                });
+                };
+
+                dbContext.PropertyListings.Add(listing);
 
                 await dbContext.SaveChangesAsync();
                 TempData["Success"] = $"Listing for Flat {flat.FlatNumber} was created as a draft.";
+
+                if (WantsJsonResponse())
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        availabilityConfirmed = true,
+                        listingId = listing.PropertyListingId,
+                        flatNumber = flat.FlatNumber,
+                        keepDraftUrl = Url.Action(nameof(Index)),
+                        publishUrl = Url.Action(nameof(Publish), new { id = listing.PropertyListingId })
+                    });
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -164,6 +269,12 @@ namespace ADHUNIK_BARI.Controllers
                 DeleteStoredImage(coverImagePath);
                 logger.LogError(ex, "Error creating a property listing for Flat {FlatId}.", model.FlatId);
                 ModelState.AddModelError(string.Empty, "The listing could not be created. Please try again.");
+
+                if (WantsJsonResponse())
+                {
+                    return ValidationJson("The listing could not be created. Please try again.", StatusCodes.Status500InternalServerError);
+                }
+
                 return View(await PopulateCreateModel(model));
             }
         }
@@ -302,28 +413,57 @@ namespace ADHUNIK_BARI.Controllers
 
             if (listing == null)
             {
+                if (WantsJsonResponse())
+                {
+                    return NotFound(new { success = false, message = "The listing could not be found." });
+                }
+
                 return NotFound();
             }
 
             if (listing.ListingStatus == PropertyListingStatuses.Published)
             {
                 TempData["Success"] = "This listing is already published.";
+
+                if (WantsJsonResponse())
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action(nameof(Index)) });
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
             if (listing.ListingStatus != PropertyListingStatuses.Draft)
             {
                 TempData["Error"] = "Only draft listings can be published.";
+
+                if (WantsJsonResponse())
+                {
+                    return Conflict(new { success = false, message = "Only draft listings can be published." });
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
             await ValidatePublishableListing(listing);
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = string.Join(" ", ModelState.Values
+                var validationMessage = string.Join(" ", ModelState.Values
                     .SelectMany(value => value.Errors)
                     .Select(error => error.ErrorMessage)
                     .Where(message => !string.IsNullOrWhiteSpace(message)));
+                TempData["Error"] = validationMessage;
+
+                if (WantsJsonResponse())
+                {
+                    return UnprocessableEntity(new
+                    {
+                        success = false,
+                        availabilityConfirmed = false,
+                        message = validationMessage
+                    });
+                }
+
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -335,11 +475,31 @@ namespace ADHUNIK_BARI.Controllers
             {
                 await dbContext.SaveChangesAsync();
                 TempData["Success"] = "Listing published successfully.";
+
+                if (WantsJsonResponse())
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Listing published successfully.",
+                        redirectUrl = Url.Action(nameof(Index))
+                    });
+                }
             }
             catch (DbUpdateException ex)
             {
                 logger.LogWarning(ex, "Listing publish conflict for property listing {PropertyListingId}.", id);
                 TempData["Error"] = "The listing could not be published because the flat already has another active listing.";
+
+                if (WantsJsonResponse())
+                {
+                    return Conflict(new
+                    {
+                        success = false,
+                        availabilityConfirmed = false,
+                        message = "The flat was claimed by another listing. Your work remains saved as a draft."
+                    });
+                }
             }
 
             return RedirectToAction(nameof(Index));
@@ -478,26 +638,59 @@ namespace ADHUNIK_BARI.Controllers
 
         private async Task<Flat?> GetAvailableFlat(int flatId)
         {
-            return await dbContext.Flats
-                .Where(flat => flat.FlatId == flatId &&
-                    flat.FlatStatus == "Available" &&
-                    !dbContext.FlatAssignments.Any(assignment =>
-                        assignment.FlatId == flat.FlatId && assignment.IsActive))
+            return await GetAvailableFlatsQuery()
+                .Where(flat => flat.FlatId == flatId)
                 .SingleOrDefaultAsync();
         }
 
         private async Task<CreatePropertyListingViewModel> PopulateCreateModel(CreatePropertyListingViewModel model)
         {
-            model.AvailableFlats = await dbContext.Flats
-                .AsNoTracking()
-                .Where(flat => flat.FlatStatus == "Available" &&
-                    !dbContext.FlatAssignments.Any(assignment =>
-                        assignment.FlatId == flat.FlatId && assignment.IsActive))
+            model.AvailableFlats = await GetAvailableFlatsQuery()
                 .OrderBy(flat => flat.FloorNumber)
                 .ThenBy(flat => flat.FlatNumber)
                 .ToListAsync();
 
             return model;
+        }
+
+        private IQueryable<Flat> GetAvailableFlatsQuery()
+        {
+            return dbContext.Flats
+                .AsNoTracking()
+                .Where(flat => flat.FlatStatus == "Available" &&
+                    !dbContext.FlatAssignments.Any(assignment =>
+                        assignment.FlatId == flat.FlatId && assignment.IsActive) &&
+                    !dbContext.PropertyListings.Any(listing =>
+                        listing.FlatId == flat.FlatId &&
+                        NewListingBlockingStatuses.Contains(listing.ListingStatus)));
+        }
+
+        private bool WantsJsonResponse()
+        {
+            return string.Equals(
+                Request.Headers["X-Requested-With"].ToString(),
+                "XMLHttpRequest",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private ObjectResult ValidationJson(string message, int statusCode = StatusCodes.Status400BadRequest)
+        {
+            var errors = ModelState
+                .Where(entry => entry.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value!.Errors
+                        .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                            ? "The supplied value is invalid."
+                            : error.ErrorMessage)
+                        .ToArray());
+
+            return StatusCode(statusCode, new
+            {
+                success = false,
+                message,
+                errors
+            });
         }
 
         private static EditPropertyListingViewModel ToEditModel(PropertyListing listing)
@@ -654,6 +847,17 @@ namespace ADHUNIK_BARI.Controllers
         private static string? NormalizeOptional(string? value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
+        private static string NormalizeManagerSection(string? section)
+        {
+            return section?.Trim().ToLowerInvariant() switch
+            {
+                "reserved" => "reserved",
+                "archived" => "archived",
+                "all" => "all",
+                _ => "active"
+            };
         }
     }
 }

@@ -1,24 +1,19 @@
 @model ADHUNIK_BARI.Models.Complaint
-@{
-    ViewData["Title"] = "Complaint Details";
-    var updateModel = ViewBag.UpdateModel as ADHUNIK_BARI.ViewModels.UpdateComplaintViewModel;
-    var selectedStatus = updateModel?.ComplaintStatus ?? Model.ComplaintStatus;
-    var selectedNote = updateModel?.ManagerNote ?? Model.ManagerNote;
-}
-<div class="container py-4"><div class="row g-4">
-    <div class="col-lg-7"><div class="card shadow-sm border-0"><div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-start mb-4"><div><h1 class="h3 mb-1">Complaint Details</h1><p class="text-muted mb-0">Complaint #@Model.ComplaintId</p></div><span class="badge @(Model.ComplaintStatus == "Solved" ? "text-bg-success" : Model.ComplaintStatus == "In Progress" ? "text-bg-info" : "text-bg-warning")">@Model.ComplaintStatus</span></div>
-        <dl class="row"><dt class="col-sm-4">Flat</dt><dd class="col-sm-8">@(Model.Flat?.FlatNumber ?? "Unknown")</dd><dt class="col-sm-4">Resident</dt><dd class="col-sm-8">@(Model.User?.FullName ?? "Unknown")</dd><dt class="col-sm-4">Email</dt><dd class="col-sm-8">@(Model.User?.Email ?? "Unknown")</dd><dt class="col-sm-4">Category</dt><dd class="col-sm-8">@Model.Category</dd><dt class="col-sm-4">Created</dt><dd class="col-sm-8">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</dd></dl>
-        <h2 class="h5 mt-4">Description</h2><p class="text-break">@Model.Description</p>
-        @if (!string.IsNullOrWhiteSpace(Model.ImagePath)) { <a href="@Model.ImagePath" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-image me-2"></i>View attachment</a> }
-        @if (Model.ResolvedAt.HasValue) { <div class="alert alert-success mt-4 mb-0">Resolved on @Model.ResolvedAt.Value.ToString("dd MMM yyyy, HH:mm")</div> }
-    </div></div></div>
-    <div class="col-lg-5"><div class="card shadow-sm border-0"><div class="card-body p-4"><h2 class="h4 mb-4">Update Complaint</h2>
-        <form asp-action="UpdateComplaint" method="post"><input type="hidden" name="ComplaintId" value="@Model.ComplaintId" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-            <div class="mb-3"><label class="form-label" for="ComplaintStatus">Status</label><select class="form-select" id="ComplaintStatus" name="ComplaintStatus"><option value="Pending" selected="@(selectedStatus == "Pending" ? "selected" : null)">Pending</option><option value="In Progress" selected="@(selectedStatus == "In Progress" ? "selected" : null)">In Progress</option><option value="Solved" selected="@(selectedStatus == "Solved" ? "selected" : null)">Solved</option></select><div class="form-text">Status must progress from Pending to In Progress to Solved.</div></div>
-            <div class="mb-4"><label class="form-label" for="ManagerNote">Manager note</label><textarea class="form-control" id="ManagerNote" name="ManagerNote" rows="5" maxlength="2000">@selectedNote</textarea></div>
-            <a asp-action="Complaints" class="btn btn-outline-secondary">Back</a> <button type="submit" class="btn btn-primary">Save Update</button>
-        </form>
-    </div></div></div>
-</div></div>
+@{ ViewData["Title"] = "Request details"; var updateModel = ViewBag.UpdateModel as ADHUNIK_BARI.ViewModels.UpdateComplaintViewModel; var selectedStatus = updateModel?.ComplaintStatus ?? Model.ComplaintStatus; var selectedNote = updateModel?.ManagerNote ?? Model.ManagerNote; var statusClass = Model.ComplaintStatus == "Solved" ? "ab-status-success" : Model.ComplaintStatus == "In Progress" ? "ab-status-info" : "ab-status-warning"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Request #@Model.ComplaintId</div><h1>Resolve with <em>clarity.</em></h1><p>Review the resident context, record progress, and leave a useful response.</p></div><a asp-action="Complaints" class="ab-app-btn ab-app-btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back to requests</a></header>
+    <div class="ab-detail-grid">
+        <section class="ab-panel ab-detail-panel"><div class="ab-detail-head"><div><div class="ab-panel-kicker">@Model.Category</div><h2>Resident service request</h2><p>Submitted @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p></div><span class="ab-status @statusClass"><i></i>@Model.ComplaintStatus</span></div>
+            <dl class="ab-meta-grid"><div><dt>Apartment</dt><dd>Flat @(Model.Flat?.FlatNumber ?? "Unknown")</dd></div><div><dt>Resident</dt><dd>@(Model.User?.FullName ?? "Unknown")</dd></div><div><dt>Email</dt><dd>@(Model.User?.Email ?? "Unknown")</dd></div><div><dt>Category</dt><dd>@Model.Category</dd></div></dl>
+            <div class="ab-description-box"><h3>Description</h3><p class="text-break">@Model.Description</p></div>
+            @if (!string.IsNullOrWhiteSpace(Model.ImagePath)) { <a href="@Model.ImagePath" target="_blank" rel="noopener" class="ab-app-btn ab-app-btn-secondary mt-3"><i class="fa-solid fa-image"></i>View attachment</a> }
+            @if (Model.ResolvedAt.HasValue) { <div class="alert alert-success mt-3 mb-0"><i class="fa-solid fa-circle-check me-2"></i>Resolved @Model.ResolvedAt.Value.ToString("dd MMM yyyy, HH:mm")</div> }
+        </section>
+        <section class="ab-panel ab-update-panel"><div class="ab-panel-kicker">WORKFLOW UPDATE</div><h2>Move the request forward</h2><form asp-action="UpdateComplaint" method="post"><input type="hidden" name="ComplaintId" value="@Model.ComplaintId" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3"><label for="ComplaintStatus" class="form-label">Status</label><select id="ComplaintStatus" name="ComplaintStatus" class="form-select"><option value="Pending" selected="@(selectedStatus == "Pending" ? "selected" : null)">Pending</option><option value="In Progress" selected="@(selectedStatus == "In Progress" ? "selected" : null)">In Progress</option><option value="Solved" selected="@(selectedStatus == "Solved" ? "selected" : null)">Solved</option></select><div class="form-text">Move requests from Pending to In Progress, then Solved.</div></div>
+            <div class="mb-3"><label for="ManagerNote" class="form-label">Manager note</label><textarea id="ManagerNote" name="ManagerNote" class="form-control" rows="6" maxlength="2000" placeholder="Share progress or resolution details…">@selectedNote</textarea></div>
+            <button type="submit" class="ab-app-btn ab-app-btn-primary w-100"><i class="fa-solid fa-check"></i>Save update</button>
+        </form></section>
+    </div>
+</div>
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

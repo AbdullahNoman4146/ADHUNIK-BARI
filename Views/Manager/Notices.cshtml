@@ -1,26 +1,9 @@
 @model IEnumerable<ADHUNIK_BARI.Models.Notice>
-@{
-    ViewData["Title"] = "Notice Management";
-}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div><h1 class="mb-1">Notice Management</h1><p class="text-muted mb-0">Publish updates for residents.</p></div>
-        <a asp-action="CreateNotice" class="btn btn-primary">Create Notice</a>
-    </div>
-    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
-    <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table align-middle mb-0">
-        <thead><tr><th>Notice</th><th>Audience</th><th>Published</th><th class="text-end">Actions</th></tr></thead>
-        <tbody>
-        @foreach (var notice in Model)
-        {
-            var audience = notice.NoticeType == "General" ? "Everyone" : $"{notice.Targets.Count} flat(s)";
-            <tr><td><div class="fw-semibold">@notice.Title</div><div class="small text-muted">@notice.Description</div></td>
-                <td><span class="badge @(notice.NoticeType == "General" ? "text-bg-success" : "text-bg-info")">@audience</span></td>
-                <td>@notice.CreatedAt.ToString("dd MMM yyyy")</td>
-                <td class="text-end"><a asp-action="EditNotice" asp-route-id="@notice.NoticeId" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                    <form asp-action="DeleteNotice" asp-route-id="@notice.NoticeId" method="post" class="d-inline"><button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this notice?');">Delete</button></form></td></tr>
-        }
-        @if (!Model.Any()) { <tr><td colspan="4" class="text-center text-muted py-4">No notices have been published.</td></tr> }
-        </tbody>
-    </table></div></div>
+@{ ViewData["Title"] = "Notices"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Community communication</div><h1>Notices with <em>purpose.</em></h1><p>Publish timely updates to the entire property or selected apartments.</p></div><a asp-action="CreateNotice" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Create notice</a></header>
+    @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> }
+    @if (Model.Any()) { <section class="ab-notice-grid">
+    @foreach (var notice in Model) { var audience = notice.NoticeType == "General" ? "Everyone" : $"{notice.Targets.Count} flat(s)"; <article class="ab-notice-card"><div class="ab-notice-card-head"><span class="ab-notice-kind"><i class="fa-solid @(notice.NoticeType == "General" ? "fa-earth-asia" : "fa-house")"></i>@audience</span><time datetime="@notice.CreatedAt.ToString("O")">@notice.CreatedAt.ToString("dd MMM yyyy")</time></div><h2>@notice.Title</h2><p>@notice.Description</p><footer class="ab-notice-card-foot"><span class="ab-notice-audience"><i class="fa-solid fa-paper-plane"></i>Published</span><div class="ab-notice-actions"><a asp-action="EditNotice" asp-route-id="@notice.NoticeId" class="ab-icon-btn" aria-label="Edit @notice.Title"><i class="fa-solid fa-pen"></i></a><form asp-action="DeleteNotice" asp-route-id="@notice.NoticeId" method="post"><button type="submit" class="ab-icon-btn" aria-label="Delete @notice.Title" data-confirm="Delete this notice?"><i class="fa-solid fa-trash"></i></button></form></div></footer></article> }
+    </section> } else { <section class="ab-panel ab-empty-state-app"><i class="fa-solid fa-bullhorn"></i><h2>No notices published yet</h2><p>Share a building update, maintenance reminder, or community announcement.</p><a asp-action="CreateNotice" class="ab-app-btn ab-app-btn-primary">Create first notice</a></section> }
 </div>

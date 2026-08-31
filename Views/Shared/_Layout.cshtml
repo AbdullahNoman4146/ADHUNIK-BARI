@@ -1,71 +1,50 @@
-﻿<!DOCTYPE html>
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var bodyClass = ViewData["BodyClass"]?.ToString() ?? string.Empty;
+    if (isAuthenticated) bodyClass = $"{bodyClass} ab-app-body".Trim();
+}
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>@ViewData["Title"] - ADHUNIK BARI</title>
-
-
+    <meta name="description" content="ADHUNIK BARI brings apartment operations, resident services, billing and property discovery into one connected platform." />
+    <meta name="theme-color" content="#071512" />
+    <title>@ViewData["Title"] · ADHUNIK BARI</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-
-    <link rel="stylesheet" href="~/css/site.css" />
-	<link rel="stylesheet" href="~/css/dashboard.css" />
-	<link rel="stylesheet" href="~/css/animations.css" />
-    <link rel="stylesheet" href="~/css/property.css" />
-
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
+    <link rel="stylesheet" href="~/css/property.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/adhunik-next.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/adhunik-app.css" asp-append-version="true" />
+    @if (ViewData["PageStyle"]?.ToString() == "receipt")
+    {
+        <link rel="stylesheet" href="~/css/receipt.css" asp-append-version="true" />
+    }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
-
-
-<body>
-
-
-    <div class="page-container">
-
-
-        <header>
-
-            @await Html.PartialAsync("_Header")
-
-        </header>
-
-
-
-        <main class="content">
-
-            @RenderBody()
-
-        </main>
-
-
-
-        <footer>
-
-            @await Html.PartialAsync("_Footer")
-
-        </footer>
-
-
-
-    </div>
-
-
-
+<body class="@bodyClass">
+    <a class="ab-skip-link" href="#main-content">Skip to main content</a>
+    @if (isAuthenticated)
+    {
+        <div class="ab-app-shell" data-app-shell>
+            @await Html.PartialAsync("_AppSidebar")
+            <div class="ab-app-overlay" data-sidebar-close aria-hidden="true"></div>
+            <div class="ab-app-workspace">
+                <header>@await Html.PartialAsync("_Header")</header>
+                <main class="content ab-app-content" id="main-content">@RenderBody()</main>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="page-container">
+            <header>@await Html.PartialAsync("_Header")</header>
+            <main class="content" id="main-content">@RenderBody()</main>
+            <footer>@await Html.PartialAsync("_Footer")</footer>
+        </div>
+    }
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/site.js" asp-append-version="true"></script>
-	<script src="~/js/dashboard.js"></script>
-
-
-
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
-
 </html>

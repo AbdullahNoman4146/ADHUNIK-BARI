@@ -1,50 +1,15 @@
 @model ADHUNIK_BARI.ViewModels.CreateFlatViewModel
-@{
-    ViewData["Title"] = "Create Flat";
-}
-
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-7">
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h1 class="h3 mb-4 fw-bold">Create New Flat</h1>
-                    <form asp-action="CreateFlat" method="post">
-                        @Html.AntiForgeryToken()
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
-                        <div class="mb-3">
-                            <label asp-for="FlatNumber" class="form-label fw-semibold">Flat Number / Unit</label>
-                            <input asp-for="FlatNumber" class="form-control" placeholder="e.g. 101, A-1" />
-                            <span asp-validation-for="FlatNumber" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="FloorNumber" class="form-label fw-semibold">Floor Number</label>
-                            <input asp-for="FloorNumber" class="form-control" type="number" min="0" placeholder="e.g. 1" />
-                            <span asp-validation-for="FloorNumber" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-4">
-                            <label asp-for="MonthlyRent" class="form-label fw-semibold">Monthly Rent (৳) <small class="text-muted fw-normal">(Applies to Tenants)</small></label>
-                            <div class="input-group">
-                                <span class="input-group-text">৳</span>
-                                <input asp-for="MonthlyRent" class="form-control" type="number" step="100" placeholder="e.g. 15000" />
-                            </div>
-                            <span asp-validation-for="MonthlyRent" class="text-danger small"></span>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Flats" class="btn btn-outline-secondary px-4">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4 fw-bold">Create Flat</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+@{ ViewData["Title"] = "Create flat"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Inventory setup</div><h1>Add a new <em>flat.</em></h1><p>Define the apartment identity and monthly tenant rate.</p></div></header>
+    <section class="ab-panel ab-form-shell">
+        <aside class="ab-form-aside"><i class="fa-solid fa-building-circle-check"></i><small>Step 01 · Identity</small><h2>A place residents can call home.</h2><p>Use a clear unit label and the actual building floor so notices, billing, and service requests stay accurate.</p></aside>
+        <form asp-action="CreateFlat" method="post" class="ab-form-body"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
+            <div><label asp-for="FlatNumber" class="form-label">Flat number / unit</label><input asp-for="FlatNumber" class="form-control" placeholder="e.g. A-101" autocomplete="off" /><span asp-validation-for="FlatNumber" class="text-danger small"></span></div>
+            <div><label asp-for="FloorNumber" class="form-label">Floor number</label><input asp-for="FloorNumber" class="form-control" type="number" min="0" placeholder="e.g. 1" /><span asp-validation-for="FloorNumber" class="text-danger small"></span></div>
+            <div class="ab-field-span-2"><label asp-for="MonthlyRent" class="form-label">Monthly tenant rent</label><div class="input-group"><span class="input-group-text">৳</span><input asp-for="MonthlyRent" class="form-control" type="number" min="0" step="100" placeholder="e.g. 15000" /></div><span asp-validation-for="MonthlyRent" class="text-danger small"></span></div>
+            <div class="ab-field-span-2 ab-field-note"><i class="fa-solid fa-circle-info"></i><span>The monthly rent is used for tenant bills. Flat owners can have separate charge rules.</span></div>
+        </div><div class="ab-form-actions"><a asp-action="Flats" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Create flat</button></div></form>
+    </section>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

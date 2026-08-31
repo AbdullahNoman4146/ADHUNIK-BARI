@@ -46,6 +46,7 @@ namespace ADHUNIK_BARI.Controllers
 
             if (user != null)
             {
+                ViewBag.ResidentName = user.FullName;
                 ViewBag.RequirePasswordChange = user.TemporaryPasswordStatus;
             }
 

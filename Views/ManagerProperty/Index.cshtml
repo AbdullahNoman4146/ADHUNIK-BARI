@@ -1,6 +1,13 @@
-@model IEnumerable<ADHUNIK_BARI.Models.PropertyListing>
+@model ADHUNIK_BARI.ViewModels.ManagerPropertyListingsViewModel
 @{
     ViewData["Title"] = "Property Marketplace";
+    var sectionTitle = Model.SelectedSection switch
+    {
+        "reserved" => "Reserved / Completed Listings",
+        "archived" => "Archived Listings",
+        "all" => "Complete Listing History",
+        _ => "Active Listing Workspace"
+    };
 }
 
 <div class="property-page container-fluid px-3 px-lg-4 py-4">
@@ -34,23 +41,52 @@
     <div class="property-summary-grid mb-4">
         <div class="property-summary-card">
             <span class="property-summary-icon bg-primary-subtle text-primary"><i class="fa-solid fa-list"></i></span>
-            <div><strong>@Model.Count()</strong><span>Total listings</span></div>
+            <div><strong>@Model.TotalCount</strong><span>Total listings</span></div>
         </div>
         <div class="property-summary-card">
             <span class="property-summary-icon bg-success-subtle text-success"><i class="fa-solid fa-eye"></i></span>
-            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Published)</strong><span>Published</span></div>
+            <div><strong>@Model.PublishedCount</strong><span>Published</span></div>
         </div>
         <div class="property-summary-card">
             <span class="property-summary-icon bg-warning-subtle text-warning"><i class="fa-solid fa-pen-ruler"></i></span>
-            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Draft)</strong><span>Drafts</span></div>
+            <div><strong>@Model.DraftCount</strong><span>Drafts</span></div>
+        </div>
+        <div class="property-summary-card">
+            <span class="property-summary-icon bg-info-subtle text-info"><i class="fa-solid fa-hourglass-half"></i></span>
+            <div><strong>@Model.ReservedOrCompletedCount</strong><span>Reserved / completed</span></div>
         </div>
         <div class="property-summary-card">
             <span class="property-summary-icon bg-secondary-subtle text-secondary"><i class="fa-solid fa-box-archive"></i></span>
-            <div><strong>@Model.Count(item => item.ListingStatus == PropertyListingStatuses.Archived)</strong><span>Archived</span></div>
+            <div><strong>@Model.ArchivedCount</strong><span>Archived</span></div>
         </div>
     </div>
 
-    @if (Model.Any())
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+        <div>
+            <h2 class="h5 fw-bold mb-1">@sectionTitle</h2>
+            <p class="small text-muted mb-0">Reserved, rented, and archived properties are kept outside the active marketplace while their history remains available.</p>
+        </div>
+        <nav class="d-flex flex-wrap gap-2" aria-label="Listing sections">
+            <a asp-action="Index" asp-route-section="active"
+               class="btn btn-sm rounded-pill px-3 @(Model.SelectedSection == "active" ? "btn-primary" : "btn-outline-primary")">
+                Active <span class="badge text-bg-light ms-1">@Model.ActiveCount</span>
+            </a>
+            <a asp-action="Index" asp-route-section="reserved"
+               class="btn btn-sm rounded-pill px-3 @(Model.SelectedSection == "reserved" ? "btn-info" : "btn-outline-info")">
+                Reserved / Completed <span class="badge text-bg-light ms-1">@Model.ReservedOrCompletedCount</span>
+            </a>
+            <a asp-action="Index" asp-route-section="archived"
+               class="btn btn-sm rounded-pill px-3 @(Model.SelectedSection == "archived" ? "btn-secondary" : "btn-outline-secondary")">
+                Archived <span class="badge text-bg-light ms-1">@Model.ArchivedCount</span>
+            </a>
+            <a asp-action="Index" asp-route-section="all"
+               class="btn btn-sm rounded-pill px-3 @(Model.SelectedSection == "all" ? "btn-dark" : "btn-outline-dark")">
+                All History <span class="badge text-bg-light ms-1">@Model.TotalCount</span>
+            </a>
+        </nav>
+    </div>
+
+    @if (Model.Listings.Count > 0)
     {
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="table-responsive">
@@ -67,7 +103,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    @foreach (var listing in Model)
+                    @foreach (var listing in Model.Listings)
                     {
                         var imagePath = listing.CoverImagePath ?? listing.RoomLayoutImagePath;
                         var isPublished = listing.ListingStatus == PropertyListingStatuses.Published;
@@ -75,6 +111,12 @@
                         var listingTypeClass = listing.ListingType == PropertyListingTypes.ToLet ? "bg-primary-subtle text-primary" : "bg-purple-subtle text-purple";
                         var listingTypeIcon = listing.ListingType == PropertyListingTypes.ToLet ? "fa-key" : "fa-tag";
                         var listingTypeLabel = listing.ListingType == PropertyListingTypes.ToLet ? "To-Let" : "For Sale";
+                        var statusLabel = listing.ListingStatus switch
+                        {
+                            PropertyListingStatuses.CheckoutReserved => "Checkout Reserved",
+                            PropertyListingStatuses.SaleReserved => "Sale Reserved",
+                            _ => listing.ListingStatus
+                        };
                         var statusClass = listing.ListingStatus switch
                         {
                             PropertyListingStatuses.Published => "bg-success-subtle text-success",
@@ -111,10 +153,14 @@
                                 </div>
                                 <div class="small text-muted mt-1">@listing.Applications.Count application(s)</div>
                             </td>
-                            <td><span class="badge rounded-pill @statusClass">@listing.ListingStatus</span></td>
+                            <td><span class="badge rounded-pill @statusClass">@statusLabel</span></td>
                             <td>
                                 <div class="small">Created @listing.CreatedAt.ToString("dd MMM yyyy")</div>
                                 <div class="small text-muted">@(listing.PublishedAt.HasValue ? $"Published {listing.PublishedAt.Value:dd MMM yyyy}" : "Not published")</div>
+                                @if (listing.UpdatedAt.HasValue)
+                                {
+                                    <div class="small text-muted">Updated @listing.UpdatedAt.Value.ToString("dd MMM yyyy")</div>
+                                }
                             </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-1 flex-wrap">
@@ -146,7 +192,7 @@
                                     {
                                         <form asp-action="Archive" asp-route-id="@listing.PropertyListingId" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Archive listing" onclick="return confirm('Archive this listing? Its history will be preserved.');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Archive listing" data-confirm="Archive this listing? Its history will be preserved.">
                                                 <i class="fa-solid fa-box-archive"></i>
                                             </button>
                                         </form>
@@ -164,9 +210,20 @@
     {
         <div class="property-empty-state card border-0 shadow-sm rounded-4 text-center p-5">
             <div class="property-empty-icon"><i class="fa-solid fa-house-circle-check"></i></div>
-            <h2 class="h4 fw-bold mt-3">No property listings yet</h2>
-            <p class="text-muted mb-4">Start by advertising an available and unassigned flat.</p>
-            <a asp-action="Create" class="btn btn-primary rounded-pill px-4"><i class="fa-solid fa-plus me-2"></i>Create first listing</a>
+            <h2 class="h4 fw-bold mt-3">No listings in this section</h2>
+            <p class="text-muted mb-4">
+                @(Model.SelectedSection == "active"
+                    ? "Create a draft or publish an available and unassigned flat."
+                    : "There are currently no records for this listing section.")
+            </p>
+            @if (Model.SelectedSection == "active")
+            {
+                <a asp-action="Create" class="btn btn-primary rounded-pill px-4"><i class="fa-solid fa-plus me-2"></i>Create Listing</a>
+            }
+            else
+            {
+                <a asp-action="Index" asp-route-section="active" class="btn btn-outline-primary rounded-pill px-4">Back to Active Listings</a>
+            }
         </div>
     }
 </div>

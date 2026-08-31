@@ -1,129 +1,38 @@
 @model ADHUNIK_BARI.ViewModels.LoginViewModel
-
-
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Sign in";
+    ViewData["BodyClass"] = "ab-auth-page";
 }
-
-
-
-<div class="login-page">
-
-
-
-    <!-- Animated Background -->
-
-    <div class="ambient-circle circle-one"></div>
-
-    <div class="ambient-circle circle-two"></div>
-
-    <div class="ambient-circle circle-three"></div>
-
-
-
-
-
-
-    <div class="login-glass-card">
-
-
-
-        <div class="login-header">
-
-
-            <div class="login-logo">
-                AB
-            </div>
-
-
-            <h1>
-                ADHUNIK BARI
-            </h1>
-
-
-            <p>
-                Smart Apartment Management System
-            </p>
-
-
+<section class="ab-login-shell">
+    <div class="ab-login-visual">
+        <div class="ab-login-photo" aria-hidden="true"></div>
+        <div class="ab-login-overlay" aria-hidden="true"></div>
+        <a class="ab-login-back" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-arrow-left"></i> Back home</a>
+        <div class="ab-login-story">
+            <div class="ab-eyebrow ab-eyebrow-light"><span></span> Your community, in one place</div>
+            <h1>Welcome back to a calmer way of living.</h1>
+            <p>Manage your home, payments, notices and requests with clarity.</p>
+            <div class="ab-login-story-cards"><span><i class="fa-solid fa-lock"></i> Secure portal</span><span><i class="fa-solid fa-building-user"></i> Role focused</span></div>
         </div>
-
-
-
-
-
-        <form asp-action="Login"
-              method="post"
-              id="loginForm">
-
-
-
-
-
-            <div class="floating-input">
-
-
-                <input asp-for="Email"
-                       id="email"
-                       placeholder=" " />
-
-
-                <label>
-                    Email Address
-                </label>
-
-
-            </div>
-
-
-
-
-
-
-            <div class="floating-input">
-
-
-                <input asp-for="Password"
-                       id="password"
-                       type="password"
-                       placeholder=" " />
-
-
-                <label>
-                    Password
-                </label>
-
-
-            </div>
-
-
-
-
-
-
-            <button type="submit"
-                    class="premium-login-btn">
-
-                <span id="loginText" class="btn-text">
-                    Login
-                </span>
-
-                <span id="spinner"
-                      class="spinner">
-                </span>
-
-            </button>
-
-
-
-
-
-        </form>
-
-
-
     </div>
-
-
-
-</div>
+    <div class="ab-login-form-side">
+        <div class="ab-login-form-wrap">
+            <div class="ab-login-brand"><span class="ab-brand-mark" aria-hidden="true"><span>AB</span><i></i></span><div><strong>ADHUNIK BARI</strong><small>Connected living</small></div></div>
+            <div class="ab-login-heading"><span>PORTAL ACCESS</span><h2>Sign in to your space</h2><p>Use the credentials provided by your building manager.</p></div>
+            <form asp-action="Login" method="post" id="loginForm" class="ab-login-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="ab-validation-summary" role="alert"></div>
+                <div class="ab-field">
+                    <label asp-for="Email">Email address</label>
+                    <div class="ab-input-wrap"><i class="fa-regular fa-envelope" aria-hidden="true"></i><input asp-for="Email" id="email" type="email" autocomplete="username" inputmode="email" placeholder="name@example.com" /><span asp-validation-for="Email"></span></div>
+                </div>
+                <div class="ab-field">
+                    <div class="ab-label-row"><label asp-for="Password">Password</label><span>Keep it private</span></div>
+                    <div class="ab-input-wrap"><i class="fa-solid fa-key" aria-hidden="true"></i><input asp-for="Password" id="password" type="password" autocomplete="current-password" placeholder="Enter your password" /><button type="button" class="ab-password-toggle" data-password-toggle aria-label="Show password"><i class="fa-regular fa-eye"></i></button><span asp-validation-for="Password"></span></div>
+                </div>
+                <button type="submit" class="ab-button ab-button-dark ab-login-submit"><span id="loginText">Continue to portal</span><span id="spinner" class="ab-button-spinner" aria-hidden="true"></span><i class="fa-solid fa-arrow-right"></i></button>
+            </form>
+            <p class="ab-login-help"><i class="fa-regular fa-circle-question"></i> Need access? Contact your apartment manager to activate your account.</p>
+        </div>
+    </div>
+</section>

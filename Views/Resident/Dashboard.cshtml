@@ -1,141 +1,31 @@
 @{
-    ViewData["Title"] = "Resident Dashboard";
+    ViewData["Title"] = "My home";
+    var assignment = ViewBag.Assignment as ADHUNIK_BARI.Models.FlatAssignment;
+    var residentName = ViewBag.ResidentName as string ?? "Resident";
+    var firstName = residentName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Resident";
 }
+<div class="ab-app-page ab-resident-dashboard">
+    @if (ViewBag.RequirePasswordChange == true) { <div class="ab-security-banner"><span><i class="fa-solid fa-shield-halved"></i></span><div><strong>Secure your new account</strong><p>Replace your temporary password before continuing.</p></div><a asp-controller="Account" asp-action="ChangePassword">Update password <i class="fa-solid fa-arrow-right"></i></a></div> }
+    <header class="ab-page-heading" data-reveal><div><div class="ab-page-kicker"><span></span> Your resident space</div><h1>Welcome home, <em>@firstName.</em></h1><p>Your apartment, payments and community updates are all in one calm place.</p></div><a class="ab-app-btn ab-app-btn-primary" asp-action="SubmitComplaint"><i class="fa-solid fa-plus"></i> New service request</a></header>
 
+    @if (assignment != null)
+    {
+        <section class="ab-home-overview" data-reveal>
+            <div class="ab-home-visual"><div class="ab-home-visual-image"></div><div class="ab-home-visual-wash"></div><div class="ab-home-status"><i></i> Active residence</div><div class="ab-home-title"><span>YOUR HOME</span><h2>Flat @assignment.Flat?.FlatNumber</h2><p>Floor @assignment.Flat?.FloorNumber · ADHUNIK BARI</p></div></div>
+            <div class="ab-home-details"><div class="ab-panel-head"><div><span class="ab-panel-kicker">RESIDENCE PROFILE</span><h2>Apartment details</h2></div><span class="ab-status ab-status-success"><i></i> Occupied</span></div><dl><div><dt>Flat number</dt><dd>@(assignment.Flat?.FlatNumber ?? "—")</dd></div><div><dt>Floor</dt><dd>@(assignment.Flat?.FloorNumber.ToString() ?? "—")</dd></div><div><dt>Resident type</dt><dd>@assignment.ResidentType</dd></div><div><dt>Member since</dt><dd>@assignment.AssignmentDate.ToString("dd MMM yyyy")</dd></div></dl><div class="ab-home-assurance"><i class="fa-solid fa-circle-check"></i><span><strong>Your assignment is active</strong><small>Building services and resident tools are available.</small></span></div></div>
+        </section>
+    }
+    else
+    {
+        <section class="ab-panel ab-assignment-empty" data-reveal><span><i class="fa-solid fa-house-circle-exclamation"></i></span><div><h2>No active flat assignment</h2><p>Your manager needs to connect this account to a flat before residence details can appear.</p></div></section>
+    }
 
+    <section class="ab-resident-actions" data-reveal>
+        <a class="ab-resident-action ab-action-featured" asp-action="MyBills"><span class="ab-action-icon"><i class="fa-solid fa-wallet"></i></span><div><small>FINANCES</small><h2>Bills & payments</h2><p>Review charges, pay securely and access receipts.</p></div><i class="fa-solid fa-arrow-right"></i><div class="ab-action-glow"></div></a>
+        <a class="ab-resident-action" asp-action="Notices"><span class="ab-action-icon"><i class="fa-solid fa-bell"></i></span><div><small>COMMUNITY</small><h2>Notices</h2><p>Stay informed about your building.</p></div><i class="fa-solid fa-arrow-right"></i></a>
+        <a class="ab-resident-action" asp-action="MyComplaints"><span class="ab-action-icon"><i class="fa-solid fa-clipboard-check"></i></span><div><small>SERVICE</small><h2>My requests</h2><p>Track maintenance and support issues.</p></div><i class="fa-solid fa-arrow-right"></i></a>
+        <a class="ab-resident-action" asp-controller="Account" asp-action="ChangePassword"><span class="ab-action-icon"><i class="fa-solid fa-shield-halved"></i></span><div><small>SECURITY</small><h2>Account safety</h2><p>Update your password and credentials.</p></div><i class="fa-solid fa-arrow-right"></i></a>
+    </section>
 
-<div class="resident-dashboard">
-
-
-
-    <h1 class="resident-title">
-        Welcome back, Resident
-    </h1>
-
-    <p class="resident-subtitle">
-        Your smart apartment management portal
-    </p>
-
-    <!-- Apartment Card -->
-    <div class="resident-glass-card">
-        <div class="apartment-header">
-            <div class="apartment-icon">
-                <i class="fa-solid fa-house text-primary"></i>
-            </div>
-            <div>
-                <h2>
-                    My Apartment
-                </h2>
-                <span>
-                    Smart Living Space
-                </span>
-            </div>
-        </div>
-
-        <div class="resident-details">
-            <div>
-                <label>
-                    Flat Number
-                </label>
-                <strong>
-                    D
-                </strong>
-            </div>
-
-            <div>
-                <label>
-                    Floor Number
-                </label>
-                <strong>
-                    7
-                </strong>
-            </div>
-
-            <div>
-                <label>
-                    Resident Type
-                </label>
-                <strong>
-                    Tenant
-                </strong>
-            </div>
-
-            <div>
-                <label>
-                    Assignment Date
-                </label>
-                <strong>
-                    22 Aug 2026
-                </strong>
-            </div>
-        </div>
-
-        <div class="status-area">
-            <span class="status-dot"></span>
-            <span>
-                Occupied
-            </span>
-        </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="resident-actions">
-        <a asp-controller="Resident"
-           asp-action="MyBills"
-           class="resident-action-card">
-            <div class="mb-2 fs-3 text-success">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
-            </div>
-            <h3>
-                My Bills & Payments
-            </h3>
-            <p>
-                View monthly bills & pay online
-            </p>
-        </a>
-
-        <a asp-controller="Resident"
-           asp-action="Notices"
-           class="resident-action-card">
-            <div class="mb-2 fs-3 text-warning">
-                <i class="fa-solid fa-bullhorn"></i>
-            </div>
-            <h3>
-                View Notices
-            </h3>
-            <p>
-                Check latest announcements
-            </p>
-        </a>
-
-        <a asp-controller="Resident"
-           asp-action="MyComplaints"
-           class="resident-action-card">
-            <div class="mb-2 fs-3 text-danger">
-                <i class="fa-solid fa-wrench"></i>
-            </div>
-            <h3>My Complaints</h3>
-            <p>Submit and track service issues</p>
-        </a>
-
-        <a asp-controller="Account"
-           asp-action="ChangePassword"
-           class="resident-action-card">
-            <div class="mb-2 fs-3 text-info">
-                <i class="fa-solid fa-key"></i>
-            </div>
-            <h3>
-                Change Password
-            </h3>
-            <p>
-                Secure your account
-            </p>
-        </a>
-
-    </div>
-
-
-
-
-
+    <section class="ab-resident-footer-card" data-reveal><div><span class="ab-panel-kicker">NEED A HAND?</span><h2>Something in your home needs attention?</h2><p>Send a clear request with a photo and follow every update from your dashboard.</p></div><a class="ab-app-btn ab-app-btn-light" asp-action="SubmitComplaint">Submit a request <i class="fa-solid fa-arrow-right"></i></a></section>
 </div>

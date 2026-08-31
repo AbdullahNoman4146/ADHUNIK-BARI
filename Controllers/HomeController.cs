@@ -23,14 +23,20 @@ namespace ADHUNIK_BARI.Controllers
         {
             await propertyPaymentService.ReleaseExpiredReservationsAsync();
 
-            var latestListings = await dbContext.PropertyListings
+            var availableListings = dbContext.PropertyListings
                 .AsNoTracking()
                 .Where(listing =>
                     listing.ListingStatus == PropertyListingStatuses.Published &&
                     listing.Flat != null &&
                     listing.Flat.FlatStatus == "Available" &&
                     !dbContext.FlatAssignments.Any(assignment =>
-                        assignment.FlatId == listing.FlatId && assignment.IsActive))
+                        assignment.FlatId == listing.FlatId && assignment.IsActive));
+
+            var listingSnapshot = await availableListings
+                .Select(listing => new { listing.ListingType, listing.Price })
+                .ToListAsync();
+
+            var latestListings = await availableListings
                 .OrderByDescending(listing => listing.PublishedAt ?? listing.CreatedAt)
                 .Take(3)
                 .Select(listing => new PublicPropertyListingCardViewModel
@@ -54,7 +60,18 @@ namespace ADHUNIK_BARI.Controllers
 
             return View(new HomePageViewModel
             {
-                LatestPropertyListings = latestListings
+                LatestPropertyListings = latestListings,
+                AvailableListingCount = listingSnapshot.Count,
+                ToLetListingCount = listingSnapshot.Count(listing => listing.ListingType == PropertyListingTypes.ToLet),
+                ForSaleListingCount = listingSnapshot.Count(listing => listing.ListingType == PropertyListingTypes.ForSale),
+                StartingRent = listingSnapshot
+                    .Where(listing => listing.ListingType == PropertyListingTypes.ToLet)
+                    .Select(listing => (decimal?)listing.Price)
+                    .Min(),
+                StartingSalePrice = listingSnapshot
+                    .Where(listing => listing.ListingType == PropertyListingTypes.ForSale)
+                    .Select(listing => (decimal?)listing.Price)
+                    .Min()
             });
         }
         public IActionResult Contact()

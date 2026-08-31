@@ -1,201 +1,200 @@
+@using ADHUNIK_BARI.Models
 @model ADHUNIK_BARI.ViewModels.CreatePropertyListingViewModel
 @{
     ViewData["Title"] = "Create Property Listing";
+    ViewData["BodyClass"] = "property-create-body";
+    var hasAvailableFlats = Model.AvailableFlats.Any();
 }
 
-<div class="property-page container py-4 py-lg-5">
-    <div class="property-page-header mb-4">
-        <div class="property-eyebrow"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>New marketplace listing</div>
-        <h1 class="fw-bold mb-1">Create Property Listing</h1>
-        <p class="text-muted mb-0">Prepare a To-Let or For-Sale listing. It will remain a draft until you publish it.</p>
+<div class="property-create-shell"
+     data-property-create
+     data-available-flats-url="@Url.Action("AvailableFlats", "ManagerProperty")"
+     data-index-url="@Url.Action("Index", "ManagerProperty")">
+    <div class="property-create-container">
+        <header class="property-create-heading">
+            <div class="property-eyebrow"><i class="fa-solid fa-wand-magic-sparkles"></i> New marketplace listing</div>
+            <h1>Create a property listing.</h1>
+            <p>Build the listing, review its live marketplace card, and run a fresh availability check before choosing whether to publish.</p>
+        </header>
+
+        <nav class="property-progress-rail" aria-label="Listing form progress">
+            <button type="button" class="property-progress-step is-active" data-step-link="listing-basics"><span>1</span><strong>Listing basics</strong></button>
+            <button type="button" class="property-progress-step" data-step-link="listing-photos"><span>2</span><strong>Photos</strong></button>
+            <button type="button" class="property-progress-step" data-step-link="listing-pricing"><span>3</span><strong>Pricing &amp; details</strong></button>
+        </nav>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data" id="propertyCreateForm" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="property-form-summary" data-validation-summary></div>
+
+            <div class="property-create-layout">
+                <main class="property-create-form-column">
+                    <section class="property-create-card" id="listing-basics" data-form-step="0">
+                        <div class="property-create-card-heading">
+                            <span class="property-create-card-icon"><i class="fa-solid fa-house"></i></span>
+                            <div><h2>Listing basics</h2><p>Choose an eligible flat and describe the opportunity.</p></div>
+                        </div>
+
+                        <div class="property-create-field" data-field="FlatId">
+                            <label asp-for="FlatId">Available flat <em>*</em></label>
+                            <div class="property-availability-alert @(hasAvailableFlats ? "d-none" : string.Empty)" id="flatAvailabilityAlert" role="status">
+                                <span class="property-alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                                <div>
+                                    <strong>No eligible flats right now</strong>
+                                    <p>Every flat is occupied, assigned, or already tied to another open listing.</p>
+                                    <button type="button" id="recheckFlatsButton"><i class="fa-solid fa-rotate"></i> Recheck availability</button>
+                                </div>
+                            </div>
+                            <select asp-for="FlatId" class="property-create-control @(hasAvailableFlats ? string.Empty : "d-none")" id="FlatId">
+                                <option value="">Select an available flat…</option>
+                                @foreach (var flat in Model.AvailableFlats)
+                                {
+                                    <option value="@flat.FlatId" data-flat-number="@flat.FlatNumber" data-floor="@flat.FloorNumber" data-rent="@flat.MonthlyRent">Flat @flat.FlatNumber · Floor @flat.FloorNumber · Current rent ৳@flat.MonthlyRent.ToString("N0")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="FlatId" class="property-field-error"></span>
+                        </div>
+
+                        <fieldset class="property-create-field">
+                            <legend>Listing type</legend>
+                            <div class="property-segmented" data-segmented>
+                                <input asp-for="ListingType" type="radio" value="@PropertyListingTypes.ToLet" id="listingTypeToLet" />
+                                <label for="listingTypeToLet"><i class="fa-solid fa-key"></i> To-Let</label>
+                                <input asp-for="ListingType" type="radio" value="@PropertyListingTypes.ForSale" id="listingTypeForSale" />
+                                <label for="listingTypeForSale"><i class="fa-solid fa-tag"></i> For Sale</label>
+                            </div>
+                            <span asp-validation-for="ListingType" class="property-field-error"></span>
+                        </fieldset>
+
+                        <div class="property-create-field" data-field="Title">
+                            <label asp-for="Title">Listing title <em>*</em></label>
+                            <input asp-for="Title" class="property-create-control" maxlength="200" placeholder="e.g. Bright 3-bedroom family apartment" autocomplete="off" />
+                            <span asp-validation-for="Title" class="property-field-error"></span>
+                        </div>
+
+                        <div class="property-create-field">
+                            <label asp-for="ShortDescription">Short description <small>(shown in listing cards)</small><span class="property-character-count"><b id="shortDescriptionCount">0</b>/500</span></label>
+                            <textarea asp-for="ShortDescription" class="property-create-control property-create-control-short" maxlength="500" rows="3" placeholder="A concise summary shown in listing cards"></textarea>
+                            <span asp-validation-for="ShortDescription" class="property-field-error"></span>
+                        </div>
+
+                        <div class="property-create-field">
+                            <label asp-for="Description">Full description <em>*</em></label>
+                            <textarea asp-for="Description" class="property-create-control" rows="6" placeholder="Describe the flat, surroundings, facilities, and terms"></textarea>
+                            <span asp-validation-for="Description" class="property-field-error"></span>
+                        </div>
+                    </section>
+
+                    <section class="property-create-card" id="listing-photos" data-form-step="1">
+                        <div class="property-create-card-heading">
+                            <span class="property-create-card-icon property-create-card-icon-green"><i class="fa-regular fa-images"></i></span>
+                            <div><h2>Photos</h2><p>JPG, PNG, or WebP · up to 5 MB each.</p></div>
+                        </div>
+
+                        <div class="property-photo-grid">
+                            <div class="property-create-field" data-field="RoomLayoutImage">
+                                <label asp-for="RoomLayoutImage">Room-layout image <em>*</em></label>
+                                <label class="property-dropzone" for="RoomLayoutImage" data-dropzone="room">
+                                    <input asp-for="RoomLayoutImage" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                                    <span class="property-dropzone-empty" data-dropzone-empty><i class="fa-regular fa-image"></i><strong>Drop image or click to upload</strong><small>Required before submitting</small></span>
+                                    <span class="property-dropzone-preview d-none" data-dropzone-preview><img alt="Room-layout preview" /><span><strong data-file-name></strong><small data-file-size></small></span><i class="fa-solid fa-circle-check"></i></span>
+                                </label>
+                                <span asp-validation-for="RoomLayoutImage" class="property-field-error"></span>
+                            </div>
+
+                            <div class="property-create-field" data-field="CoverImage">
+                                <label asp-for="CoverImage">Cover image <small>(optional)</small></label>
+                                <label class="property-dropzone" for="CoverImage" data-dropzone="cover">
+                                    <input asp-for="CoverImage" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                                    <span class="property-dropzone-empty" data-dropzone-empty><i class="fa-regular fa-image"></i><strong>Drop image or click to upload</strong><small>Used as the marketplace thumbnail</small></span>
+                                    <span class="property-dropzone-preview d-none" data-dropzone-preview><img alt="Cover image preview" /><span><strong data-file-name></strong><small data-file-size></small></span><i class="fa-solid fa-circle-check"></i></span>
+                                </label>
+                                <span asp-validation-for="CoverImage" class="property-field-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="property-draft-safeguard"><i class="fa-solid fa-shield-halved"></i><span>The listing is first saved as a <strong>Draft</strong>. Publishing always performs another availability check.</span></div>
+                    </section>
+
+                    <section class="property-create-card" id="listing-pricing" data-form-step="2">
+                        <div class="property-create-card-heading">
+                            <span class="property-create-card-icon"><i class="fa-solid fa-coins"></i></span>
+                            <div><h2>Pricing and property details</h2><p>All amounts are managed in Bangladeshi Taka (৳).</p></div>
+                        </div>
+
+                        <div class="property-form-grid property-form-grid-two">
+                            <div class="property-create-field"><label asp-for="Price">Rent / sale price <em>*</em></label><div class="property-money-control"><span>৳</span><input asp-for="Price" type="number" min="0.01" step="0.01" placeholder="0" /></div><span asp-validation-for="Price" class="property-field-error"></span></div>
+                            <div class="property-create-field"><label asp-for="AdvanceAmount">Advance amount <em>*</em></label><div class="property-money-control"><span>৳</span><input asp-for="AdvanceAmount" type="number" min="0.01" step="0.01" placeholder="0" /></div><span asp-validation-for="AdvanceAmount" class="property-field-error"></span></div>
+                        </div>
+
+                        <div class="property-form-grid property-form-grid-three">
+                            <div class="property-create-field"><label asp-for="Bedrooms">Bedrooms</label><div class="property-stepper"><button type="button" data-stepper="Bedrooms" data-direction="-1" aria-label="Decrease bedrooms">−</button><input asp-for="Bedrooms" type="number" min="0" /><button type="button" data-stepper="Bedrooms" data-direction="1" aria-label="Increase bedrooms">+</button></div><span asp-validation-for="Bedrooms" class="property-field-error"></span></div>
+                            <div class="property-create-field"><label asp-for="Bathrooms">Bathrooms</label><div class="property-stepper"><button type="button" data-stepper="Bathrooms" data-direction="-1" aria-label="Decrease bathrooms">−</button><input asp-for="Bathrooms" type="number" min="0" /><button type="button" data-stepper="Bathrooms" data-direction="1" aria-label="Increase bathrooms">+</button></div><span asp-validation-for="Bathrooms" class="property-field-error"></span></div>
+                            <div class="property-create-field"><label asp-for="Balconies">Balconies</label><div class="property-stepper"><button type="button" data-stepper="Balconies" data-direction="-1" aria-label="Decrease balconies">−</button><input asp-for="Balconies" type="number" min="0" /><button type="button" data-stepper="Balconies" data-direction="1" aria-label="Increase balconies">+</button></div><span asp-validation-for="Balconies" class="property-field-error"></span></div>
+                        </div>
+
+                        <div class="property-form-grid property-form-grid-two">
+                            <div class="property-create-field"><label asp-for="AreaSqFt">Area (sq ft)</label><input asp-for="AreaSqFt" class="property-create-control" type="number" min="0" step="0.01" placeholder="0" /><span asp-validation-for="AreaSqFt" class="property-field-error"></span></div>
+                            <div class="property-create-field"><label asp-for="Facing">Facing</label><input asp-for="Facing" class="property-create-control" maxlength="50" placeholder="e.g. South" /><span asp-validation-for="Facing" class="property-field-error"></span></div>
+                        </div>
+
+                        <fieldset class="property-create-field">
+                            <legend>Furnishing</legend>
+                            <div class="property-segmented property-segmented-four" data-segmented>
+                                <input asp-for="FurnishingStatus" type="radio" value="" id="furnishingNone" /><label for="furnishingNone">Not specified</label>
+                                <input asp-for="FurnishingStatus" type="radio" value="Unfurnished" id="furnishingUnfurnished" /><label for="furnishingUnfurnished">Unfurnished</label>
+                                <input asp-for="FurnishingStatus" type="radio" value="Semi-furnished" id="furnishingSemi" /><label for="furnishingSemi">Semi</label>
+                                <input asp-for="FurnishingStatus" type="radio" value="Furnished" id="furnishingFull" /><label for="furnishingFull">Furnished</label>
+                            </div>
+                            <span asp-validation-for="FurnishingStatus" class="property-field-error"></span>
+                        </fieldset>
+
+                        <div class="property-create-field">
+                            <label asp-for="Features">Features / amenities</label>
+                            <input asp-for="Features" type="hidden" />
+                            <div class="property-tag-control" id="propertyTagControl"><div data-tag-list></div><input type="text" id="propertyTagInput" maxlength="80" placeholder="Type an amenity and press Enter" autocomplete="off" /></div>
+                            <small class="property-field-hint">Try: Lift, Generator, Parking, Rooftop access</small>
+                            <span asp-validation-for="Features" class="property-field-error"></span>
+                        </div>
+                    </section>
+                </main>
+
+                <aside class="property-preview-column" aria-label="Live listing preview">
+                    <section class="property-preview-panel">
+                        <h2>Live preview</h2><p>What residents will see on the marketplace.</p>
+                        <article class="property-listing-preview">
+                            <div class="property-listing-preview-image" id="listingPreviewImage"><i class="fa-regular fa-image"></i><span>No photo yet</span><b id="listingPreviewType">To-Let</b></div>
+                            <div class="property-listing-preview-body"><h3 id="listingPreviewTitle">Untitled listing</h3><strong id="listingPreviewPrice">৳ — /mo</strong><div><span><i class="fa-solid fa-bed"></i> <b id="listingPreviewBedrooms">0</b> bed</span><span><i class="fa-solid fa-bath"></i> <b id="listingPreviewBathrooms">0</b> bath</span></div></div>
+                        </article>
+                    </section>
+
+                    <section class="property-preview-panel property-submit-checklist">
+                        <h2>Before you submit</h2><p>A quick readiness check.</p>
+                        <ul><li data-check="flat"><span></span> Flat selected</li><li data-check="title"><span></span> Listing title added</li><li data-check="photo"><span></span> Room-layout photo added</li><li data-check="price"><span></span> Price set</li></ul>
+                    </section>
+                </aside>
+            </div>
+        </form>
     </div>
 
-    <form asp-action="Create" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-4"></div>
+    <footer class="property-create-action-bar">
+        <div class="property-autosave-state" id="propertyAutosaveState"><span></span><strong>Changes ready</strong></div>
+        <div><a asp-action="Index" class="property-action-secondary">Cancel</a><button type="submit" form="propertyCreateForm" class="property-action-primary" id="submitListingButton"><i class="fa-solid fa-arrow-up-right-from-square"></i> Submit listing</button></div>
+    </footer>
 
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4 p-lg-5">
-                        <div class="property-section-heading mb-4">
-                            <span class="property-section-icon"><i class="fa-solid fa-house"></i></span>
-                            <div><h2 class="h5 fw-bold mb-1">Listing basics</h2><p class="text-muted small mb-0">Choose the available flat and describe the opportunity.</p></div>
-                        </div>
+    <div class="property-submit-overlay" id="propertySubmitOverlay" aria-hidden="true">
+        <section class="property-submit-dialog" role="dialog" aria-modal="true" aria-labelledby="propertySubmitTitle">
+            <div class="property-submit-stage" data-submit-stage="submitting"><span class="property-submit-spinner"></span><h2 id="propertySubmitTitle">Submitting listing…</h2><p>Securely saving the listing as a draft.</p></div>
+            <div class="property-submit-stage d-none" data-submit-stage="checking"><span class="property-submit-spinner"></span><h2>Running a fresh availability check…</h2><p>Confirming that <strong data-dialog-flat>the selected flat</strong> is still available.</p><span class="property-submit-progress"><i></i></span></div>
+            <div class="property-submit-stage d-none" data-submit-stage="success"><span class="property-submit-success"><i class="fa-solid fa-check"></i></span><h2>Availability confirmed</h2><p><strong data-dialog-flat>The selected flat</strong> is still free. Publish now or keep the new listing as a draft.</p><div class="property-submit-actions"><button type="button" class="property-action-primary" id="publishListingButton"><i class="fa-solid fa-paper-plane"></i> Publish now</button><button type="button" class="property-action-secondary" id="keepDraftButton">Keep as draft</button></div></div>
+            <div class="property-submit-stage d-none" data-submit-stage="failure"><span class="property-submit-failure"><i class="fa-solid fa-triangle-exclamation"></i></span><h2>Availability changed</h2><p id="propertySubmitFailureMessage">This flat is no longer eligible. Choose another flat and submit again—your other entries are still here.</p><button type="button" class="property-action-primary" id="returnToFormButton">Return to form</button></div>
+        </section>
+    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="FlatId" class="form-label fw-semibold">Available flat</label>
-                            @if (Model.AvailableFlats.Any())
-                            {
-                                <select asp-for="FlatId" class="form-select">
-                                    <option value="">-- Select an available flat --</option>
-                                    @foreach (var flat in Model.AvailableFlats)
-                                    {
-                                        <option value="@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber · Current rent ৳@flat.MonthlyRent.ToString("N0")</option>
-                                    }
-                                </select>
-                            }
-                            else
-                            {
-                                <div class="alert alert-warning rounded-3 mb-0"><i class="fa-solid fa-circle-info me-2"></i>There are currently no available and unassigned flats.</div>
-                            }
-                            <span asp-validation-for="FlatId" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="ListingType" class="form-label fw-semibold">Listing type</label>
-                            <select asp-for="ListingType" class="form-select">
-                                <option value="ToLet">To-Let</option>
-                                <option value="ForSale">For Sale</option>
-                            </select>
-                            <span asp-validation-for="ListingType" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Title" class="form-label fw-semibold">Listing title</label>
-                            <input asp-for="Title" class="form-control" placeholder="e.g. Bright 3-bedroom family apartment" />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="ShortDescription" class="form-label fw-semibold">Short description</label>
-                            <input asp-for="ShortDescription" class="form-control" placeholder="A concise summary shown in listing cards" />
-                            <span asp-validation-for="ShortDescription" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-0">
-                            <label asp-for="Description" class="form-label fw-semibold">Full description</label>
-                            <textarea asp-for="Description" class="form-control" rows="6" placeholder="Describe the flat, surroundings, facilities, and terms"></textarea>
-                            <span asp-validation-for="Description" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4 p-lg-5">
-                        <div class="property-section-heading mb-4">
-                            <span class="property-section-icon"><i class="fa-solid fa-coins"></i></span>
-                            <div><h2 class="h5 fw-bold mb-1">Pricing and property details</h2><p class="text-muted small mb-0">All amounts are managed in Bangladeshi Taka (৳).</p></div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="Price" class="form-label fw-semibold">Rent / sale price (৳)</label>
-                                <input asp-for="Price" class="form-control" type="number" min="0.01" step="0.01" placeholder="e.g. 25000" />
-                                <span asp-validation-for="Price" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="AdvanceAmount" class="form-label fw-semibold">Advance amount (৳)</label>
-                                <input asp-for="AdvanceAmount" class="form-control" type="number" min="0.01" step="0.01" placeholder="e.g. 50000" />
-                                <span asp-validation-for="AdvanceAmount" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Bedrooms" class="form-label fw-semibold">Bedrooms</label>
-                                <input asp-for="Bedrooms" class="form-control" type="number" min="0" />
-                                <span asp-validation-for="Bedrooms" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Bathrooms" class="form-label fw-semibold">Bathrooms</label>
-                                <input asp-for="Bathrooms" class="form-control" type="number" min="0" />
-                                <span asp-validation-for="Bathrooms" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Balconies" class="form-label fw-semibold">Balconies</label>
-                                <input asp-for="Balconies" class="form-control" type="number" min="0" />
-                                <span asp-validation-for="Balconies" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="AreaSqFt" class="form-label fw-semibold">Area (sq ft)</label>
-                                <input asp-for="AreaSqFt" class="form-control" type="number" min="0" step="0.01" />
-                                <span asp-validation-for="AreaSqFt" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="FurnishingStatus" class="form-label fw-semibold">Furnishing</label>
-                                <select asp-for="FurnishingStatus" class="form-select">
-                                    <option value="">Not specified</option>
-                                    <option>Unfurnished</option>
-                                    <option>Semi-furnished</option>
-                                    <option>Furnished</option>
-                                </select>
-                                <span asp-validation-for="FurnishingStatus" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Facing" class="form-label fw-semibold">Facing</label>
-                                <input asp-for="Facing" class="form-control" placeholder="e.g. South" />
-                                <span asp-validation-for="Facing" class="text-danger small"></span>
-                            </div>
-                            <div class="col-12">
-                                <label asp-for="Features" class="form-label fw-semibold">Features / amenities</label>
-                                <textarea asp-for="Features" class="form-control" rows="3" placeholder="Separate amenities with commas or new lines"></textarea>
-                                <span asp-validation-for="Features" class="text-danger small"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 mb-4 property-sticky-card">
-                    <div class="card-body p-4">
-                        <div class="property-section-heading mb-3">
-                            <span class="property-section-icon"><i class="fa-solid fa-images"></i></span>
-                            <div><h2 class="h5 fw-bold mb-1">Listing images</h2><p class="text-muted small mb-0">JPG, PNG, or WebP · up to 5 MB each</p></div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label asp-for="RoomLayoutImage" class="form-label fw-semibold">Room-layout image <span class="text-danger">*</span></label>
-                            <input asp-for="RoomLayoutImage" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                            <div class="form-text">This image is required before publishing.</div>
-                            <span asp-validation-for="RoomLayoutImage" class="text-danger small"></span>
-                            <div id="roomLayoutPreview" class="property-upload-preview d-none mt-3"><img id="roomLayoutPreviewImage" alt="Room layout preview" /></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="CoverImage" class="form-label fw-semibold">Cover image <span class="text-muted fw-normal">(optional)</span></label>
-                            <input asp-for="CoverImage" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                            <span asp-validation-for="CoverImage" class="text-danger small"></span>
-                            <div id="coverPreview" class="property-upload-preview d-none mt-3"><img id="coverPreviewImage" alt="Cover image preview" /></div>
-                        </div>
-
-                        <div class="property-draft-note rounded-3 p-3 mt-4">
-                            <i class="fa-solid fa-shield-halved text-primary me-2"></i>
-                            <span>The listing will be saved as <strong>Draft</strong>. Publishing performs a fresh availability check.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between gap-2">
-                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fa-solid fa-floppy-disk me-2"></i>Save Draft</button>
-                </div>
-            </div>
-        </div>
-    </form>
+    <div class="property-create-toast" id="propertyCreateToast" role="status" aria-live="polite"><i class="fa-solid fa-circle-check"></i><span></span></div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        function bindImagePreview(inputId, wrapperId, imageId) {
-            const input = document.getElementById(inputId);
-            const wrapper = document.getElementById(wrapperId);
-            const image = document.getElementById(imageId);
-            input?.addEventListener('change', function () {
-                const file = this.files?.[0];
-                if (!file || !file.type.startsWith('image/')) {
-                    wrapper?.classList.add('d-none');
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = event => {
-                    image.src = event.target.result;
-                    wrapper.classList.remove('d-none');
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        bindImagePreview('RoomLayoutImage', 'roomLayoutPreview', 'roomLayoutPreviewImage');
-        bindImagePreview('CoverImage', 'coverPreview', 'coverPreviewImage');
-    </script>
+    <script src="~/js/property-create.js" asp-append-version="true"></script>
 }

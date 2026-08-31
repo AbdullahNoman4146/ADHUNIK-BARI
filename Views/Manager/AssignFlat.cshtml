@@ -1,14 +1,14 @@
 @model ADHUNIK_BARI.ViewModels.AssignFlatViewModel
-@{ ViewData["Title"] = "Assign Flat"; }
-<div class="container py-4"><div class="row justify-content-center"><div class="col-md-7">
-    <div class="card shadow-sm border-0"><div class="card-body p-4"><h1 class="h3 mb-4">Assign Resident to Flat</h1>
-        <form asp-action="AssignFlat" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-            <div class="mb-3"><label asp-for="FlatId" class="form-label">Available Flat</label><select asp-for="FlatId" class="form-select"><option value="">-- Select flat --</option>@foreach (var flat in Model.AvailableFlats) { <option value="@flat.FlatId">@flat.FlatNumber (Floor @flat.FloorNumber)</option> }</select><span asp-validation-for="FlatId" class="text-danger"></span></div>
-            <div class="mb-3"><label asp-for="UserId" class="form-label">Resident</label><select asp-for="UserId" class="form-select"><option value="">-- Select resident --</option>@foreach (var resident in Model.Residents) { <option value="@resident.Id">@resident.FullName (@resident.Email)</option> }</select><span asp-validation-for="UserId" class="text-danger"></span></div>
-            <div class="mb-4"><label asp-for="ResidentType" class="form-label">Resident Type</label><select asp-for="ResidentType" class="form-select"><option value="">-- Select type --</option><option value="Tenant">Tenant</option><option value="FlatOwner">Flat Owner</option></select><span asp-validation-for="ResidentType" class="text-danger"></span></div>
-            <a asp-action="Flats" class="btn btn-outline-secondary">Cancel</a> <button type="submit" class="btn btn-primary">Assign Flat</button>
-        </form>
-    </div></div>
-</div></div></div>
+@{ ViewData["Title"] = "Assign resident"; }
+<div class="ab-app-page">
+    <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Occupancy</div><h1>Connect a resident <em>to home.</em></h1><p>Assign an available apartment and define the resident relationship.</p></div></header>
+    <section class="ab-panel ab-form-shell">
+        <aside class="ab-form-aside"><i class="fa-solid fa-key"></i><small>Secure assignment</small><h2>One resident. One clear home record.</h2><p>The apartment will become occupied and the resident dashboard will immediately reflect this assignment.</p></aside>
+        <form asp-action="AssignFlat" method="post" class="ab-form-body"><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
+            <div class="ab-field-span-2"><label asp-for="FlatId" class="form-label">Available flat</label><select asp-for="FlatId" class="form-select"><option value="">Choose an available flat</option>@foreach (var flat in Model.AvailableFlats) { <option value="@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber</option> }</select><span asp-validation-for="FlatId" class="text-danger small"></span></div>
+            <div class="ab-field-span-2"><label asp-for="UserId" class="form-label">Resident account</label><select asp-for="UserId" class="form-select"><option value="">Choose a resident</option>@foreach (var resident in Model.Residents) { <option value="@resident.Id">@resident.FullName · @resident.Email</option> }</select><span asp-validation-for="UserId" class="text-danger small"></span></div>
+            <div class="ab-field-span-2"><label asp-for="ResidentType" class="form-label">Resident type</label><select asp-for="ResidentType" class="form-select"><option value="">Choose relationship</option><option value="Tenant">Tenant</option><option value="FlatOwner">Flat owner</option></select><span asp-validation-for="ResidentType" class="text-danger small"></span></div>
+        </div><div class="ab-form-actions"><a asp-action="Flats" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-link"></i>Confirm assignment</button></div></form>
+    </section>
+</div>
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }
