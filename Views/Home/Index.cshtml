@@ -17,10 +17,12 @@
 }
 
 <section class="ab-cinematic-hero" aria-labelledby="hero-title" data-cinematic-hero data-stage="0">
-    <video class="ab-cinematic-media" autoplay muted loop playsinline preload="metadata" poster="/images/brand/adhunik-residence-hero.png" data-hero-video aria-hidden="true">
-        <source src="/media/adhunik-bari-aerial.webm" type="video/webm" />
-    </video>
-    <div class="ab-cinematic-poster" aria-hidden="true"></div>
+    <div class="ab-cinematic-scene" data-depth-scene aria-hidden="true">
+        <div class="ab-cinematic-still"></div>
+        <div class="ab-cinematic-depth ab-cinematic-depth-left"></div>
+        <div class="ab-cinematic-depth ab-cinematic-depth-right"></div>
+        <div class="ab-cinematic-reflection"></div>
+    </div>
     <div class="ab-cinematic-grade" aria-hidden="true"></div>
     <div class="ab-cinematic-grid" aria-hidden="true"></div>
     <div class="ab-skyline-scan" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -81,7 +83,7 @@
     </div>
     <div class="ab-cinematic-footnote">
         <span><i></i> Live marketplace data</span>
-        <button type="button" data-video-toggle aria-pressed="false" aria-label="Pause background video"><i class="fa-solid fa-pause"></i><span data-video-toggle-label>Pause motion</span></button>
+        <button type="button" data-motion-toggle aria-pressed="false" aria-label="Pause depth motion"><i class="fa-solid fa-pause"></i><span data-motion-toggle-label>Pause depth</span></button>
         <span>Use buttons or arrow keys to explore</span>
     </div>
 </section>

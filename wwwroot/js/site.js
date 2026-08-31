@@ -145,10 +145,11 @@
         const nextLabel = cinematicHero.querySelector('[data-story-next-label]');
         const currentLabel = cinematicHero.querySelector('[data-story-current]');
         const progress = cinematicHero.querySelector('[data-story-progress]');
-        const video = cinematicHero.querySelector('[data-hero-video]');
-        const videoToggle = cinematicHero.querySelector('[data-video-toggle]');
-        const videoToggleLabel = cinematicHero.querySelector('[data-video-toggle-label]');
+        const depthScene = cinematicHero.querySelector('[data-depth-scene]');
+        const motionToggle = cinematicHero.querySelector('[data-motion-toggle]');
+        const motionToggleLabel = cinematicHero.querySelector('[data-motion-toggle-label]');
         let storyIndex = 0;
+        let depthMotionPaused = prefersReducedMotion;
 
         const showStory = index => {
             storyIndex = (index + slides.length) % slides.length;
@@ -177,18 +178,43 @@
             if (event.key === 'ArrowLeft') { event.preventDefault(); showStory(Math.max(0, storyIndex - 1)); }
             if (event.key === 'ArrowRight') { event.preventDefault(); showStory(storyIndex + 1); }
         });
-        const setVideoState = paused => {
-            if (!video || !videoToggle) return;
-            if (paused) video.pause();
-            else video.play().catch(() => cinematicHero.classList.add('is-video-paused'));
-            videoToggle.setAttribute('aria-pressed', paused.toString());
-            videoToggle.setAttribute('aria-label', paused ? 'Play background video' : 'Pause background video');
-            videoToggle.querySelector('i')?.classList.toggle('fa-play', paused);
-            videoToggle.querySelector('i')?.classList.toggle('fa-pause', !paused);
-            if (videoToggleLabel) videoToggleLabel.textContent = paused ? 'Play motion' : 'Pause motion';
+        const resetDepth = () => {
+            if (!depthScene) return;
+            depthScene.style.setProperty('--depth-x', '0px');
+            depthScene.style.setProperty('--depth-y', '0px');
+            depthScene.style.setProperty('--depth-rx', '0deg');
+            depthScene.style.setProperty('--depth-ry', '0deg');
+            depthScene.style.setProperty('--depth-fg-x', '0px');
+            depthScene.style.setProperty('--depth-fg-y', '0px');
         };
-        videoToggle?.addEventListener('click', () => setVideoState(!video?.paused));
-        setVideoState(prefersReducedMotion);
+        const setDepthMotionState = paused => {
+            depthMotionPaused = paused;
+            cinematicHero.classList.toggle('is-motion-paused', paused);
+            if (paused) resetDepth();
+            if (!motionToggle) return;
+            motionToggle.setAttribute('aria-pressed', paused.toString());
+            motionToggle.setAttribute('aria-label', paused ? 'Play depth motion' : 'Pause depth motion');
+            motionToggle.querySelector('i')?.classList.toggle('fa-play', paused);
+            motionToggle.querySelector('i')?.classList.toggle('fa-pause', !paused);
+            if (motionToggleLabel) motionToggleLabel.textContent = paused ? 'Play depth' : 'Pause depth';
+        };
+        if (depthScene && window.matchMedia('(pointer: fine)').matches) {
+            cinematicHero.addEventListener('pointermove', event => {
+                if (depthMotionPaused) return;
+                const bounds = cinematicHero.getBoundingClientRect();
+                const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width - .5) * 2));
+                const y = Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height - .5) * 2));
+                depthScene.style.setProperty('--depth-x', `${x * -9}px`);
+                depthScene.style.setProperty('--depth-y', `${y * -6}px`);
+                depthScene.style.setProperty('--depth-rx', `${y * -1.2}deg`);
+                depthScene.style.setProperty('--depth-ry', `${x * 1.8}deg`);
+                depthScene.style.setProperty('--depth-fg-x', `${x * -16}px`);
+                depthScene.style.setProperty('--depth-fg-y', `${y * -10}px`);
+            });
+            cinematicHero.addEventListener('pointerleave', resetDepth);
+        }
+        motionToggle?.addEventListener('click', () => setDepthMotionState(!depthMotionPaused));
+        setDepthMotionState(depthMotionPaused);
         showStory(0);
     }
 
