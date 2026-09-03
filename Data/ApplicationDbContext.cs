@@ -30,6 +30,7 @@ namespace ADHUNIK_BARI.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PropertyListing> PropertyListings { get; set; }
         public DbSet<PropertyApplication> PropertyApplications { get; set; }
+        public DbSet<CctvCamera> CctvCameras { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -226,6 +227,16 @@ namespace ADHUNIK_BARI.Data
                 b.HasIndex(application => application.StripePaymentIntentId)
                     .IsUnique()
                     .HasFilter("[StripePaymentIntentId] IS NOT NULL");
+            });
+
+            builder.Entity<CctvCamera>(b =>
+            {
+                b.ToTable("CctvCameras");
+                b.HasKey(c => c.CameraId);
+                b.Property(c => c.CameraName).IsRequired().HasMaxLength(100);
+                b.Property(c => c.Location).IsRequired().HasMaxLength(100);
+                b.Property(c => c.StreamUrl).IsRequired().HasMaxLength(1000);
+                b.Property(c => c.Status).HasMaxLength(50);
             });
 
         }

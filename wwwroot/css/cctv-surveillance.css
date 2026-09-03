@@ -1,0 +1,702 @@
+/* ==========================================================================
+   ADHUNIK BARI - Professional CCTV Surveillance & NVR Station Stylesheet
+   Surveillance Dark Theme: #050a08, #091612, #0e201b
+   Surveillance Accents: #00f59b (Emerald HUD), #ef4444 (REC Live), #06b6d4 (Cyan)
+   ========================================================================== */
+
+:root {
+    --cctv-bg: #050a08;
+    --cctv-surface: #091612;
+    --cctv-surface-alt: #0e201b;
+    --cctv-card-bg: #091612;
+    --cctv-border: #16382c;
+    --cctv-border-active: #00f59b;
+    --cctv-hud-green: #00f59b;
+    --cctv-hud-dim: #7da598;
+    --cctv-rec-red: #ef4444;
+    --cctv-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.cctv-control-room {
+    background-color: var(--cctv-bg);
+    color: #e2ede8;
+    min-height: calc(100vh - 80px);
+    padding: 1.5rem 2rem 3rem;
+    border-radius: 1rem;
+    position: relative;
+}
+
+/* Header & Status Bar */
+.cctv-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--cctv-border);
+}
+
+.cctv-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cctv-hud-green);
+    font-family: var(--cctv-mono);
+}
+
+.cctv-kicker i {
+    font-size: 0.65rem;
+    animation: cctv-pulse 2s infinite ease-in-out;
+}
+
+.cctv-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.cctv-subtitle {
+    font-size: 0.875rem;
+    color: var(--cctv-hud-dim);
+    margin: 0;
+}
+
+/* CCTV Header Action Buttons (Dark Glass + Soft Emerald Hover - No White Flash) */
+.cctv-header-btn {
+    background: rgba(9, 22, 18, 0.85);
+    border: 1px solid var(--cctv-border);
+    color: #c2d6ce;
+    font-size: 0.825rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(4px);
+    text-decoration: none;
+}
+
+.cctv-header-btn:hover {
+    background: rgba(14, 34, 27, 0.95);
+    border-color: rgba(0, 245, 155, 0.5);
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 245, 155, 0.25);
+}
+
+.cctv-header-btn i {
+    color: var(--cctv-hud-green);
+    font-size: 0.85rem;
+}
+
+/* Master Telemetry & Action Strip */
+.cctv-telemetry-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--cctv-surface);
+    border: 1px solid var(--cctv-border);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.cctv-telemetry-items {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.cctv-telemetry-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-family: var(--cctv-mono);
+    color: #ffffff;
+}
+
+.cctv-telemetry-item span.label {
+    color: var(--cctv-hud-dim);
+    text-transform: uppercase;
+    font-size: 0.725rem;
+}
+
+.cctv-telemetry-item span.val {
+    font-weight: 700;
+}
+
+/* Matrix Layout Switcher Buttons */
+.cctv-matrix-switcher {
+    display: inline-flex;
+    background: #040806;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--cctv-border);
+    gap: 0.25rem;
+}
+
+.cctv-matrix-btn {
+    border: none;
+    background: transparent;
+    color: var(--cctv-hud-dim);
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: var(--cctv-mono);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cctv-matrix-btn:hover {
+    color: #ffffff;
+}
+
+.cctv-matrix-btn.active {
+    background: var(--cctv-surface-alt);
+    color: var(--cctv-hud-green);
+    box-shadow: inset 0 0 8px rgba(0, 245, 155, 0.15);
+}
+
+/* Matrix Container Grids */
+.cctv-matrix-container {
+    display: grid;
+    gap: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.cctv-matrix-container.matrix-1x1 {
+    grid-template-columns: 1fr;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.cctv-matrix-container.matrix-1x1 .cctv-card:not(.focus-active) {
+    display: none;
+}
+
+.cctv-matrix-container.matrix-2x2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.cctv-matrix-container.matrix-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+}
+
+@media (max-width: 900px) {
+    .cctv-matrix-container.matrix-2x2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Surveillance Camera Card */
+.cctv-card {
+    background: var(--cctv-card-bg);
+    border: 1px solid var(--cctv-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cctv-card:hover {
+    border-color: rgba(0, 245, 155, 0.5);
+    box-shadow: 0 10px 28px rgba(0, 245, 155, 0.12);
+}
+
+/* Surveillance Screen & Feed */
+.cctv-screen {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #020403;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cctv-screen:fullscreen,
+.cctv-screen:-webkit-full-screen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    aspect-ratio: auto !important;
+    background: #000000 !important;
+}
+
+.cctv-screen:fullscreen .cctv-video-feed,
+.cctv-screen:-webkit-full-screen .cctv-video-feed {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+/* =========================================================
+   Security NVR Video Wall Fullscreen Mode (All Cameras)
+   Auto-fills 100% of the screen with pure video camera tiles
+   ========================================================= */
+.cctv-matrix-container:fullscreen,
+.cctv-matrix-container:-webkit-full-screen,
+.cctv-matrix-container.is-wall-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    background: #000000 !important;
+    z-index: 999999 !important;
+    display: grid !important;
+    gap: 6px !important;
+    grid-template-columns: repeat(var(--cctv-wall-cols, 2), 1fr) !important;
+    grid-template-rows: repeat(var(--cctv-wall-rows, 1), 1fr) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* Individual Camera Card in Wall Fullscreen */
+.cctv-matrix-container:fullscreen .cctv-card,
+.cctv-matrix-container:-webkit-full-screen .cctv-card,
+.cctv-matrix-container.is-wall-fullscreen .cctv-card {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 245, 155, 0.25) !important;
+    background: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+}
+
+/* Camera Video Screen in Wall Fullscreen */
+.cctv-matrix-container:fullscreen .cctv-screen,
+.cctv-matrix-container:-webkit-full-screen .cctv-screen,
+.cctv-matrix-container.is-wall-fullscreen .cctv-screen {
+    flex: 1 1 100% !important;
+    height: 100% !important;
+    width: 100% !important;
+    aspect-ratio: auto !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #000000 !important;
+}
+
+/* Video Feed in Wall Fullscreen */
+.cctv-matrix-container:fullscreen .cctv-video-feed,
+.cctv-matrix-container:-webkit-full-screen .cctv-video-feed,
+.cctv-matrix-container.is-wall-fullscreen .cctv-video-feed {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+/* Hide card footer in Wall Fullscreen to leave pure edge-to-edge camera streams */
+.cctv-matrix-container:fullscreen .cctv-card-footer,
+.cctv-matrix-container:-webkit-full-screen .cctv-card-footer,
+.cctv-matrix-container.is-wall-fullscreen .cctv-card-footer {
+    display: none !important;
+}
+
+/* Floating Exit Button in Fullscreen Mode */
+.cctv-wall-exit-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 1000000;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 245, 155, 0.5);
+    color: #ffffff;
+    padding: 0.45rem 0.95rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.cctv-wall-exit-btn:hover {
+    background: rgba(14, 34, 27, 0.95);
+    border-color: var(--cctv-hud-green);
+    box-shadow: 0 0 15px rgba(0, 245, 155, 0.4);
+}
+
+.cctv-video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none;
+}
+
+/* Shield to prevent browser extension toolbars from attaching to the video */
+.cctv-screen-shield {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+/* Scanlines Effect */
+.cctv-scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+            rgba(0, 0, 0, 0.3) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0.6;
+}
+
+.cctv-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.85);
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* On-Screen Display (OSD) */
+.cctv-osd-top,
+.cctv-osd-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 0.5rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--cctv-mono);
+    font-size: 0.75rem;
+    z-index: 6;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 245, 155, 0.4);
+}
+
+.cctv-osd-top {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+    pointer-events: none;
+}
+
+.cctv-osd-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    pointer-events: none;
+}
+
+.cctv-osd-title {
+    color: var(--cctv-hud-green);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cctv-osd-timecode {
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.cctv-osd-rec {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.cctv-rec-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--cctv-rec-red);
+    box-shadow: 0 0 8px var(--cctv-rec-red);
+    animation: cctv-rec-blink 1s infinite alternate ease-in-out;
+}
+
+/* Bottom-Right Maximize Button (Clean, Subtle) */
+.cctv-maximize-btn {
+    pointer-events: auto;
+    background: rgba(8, 14, 11, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #c2d6ce;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+}
+
+/* When hovering over the card: JUST SLIGHTLY GLOW (Soft, Subtle) */
+.cctv-card:hover .cctv-maximize-btn {
+    border-color: rgba(0, 245, 155, 0.55);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(0, 245, 155, 0.35);
+    /* Soft slight glow */
+    background: rgba(10, 24, 19, 0.85);
+}
+
+.cctv-maximize-btn:hover {
+    border-color: rgba(0, 245, 155, 0.85);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(0, 245, 155, 0.55);
+    /* Slight clean glow */
+    background: rgba(12, 30, 24, 0.95);
+}
+
+/* Card Information Footer */
+.cctv-card-footer {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--cctv-surface);
+    border-top: 1px solid var(--cctv-border);
+}
+
+.cctv-cam-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.cctv-cam-location {
+    font-size: 0.725rem;
+    color: var(--cctv-hud-dim);
+}
+
+/* Badges */
+.cctv-badge {
+    font-size: 0.675rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.25rem;
+    font-family: var(--cctv-mono);
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+}
+
+.cctv-badge-online {
+    background: rgba(0, 245, 155, 0.15);
+    color: var(--cctv-hud-green);
+    border: 1px solid rgba(0, 245, 155, 0.3);
+}
+
+.cctv-badge-offline {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--cctv-rec-red);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Toast / Flash Message Styling in Control Room - Butter-Smooth Collapse */
+.cctv-toast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d241c;
+    border: 1px solid rgba(0, 245, 155, 0.4);
+    color: #e2ede8;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 245, 155, 0.15);
+    overflow: hidden;
+    max-height: 80px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.45s ease,
+        transform 0.45s ease,
+        max-height 0.45s ease,
+        margin-bottom 0.45s ease,
+        padding-top 0.45s ease,
+        padding-bottom 0.45s ease,
+        border-width 0.45s ease;
+}
+
+.cctv-toast.cctv-toast-danger {
+    background: #241010;
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.cctv-toast.fading {
+    opacity: 0 !important;
+    transform: translateY(-8px) scale(0.98) !important;
+    max-height: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+}
+
+.cctv-toast-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.cctv-toast-close:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Stream URL Live Preview Box */
+.cctv-modal-preview {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 220px;
+    background: #020504;
+    border: 1px solid var(--cctv-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    position: relative;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+.cctv-modal-preview img,
+.cctv-modal-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Pulse Keyframes */
+@keyframes cctv-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes cctv-rec-blink {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.2;
+        transform: scale(0.85);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Suppress any browser extension from rendering buttons inside or beside cctv-screen */
+.cctv-screen>*:not(.cctv-video-feed):not(.cctv-scanlines):not(.cctv-vignette):not(.cctv-screen-shield):not(.cctv-osd-top):not(.cctv-osd-bottom),
+.cctv-card>*:not(.cctv-screen):not(.cctv-card-footer),
+[class*="rtvp"],
+[id*="rtvp"],
+[class*="rotate-button"],
+[class*="img-rotate"],
+[id*="img-rotate"],
+[class*="grugru"],
+[class*="video-rotate"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* High-Contrast Input Placeholders & Helper Text for Modal & Forms */
+.modal-content input::placeholder,
+.card input::placeholder,
+input[name="StreamUrl"]::placeholder,
+input[name="CameraName"]::placeholder,
+input[name="Location"]::placeholder {
+    color: #8daea1 !important;
+    opacity: 0.9 !important;
+}
+
+.modal-content small,
+.card small {
+    color: #a4c7b8 !important;
+    font-size: 0.825rem !important;
+    font-weight: 500 !important;
+}

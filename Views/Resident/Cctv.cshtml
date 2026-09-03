@@ -1,0 +1,147 @@
+@model ADHUNIK_BARI.ViewModels.CctvDashboardViewModel
+@{
+    ViewData["Title"] = "Community CCTV Live Feeds";
+}
+
+@section Scripts {
+    <script src="~/js/cctv-surveillance.js" asp-append-version="true"></script>
+}
+
+<link rel="stylesheet" href="~/css/cctv-surveillance.css" asp-append-version="true" />
+
+<div class="cctv-control-room">
+    <header class="cctv-header">
+        <div>
+            <h1 class="cctv-title m-0">
+                <i class="fa-solid fa-video text-success"></i> Community CCTV Feeds
+            </h1>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="cctv-header-btn" data-cctv-refresh-all title="Refresh All Feeds">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Refresh All</span>
+            </button>
+            <button type="button" class="cctv-header-btn" data-cctv-wall-fullscreen title="Fullscreen All Cameras">
+                <i class="fa-solid fa-expand"></i>
+                <span>Fullscreen All</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Telemetry & Zone Filter Bar -->
+    <div class="cctv-telemetry-bar">
+        <div class="cctv-telemetry-items">
+            <div class="cctv-telemetry-item">
+                <span class="label">Live Feeds:</span>
+                <span class="val text-success">@Model.TotalCameras Active</span>
+            </div>
+        </div>
+
+        @if (Model.AvailableZones.Any())
+        {
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="small text-muted me-1">Area:</span>
+                <a asp-action="Cctv" asp-route-zone="All" class="badge text-decoration-none px-3 py-2 @(string.IsNullOrEmpty(Model.SelectedZone) || Model.SelectedZone == "All" ? "bg-success text-dark fw-bold" : "bg-dark text-white border border-secondary")">
+                    All (@Model.TotalCameras)
+                </a>
+                @foreach (var z in Model.AvailableZones)
+                {
+                    <a asp-action="Cctv" asp-route-zone="@z" class="badge text-decoration-none px-3 py-2 @(Model.SelectedZone == z ? "bg-success text-dark fw-bold" : "bg-dark text-white border border-secondary")">
+                        @z
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Feeds Grid or Empty State -->
+    @if (Model.Cameras.Any())
+    {
+        <div class="cctv-matrix-container matrix-grid">
+            @foreach (var cam in Model.Cameras)
+            {
+                <div class="cctv-card"
+                     data-camera-id="@cam.CameraId"
+                     data-cam-name="@cam.CameraName"
+                     data-cam-location="@cam.Location">
+
+                    <div class="cctv-screen">
+                        @if (cam.StreamUrl.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || cam.StreamUrl.EndsWith(".webm", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <video class="cctv-video-feed"
+                                   src="@cam.StreamUrl"
+                                   data-stream-src="@cam.StreamUrl"
+                                   autoplay muted loop playsinline></video>
+                        }
+                        else
+                        {
+                            <img class="cctv-video-feed"
+                                 src="@cam.StreamUrl"
+                                 data-stream-src="@cam.StreamUrl"
+                                 alt="@cam.CameraName"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.parentElement.classList.add('stream-error');" />
+                        }
+
+                        <!-- CRT Scanlines & Vignette -->
+                        <div class="cctv-scanlines"></div>
+                        <div class="cctv-vignette"></div>
+                        <div class="cctv-screen-shield"></div>
+
+                        <!-- OSD TOP -->
+                        <div class="cctv-osd-top">
+                            <span class="cctv-osd-title">
+                                <i class="fa-solid fa-shield-halved text-success"></i>
+                                @cam.CameraName.ToUpperInvariant() · [@cam.Location.ToUpperInvariant()]
+                            </span>
+                            <span class="cctv-osd-timecode" data-osd-clock>
+                                2026-09-04 00:00:00.000
+                            </span>
+                        </div>
+
+                        <!-- OSD BOTTOM with Status Badge and Maximize Icon in Bottom Right of Video -->
+                        <div class="cctv-osd-bottom">
+                            <span class="cctv-osd-rec">
+                                <span class="cctv-rec-dot"></span>
+                                LIVE FEED
+                            </span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success">ONLINE</span>
+                                <button type="button" class="cctv-maximize-btn" data-cctv-fullscreen title="Fullscreen">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer: Information on Left, Active Badge on Right -->
+                    <div class="cctv-card-footer">
+                        <div>
+                            <h6 class="cctv-cam-title">@cam.CameraName</h6>
+                            <span class="cctv-cam-location">
+                                <i class="fa-solid fa-location-dot text-muted"></i> @cam.Location
+                            </span>
+                        </div>
+                        <span class="badge bg-dark border border-secondary text-success small">
+                            <i class="fa-solid fa-signal"></i> Active
+                        </span>
+                    </div>
+
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 my-4 rounded" style="background: var(--cctv-surface); border: 1px dashed var(--cctv-border); padding: 4.5rem 2rem;">
+            <div class="mb-3">
+                <i class="fa-solid fa-video-slash" style="font-size: 3.5rem; color: #2e5a4b;"></i>
+            </div>
+            <h3 class="text-white fw-bold mb-2">0 Cameras Connected</h3>
+            <p class="text-muted mx-auto" style="max-width: 480px;">
+                No community surveillance cameras are currently broadcasting.
+            </p>
+        </div>
+    }
+</div>
