@@ -311,5 +311,45 @@ namespace ADHUNIK_BARI.Controllers
                 .OrderByDescending(assignment => assignment.AssignmentDate)
                 .FirstOrDefaultAsync();
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner")]
+        public async Task<IActionResult> Cctv(string? zone = null)
+        {
+            var user = await userManager.GetUserAsync(User);
+            var assignment = user == null ? null : await GetActiveAssignment(user.Id);
+            ViewBag.Assignment = assignment;
+
+            var query = dbContext.CctvCameras
+                .AsNoTracking()
+                .Where(c => c.Status == "Online");
+
+            var availableZones = await dbContext.CctvCameras
+                .Where(c => c.Status == "Online")
+                .Select(c => c.Location)
+                .Distinct()
+                .OrderBy(z => z)
+                .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(zone) && zone != "All")
+            {
+                query = query.Where(c => c.Location == zone);
+            }
+
+            var cameras = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            var viewModel = new CctvDashboardViewModel
+            {
+                Cameras = cameras,
+                SelectedZone = zone,
+                AvailableZones = availableZones,
+                TotalCameras = cameras.Count,
+                OnlineCount = cameras.Count
+            };
+
+            return View(viewModel);
+        }
     }
 }

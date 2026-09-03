@@ -1,0 +1,85 @@
+@model ADHUNIK_BARI.Models.CctvCamera
+@{
+    ViewData["Title"] = "Add CCTV Camera";
+}
+
+@section Scripts {
+    <script src="~/js/cctv-surveillance.js" asp-append-version="true"></script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<link rel="stylesheet" href="~/css/cctv-surveillance.css" asp-append-version="true" />
+
+<div class="cctv-control-room">
+    <header class="cctv-header">
+        <div>
+            <div class="cctv-kicker">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>DEVICE REGISTRATION</span>
+            </div>
+            <h1 class="cctv-title">
+                <i class="fa-solid fa-camera text-success"></i> Add CCTV Camera
+            </h1>
+            <p class="cctv-subtitle">
+                Register a new camera feed by providing its location and stream URL.
+            </p>
+        </div>
+        <div>
+            <a class="ab-app-btn ab-app-btn-secondary" asp-action="Cctv">
+                <i class="fa-solid fa-arrow-left"></i> Back to Surveillance
+            </a>
+        </div>
+    </header>
+
+    <div class="card p-4 rounded-3 shadow-sm mx-auto" style="max-width: 650px; background: #091612; border: 1px solid var(--cctv-border); color: #e2ede8;">
+        <form asp-action="CreateCctv" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="CameraName" class="form-label text-white small fw-bold"></label>
+                <input asp-for="CameraName" class="form-control" style="background: #040907; border-color: var(--cctv-border); color: #fff;" placeholder="e.g. Main Gate Entrance" required />
+                <span asp-validation-for="CameraName" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Location" class="form-label text-white small fw-bold"></label>
+                <input asp-for="Location" class="form-control" style="background: #040907; border-color: var(--cctv-border); color: #fff;" placeholder="e.g. Main Gate, Lobby, Basement Parking" required />
+                <span asp-validation-for="Location" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label asp-for="StreamUrl" class="form-label text-white small fw-bold mb-0"></label>
+                    <button type="button" class="btn btn-sm btn-outline-success py-0 px-2 small" data-test-url-btn>
+                        <i class="fa-solid fa-play"></i> Test URL Preview
+                    </button>
+                </div>
+                <input asp-for="StreamUrl" class="form-control" style="background: #040907; border-color: var(--cctv-border); color: #fff; font-family: monospace;" placeholder="e.g. http://192.168.0.157:8080/video" required />
+                <small class="d-block mt-1 fw-medium" style="color: #a4c7b8; font-size: 0.825rem;">Direct streaming link (HTTP / MJPEG / MP4).</small>
+                <span asp-validation-for="StreamUrl" class="text-danger small"></span>
+            </div>
+
+            <!-- Live URL Test Preview Box -->
+            <div data-url-preview-status class="small mb-2"></div>
+            <div class="cctv-modal-preview" data-url-preview-box>
+                <img data-url-preview-media src="" alt="Live Stream Preview" />
+            </div>
+
+            <div class="mb-4 mt-3">
+                <label asp-for="Status" class="form-label text-white small fw-bold"></label>
+                <select asp-for="Status" class="form-select" style="background: #040907; border-color: var(--cctv-border); color: #fff;">
+                    <option value="Online">Online</option>
+                    <option value="Offline">Offline</option>
+                </select>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-end gap-2 pt-2">
+                <a asp-action="Cctv" class="ab-app-btn ab-app-btn-secondary">Cancel</a>
+                <button type="submit" class="ab-app-btn ab-app-btn-primary">
+                    <i class="fa-solid fa-circle-check"></i> Save Camera
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

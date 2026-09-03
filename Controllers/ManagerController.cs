@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net.Sockets;
 using ADHUNIK_BARI.Data;
 using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.Services;
@@ -959,10 +961,203 @@ Date:
             TempData["Success"] =
                 $"Parking {parking.SpotNumber} assigned successfully.";
 
-
-
             return RedirectToAction(nameof(Parking));
+        }
 
+        // ==========================================
+        // CCTV SURVEILLANCE MANAGEMENT (CLEAN & DIRECT)
+        // ==========================================
+
+        [HttpGet]
+        public async Task<IActionResult> Cctv(string? zone = null)
+        {
+            var query = dbContext.CctvCameras.AsNoTracking();
+
+            var availableZones = await dbContext.CctvCameras
+                .Select(c => c.Location)
+                .Distinct()
+                .OrderBy(z => z)
+                .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(zone) && zone != "All")
+            {
+                query = query.Where(c => c.Location == zone);
+            }
+
+            var cameras = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            var totalCameras = await dbContext.CctvCameras.CountAsync();
+            var onlineCount = await dbContext.CctvCameras.CountAsync(c => c.Status == "Online");
+            var offlineCount = totalCameras - onlineCount;
+
+            var viewModel = new CctvDashboardViewModel
+            {
+                Cameras = cameras,
+                SelectedZone = zone,
+                AvailableZones = availableZones,
+                TotalCameras = totalCameras,
+                OnlineCount = onlineCount,
+                OfflineCount = offlineCount
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public IActionResult CreateCctv()
+        {
+            var model = new CctvCamera
+            {
+                Location = "Main Gate",
+                Status = "Online"
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCctv(CctvCamera model)
+        {
+            if (string.IsNullOrWhiteSpace(model.CameraName))
+            {
+                ModelState.AddModelError(nameof(model.CameraName), "Camera Name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.StreamUrl))
+            {
+                ModelState.AddModelError(nameof(model.StreamUrl), "Stream URL is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            model.CameraName = model.CameraName.Trim();
+            model.Location = string.IsNullOrWhiteSpace(model.Location) ? "Main Gate" : model.Location.Trim();
+            // Direct URL as input by user - NO auto format, NO appending!
+            model.StreamUrl = model.StreamUrl.Trim();
+            model.Status = string.IsNullOrWhiteSpace(model.Status) ? "Online" : model.Status.Trim();
+            model.CreatedAt = DateTime.UtcNow;
+
+            await dbContext.CctvCameras.AddAsync(model);
+            await dbContext.SaveChangesAsync();
+
+            TempData["Success"] = $"Camera '{model.CameraName}' added successfully.";
+            return RedirectToAction(nameof(Cctv));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditCctv(int id)
+        {
+            var camera = await dbContext.CctvCameras.FindAsync(id);
+            if (camera == null)
+            {
+                TempData["Error"] = "Camera not found.";
+                return RedirectToAction(nameof(Cctv));
+            }
+
+            return View(camera);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCctv(int id, CctvCamera model)
+        {
+            if (id != model.CameraId)
+            {
+                return NotFound();
+            }
+
+            var camera = await dbContext.CctvCameras.FindAsync(id);
+            if (camera == null)
+            {
+                TempData["Error"] = "Camera not found.";
+                return RedirectToAction(nameof(Cctv));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CameraName))
+            {
+                ModelState.AddModelError(nameof(model.CameraName), "Camera Name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.StreamUrl))
+            {
+                ModelState.AddModelError(nameof(model.StreamUrl), "Stream URL is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            camera.CameraName = model.CameraName.Trim();
+            camera.Location = string.IsNullOrWhiteSpace(model.Location) ? "Main Gate" : model.Location.Trim();
+            // Direct URL as input by user - NO auto format, NO appending!
+            camera.StreamUrl = model.StreamUrl.Trim();
+            camera.Status = string.IsNullOrWhiteSpace(model.Status) ? "Online" : model.Status.Trim();
+
+            await dbContext.SaveChangesAsync();
+
+            TempData["Success"] = $"Camera '{camera.CameraName}' updated successfully.";
+            return RedirectToAction(nameof(Cctv));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleCctvStatus(int id)
+        {
+            var camera = await dbContext.CctvCameras.FindAsync(id);
+            if (camera == null)
+            {
+                return Json(new { success = false, message = "Camera not found." });
+            }
+
+            camera.Status = (camera.Status == "Online") ? "Offline" : "Online";
+            await dbContext.SaveChangesAsync();
+
+            return Json(new { success = true, status = camera.Status });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCctv(int id)
+        {
+            var camera = await dbContext.CctvCameras.FindAsync(id);
+            if (camera == null)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+                {
+                    return Json(new { success = false, message = "Camera not found." });
+                }
+                TempData["Error"] = "Camera not found.";
+                return RedirectToAction(nameof(Cctv));
+            }
+
+            var cameraName = camera.CameraName;
+            dbContext.CctvCameras.Remove(camera);
+            await dbContext.SaveChangesAsync();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+            {
+                var total = await dbContext.CctvCameras.CountAsync();
+                var online = await dbContext.CctvCameras.CountAsync(c => c.Status == "Online");
+                var offline = total - online;
+                return Json(new
+                {
+                    success = true,
+                    message = $"Camera '{cameraName}' has been removed.",
+                    totalCameras = total,
+                    onlineCount = online,
+                    offlineCount = offline
+                });
+            }
+
+            TempData["Success"] = $"Camera '{cameraName}' has been removed.";
+            return RedirectToAction(nameof(Cctv));
         }
 
     }
