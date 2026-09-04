@@ -149,7 +149,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("AssignmentId");
 
-                    b.ToTable("Bills");
+                    b.ToTable("Bills", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.BillItem", b =>
@@ -188,7 +188,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("BillId");
 
-                    b.ToTable("BillItems");
+                    b.ToTable("BillItems", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.CctvCamera", b =>
@@ -199,96 +199,30 @@ namespace ADHUNIK_BARI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CameraId"));
 
-                    b.Property<string>("CameraCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("CameraName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("FloorNumber")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("HasNightVision")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("HasPTZ")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Password")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Port")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Protocol")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Resolution")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("StreamType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("StreamUrl")
+                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Username")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("CameraId");
-
-                    b.HasIndex("CameraCode")
-                        .IsUnique();
-
-                    b.HasIndex("DisplayOrder");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Location");
 
                     b.ToTable("CctvCameras");
                 });
@@ -345,7 +279,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Complaints");
+                    b.ToTable("Complaints", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Flat", b =>
@@ -377,7 +311,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasKey("FlatId");
 
-                    b.ToTable("Flats");
+                    b.ToTable("Flats", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.FlatAssignment", b =>
@@ -412,7 +346,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("FlatAssignments");
+                    b.ToTable("FlatAssignments", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Notice", b =>
@@ -447,7 +381,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("Notices");
+                    b.ToTable("Notices", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.NoticeTarget", b =>
@@ -470,7 +404,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("NoticeId");
 
-                    b.ToTable("NoticeTargets");
+                    b.ToTable("NoticeTargets", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.ParkingSpot", b =>
@@ -505,7 +439,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("FlatId");
 
-                    b.ToTable("ParkingSpots");
+                    b.ToTable("ParkingSpots", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Payment", b =>
@@ -563,7 +497,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.PropertyApplication", b =>
@@ -669,7 +603,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("Status", "PaymentStatus");
 
-                    b.ToTable("PropertyApplications");
+                    b.ToTable("PropertyApplications", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.PropertyListing", b =>
@@ -772,7 +706,7 @@ namespace ADHUNIK_BARI.Migrations
 
                     b.HasIndex("ListingStatus", "ListingType");
 
-                    b.ToTable("PropertyListings");
+                    b.ToTable("PropertyListings", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1125,42 +1059,6 @@ namespace ADHUNIK_BARI.Migrations
                     b.Navigation("BillItems");
 
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("ADHUNIK_BARI.Models.CctvCamera", b =>
-                {
-                    b.Property<int>("CameraId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CameraId"));
-
-                    b.Property<string>("CameraName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("StreamUrl")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.HasKey("CameraId");
-
-                    b.ToTable("CctvCameras", (string)null);
                 });
 
             modelBuilder.Entity("ADHUNIK_BARI.Models.Flat", b =>
