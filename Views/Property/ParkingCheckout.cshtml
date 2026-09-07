@@ -1,0 +1,171 @@
+@model ADHUNIK_BARI.ViewModels.ParkingCheckoutViewModel
+@{
+    ViewData["Title"] = "Pay Parking Advance - Space " + Model.SpotNumber;
+}
+
+<div class="public-marketplace-page">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="property-eyebrow text-success mb-2">
+                            <i class="fa-solid fa-square-parking me-2"></i>Secure Parking Booking Payment
+                        </div>
+                        <h1 class="h2 fw-bold mt-1">Parking Space @Model.SpotNumber</h1>
+                        <p class="text-muted">
+                            @Model.FloorName · @Model.VehicleType · 
+                            @(Model.IsOutsider ? "External Member Booking (Account will be created)" : (string.IsNullOrWhiteSpace(Model.FlatNumber) ? "Resident Booking" : $"Assigned to Flat {Model.FlatNumber}"))
+                        </p>
+
+                        <div class="public-price-panel rounded-4 p-3 mb-4 bg-light border">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="small text-muted d-block">Advance Amount Due Now</span>
+                                    <strong class="fs-4 text-primary">৳@Model.AdvanceAmount.ToString("N0")</strong>
+                                </div>
+                                <span class="badge @(Model.ListingType == "ForSale" ? "bg-primary-subtle text-primary" : "bg-success-subtle text-success") px-3 py-2 rounded-pill fw-semibold">
+                                    @(Model.ListingType == "ForSale" ? "Sale Advance" : "Rent / Booking Deposit")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning border-0 rounded-4">
+                            <i class="fa-solid fa-clock me-2"></i>
+                            This reservation expires at <strong>@Model.ReservationExpiresAt?.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</strong>.
+                        </div>
+
+                        @if (Model.IsOutsider)
+                        {
+                            <div class="alert alert-info border-0 rounded-4 mb-4">
+                                <div class="d-flex gap-2">
+                                    <i class="fa-solid fa-user-shield text-info fs-5 mt-1"></i>
+                                    <div class="small">
+                                        <strong>External Applicant Notice:</strong><br />
+                                        Upon successful payment, an account with username <strong>@Model.ApplicantEmail</strong> will be created automatically. Your login credentials and portal access link will be emailed immediately.
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.IsSimulatedDevPayment)
+                        {
+                            <div class="alert alert-secondary border rounded-4 mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <i class="fa-solid fa-vial text-primary me-2"></i>
+                                        <strong>Demo / Local Test Mode</strong>
+                                        <div class="small text-muted">Test payment simulation is active for this session.</div>
+                                    </div>
+                                    <button type="button" id="sim-pay-button" class="btn btn-outline-success btn-sm rounded-pill fw-semibold">
+                                        <i class="fa-solid fa-bolt me-1"></i>Simulate Instant Payment
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.PublishableKey))
+                        {
+                            <form id="parking-payment-form">
+                                @Html.AntiForgeryToken()
+                                <label class="form-label fw-semibold small text-muted text-uppercase mb-2">Card Details</label>
+                                <div id="card-element" class="form-control p-3 mb-2 rounded-3"></div>
+                                <div id="payment-message" class="text-danger small mt-2"></div>
+                                <button id="pay-button" type="submit" class="btn btn-primary btn-lg rounded-pill w-100 mt-4 fw-semibold shadow-sm">
+                                    <i class="fa-solid fa-lock me-2"></i>Pay ৳@Model.AdvanceAmount.ToString("N0") &amp; Confirm Space
+                                </button>
+                            </form>
+                        }
+                        else if (!Model.IsSimulatedDevPayment)
+                        {
+                            <div class="alert alert-danger">Stripe payment gateway is currently unavailable.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (!string.IsNullOrWhiteSpace(Model.PublishableKey))
+    {
+        <script src="https://js.stripe.com/v3/"></script>
+    }
+    <script>
+        (() => {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const messageEl = document.getElementById('payment-message');
+
+            async function submitConfirmation(intentId) {
+                const body = new URLSearchParams();
+                if (token) body.append('__RequestVerificationToken', token);
+                body.append('applicationId', '@Model.ParkingApplicationId');
+                body.append('paymentIntentId', intentId);
+
+                const response = await fetch('@Url.Action("ConfirmParkingPayment", "Property")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                    body: body.toString()
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    if (messageEl) messageEl.textContent = data.message || 'Payment confirmed, but booking finalization requires assistance.';
+                    return false;
+                }
+
+                window.location.href = data.redirectUrl;
+                return true;
+            }
+
+            // Simulated Dev Payment Button Handler
+            const simButton = document.getElementById('sim-pay-button');
+            if (simButton) {
+                simButton.addEventListener('click', async () => {
+                    simButton.disabled = true;
+                    simButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing Demo Payment...';
+                    await submitConfirmation('sim_pi_dev_@Model.ParkingApplicationId');
+                });
+            }
+
+            // Real Stripe Form Handler
+            const form = document.getElementById('parking-payment-form');
+            if (form && typeof Stripe !== 'undefined') {
+                const stripe = Stripe('@Model.PublishableKey');
+                const elements = stripe.elements();
+                const card = elements.create('card');
+                card.mount('#card-element');
+
+                const button = document.getElementById('pay-button');
+
+                form.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    button.disabled = true;
+                    if (messageEl) messageEl.textContent = '';
+                    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Verifying Payment...';
+
+                    const result = await stripe.confirmCardPayment('@Model.ClientSecret', {
+                        payment_method: { card: card }
+                    });
+
+                    if (result.error) {
+                        if (messageEl) messageEl.textContent = result.error.message || 'Payment could not be completed.';
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fa-solid fa-lock me-2"></i>Pay ৳@Model.AdvanceAmount.ToString("N0") &amp; Confirm Space';
+                        return;
+                    }
+
+                    if (!result.paymentIntent || result.paymentIntent.status !== 'succeeded') {
+                        if (messageEl) messageEl.textContent = 'Stripe has not confirmed the payment yet.';
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fa-solid fa-lock me-2"></i>Pay ৳@Model.AdvanceAmount.ToString("N0") &amp; Confirm Space';
+                        return;
+                    }
+
+                    await submitConfirmation(result.paymentIntent.id);
+                });
+            }
+        })();
+    </script>
+}

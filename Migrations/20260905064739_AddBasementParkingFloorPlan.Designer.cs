@@ -4,6 +4,7 @@ using ADHUNIK_BARI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ADHUNIK_BARI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260905064739_AddBasementParkingFloorPlan")]
+    partial class AddBasementParkingFloorPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -443,112 +446,6 @@ namespace ADHUNIK_BARI.Migrations
                     b.ToTable("ParkingActivityLogs");
                 });
 
-            modelBuilder.Entity("ADHUNIK_BARI.Models.ParkingApplication", b =>
-                {
-                    b.Property<int>("ParkingApplicationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParkingApplicationId"));
-
-                    b.Property<decimal>("AdvanceAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ApplicationType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("EmailSent")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("EmailSentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FailureReason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int?>("FlatId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsOutsider")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ParkingSpotId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PaymentStatus")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("ReservationExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<string>("StripePaymentIntentId")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("VehicleRegNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("VehicleType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("ParkingApplicationId");
-
-                    b.HasIndex("CreatedUserId");
-
-                    b.HasIndex("FlatId");
-
-                    b.HasIndex("ParkingSpotId");
-
-                    b.HasIndex("StripePaymentIntentId")
-                        .IsUnique()
-                        .HasFilter("[StripePaymentIntentId] IS NOT NULL");
-
-                    b.HasIndex("Status", "PaymentStatus");
-
-                    b.ToTable("ParkingApplications");
-                });
-
             modelBuilder.Entity("ADHUNIK_BARI.Models.ParkingFloor", b =>
                 {
                     b.Property<int>("ParkingFloorId")
@@ -585,9 +482,6 @@ namespace ADHUNIK_BARI.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParkingSpotId"));
-
-                    b.Property<string>("AssignedUserId")
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -628,8 +522,6 @@ namespace ADHUNIK_BARI.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("ParkingSpotId");
-
-                    b.HasIndex("AssignedUserId");
 
                     b.HasIndex("FlatId");
 
@@ -1146,38 +1038,8 @@ namespace ADHUNIK_BARI.Migrations
                     b.Navigation("ParkingSpot");
                 });
 
-            modelBuilder.Entity("ADHUNIK_BARI.Models.ParkingApplication", b =>
-                {
-                    b.HasOne("ADHUNIK_BARI.Models.ApplicationUser", "CreatedUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ADHUNIK_BARI.Models.Flat", "Flat")
-                        .WithMany()
-                        .HasForeignKey("FlatId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ADHUNIK_BARI.Models.ParkingSpot", "ParkingSpot")
-                        .WithMany()
-                        .HasForeignKey("ParkingSpotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedUser");
-
-                    b.Navigation("Flat");
-
-                    b.Navigation("ParkingSpot");
-                });
-
             modelBuilder.Entity("ADHUNIK_BARI.Models.ParkingSpot", b =>
                 {
-                    b.HasOne("ADHUNIK_BARI.Models.ApplicationUser", "AssignedUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("ADHUNIK_BARI.Models.Flat", "Flat")
                         .WithMany()
                         .HasForeignKey("FlatId");
@@ -1186,8 +1048,6 @@ namespace ADHUNIK_BARI.Migrations
                         .WithMany("ParkingSpots")
                         .HasForeignKey("ParkingFloorId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AssignedUser");
 
                     b.Navigation("Flat");
 

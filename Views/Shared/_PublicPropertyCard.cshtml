@@ -3,17 +3,48 @@
     var isToLet = Model.ListingType == PropertyListingTypes.ToLet;
     var listingTypeLabel = isToLet ? "To-let" : "For sale";
 }
-<article class="public-property-card ab-property-card">
-    <a class="public-property-card-media ab-property-media" asp-controller="Property" asp-action="Details" asp-route-id="@Model.PropertyListingId" aria-label="View @Model.Title">
-        @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath)) { <img src="@Model.CoverImagePath" alt="Exterior or interior view of @Model.Title" loading="lazy" /> }
-        else { <div class="public-image-fallback ab-property-fallback"><i class="fa-solid fa-house-chimney"></i><span>ADHUNIK BARI</span></div> }
-        <span class="ab-listing-type"><i class="fa-solid @(isToLet ? "fa-key" : "fa-tag")"></i>@listingTypeLabel</span>
-        <span class="ab-property-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
-    </a>
-    <div class="public-property-card-body ab-property-body">
-        <div class="ab-property-location"><i class="fa-solid fa-location-dot"></i> Flat @Model.FlatNumber · Floor @Model.FloorNumber</div>
-        <h2>@Model.Title</h2>
-        <div class="ab-property-price"><strong>৳@Model.Price.ToString("N0")</strong><span>@(isToLet ? "per month" : "asking price")</span></div>
-        <div class="public-card-stats ab-property-stats"><span><i class="fa-solid fa-bed"></i>@Model.Bedrooms beds</span><span><i class="fa-solid fa-bath"></i>@Model.Bathrooms baths</span><span><i class="fa-solid fa-vector-square"></i>@Model.AreaSqFt.ToString("N0") sq ft</span></div>
-    </div>
-</article>
+
+@if (Model.IsParking)
+{
+    <article class="public-property-card ab-property-card ab-parking-listing-card">
+        <a class="public-property-card-media ab-property-media" asp-controller="Property" asp-action="ParkingDetails" asp-route-id="@Model.ParkingSpotId" aria-label="View @Model.Title">
+            <div class="public-image-fallback ab-property-fallback" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #38bdf8; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-square-parking" style="font-size: 42px; margin-bottom: 6px; color: #38bdf8;"></i>
+                <span style="font-weight: 800; font-size: 16px; letter-spacing: 1px; color: #fff;">@Model.SpotNumber</span>
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 2px;">@Model.FloorName</small>
+            </div>
+            <span class="ab-listing-type" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
+                <i class="fa-solid fa-square-parking me-1"></i>Parking · @listingTypeLabel
+            </span>
+            <span class="ab-property-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+        </a>
+        <div class="public-property-card-body ab-property-body">
+            <div class="ab-property-location"><i class="fa-solid fa-location-dot"></i> @Model.FloorName · Bay @Model.SpotNumber</div>
+            <h2>@Model.Title</h2>
+            <div class="ab-property-price"><strong>৳@Model.Price.ToString("N0")</strong><span>@(isToLet ? "per month" : "asking price")</span></div>
+            <div class="public-card-stats ab-property-stats">
+                <span><i class="fa-solid fa-car"></i>@(Model.VehicleType ?? "Car")</span>
+                <span><i class="fa-solid fa-shield-halved"></i>24/7 Guard</span>
+                <span><i class="fa-solid fa-video"></i>CCTV</span>
+            </div>
+        </div>
+    </article>
+}
+else
+{
+    <article class="public-property-card ab-property-card">
+        <a class="public-property-card-media ab-property-media" asp-controller="Property" asp-action="Details" asp-route-id="@Model.PropertyListingId" aria-label="View @Model.Title">
+            @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath)) { <img src="@Model.CoverImagePath" alt="Exterior or interior view of @Model.Title" loading="lazy" /> }
+            else { <div class="public-image-fallback ab-property-fallback"><i class="fa-solid fa-house-chimney"></i><span>ADHUNIK BARI</span></div> }
+            <span class="ab-listing-type"><i class="fa-solid @(isToLet ? "fa-key" : "fa-tag")"></i>@listingTypeLabel</span>
+            <span class="ab-property-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+        </a>
+        <div class="public-property-card-body ab-property-body">
+            <div class="ab-property-location"><i class="fa-solid fa-location-dot"></i> Flat @Model.FlatNumber · Floor @Model.FloorNumber</div>
+            <h2>@Model.Title</h2>
+            <div class="ab-property-price"><strong>৳@Model.Price.ToString("N0")</strong><span>@(isToLet ? "per month" : "asking price")</span></div>
+            <div class="public-card-stats ab-property-stats"><span><i class="fa-solid fa-bed"></i>@Model.Bedrooms beds</span><span><i class="fa-solid fa-bath"></i>@Model.Bathrooms baths</span><span><i class="fa-solid fa-vector-square"></i>@Model.AreaSqFt.ToString("N0") sq ft</span></div>
+        </div>
+    </article>
+}
+

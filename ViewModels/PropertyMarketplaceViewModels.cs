@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using ADHUNIK_BARI.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ADHUNIK_BARI.ViewModels
 {
@@ -204,6 +205,13 @@ namespace ADHUNIK_BARI.ViewModels
         public string RoomLayoutImagePath { get; set; } = string.Empty;
 
         public DateTime? PublishedAt { get; set; }
+
+        // Parking Marketplace Extensions
+        public bool IsParking { get; set; }
+        public int? ParkingSpotId { get; set; }
+        public string? SpotNumber { get; set; }
+        public string? FloorName { get; set; }
+        public string? VehicleType { get; set; }
     }
 
     public class PublicPropertyListingDetailsViewModel : PublicPropertyListingCardViewModel
@@ -258,5 +266,113 @@ namespace ADHUNIK_BARI.ViewModels
         public decimal? StartingRent { get; set; }
 
         public decimal? StartingSalePrice { get; set; }
+    }
+
+    public class PublicParkingDetailsViewModel
+    {
+        public int ParkingSpotId { get; set; }
+        public string SpotNumber { get; set; } = string.Empty;
+        public string FloorName { get; set; } = string.Empty;
+        public string FloorCode { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string ListingType { get; set; } = string.Empty;
+        public string VehicleType { get; set; } = "Car";
+        public decimal Price { get; set; }
+        public decimal AdvanceAmount { get; set; }
+        public string? ListingNotes { get; set; }
+        public DateTime? PublishedAt { get; set; }
+    }
+
+    public class ApplyParkingViewModel
+    {
+        [Required]
+        public int ParkingSpotId { get; set; }
+
+        public string SpotNumber { get; set; } = string.Empty;
+        public string FloorName { get; set; } = string.Empty;
+        public string ListingType { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public decimal AdvanceAmount { get; set; }
+        public string VehicleType { get; set; } = "Car";
+
+        [Required(ErrorMessage = "Full name is required.")]
+        [MaxLength(200)]
+        [Display(Name = "Full Name")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email address is required.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        [MaxLength(256)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Phone number is required.")]
+        [MaxLength(50)]
+        public string Phone { get; set; } = string.Empty;
+
+        [Display(Name = "Your Flat (Optional)")]
+        public int? FlatId { get; set; }
+
+        public string? SelectedFlatNumber { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Vehicle Registration Number (optional)")]
+        public string? VehicleRegNumber { get; set; }
+
+        [Display(Name = "Expected Start / Move-in Date")]
+        public DateTime? ExpectedStartDate { get; set; }
+
+        [MaxLength(1000)]
+        [Display(Name = "Message / Notes to Management (optional)")]
+        public string? Notes { get; set; }
+
+        public bool TermsAccepted { get; set; }
+
+        public List<SelectListItem> AvailableFlats { get; set; } = new();
+
+        public bool IsLoggedInResident { get; set; }
+        public string? ResidentRole { get; set; }
+    }
+
+    public class ParkingCheckoutViewModel
+    {
+        public int ParkingApplicationId { get; set; }
+        public int ParkingSpotId { get; set; }
+        public string SpotNumber { get; set; } = string.Empty;
+        public string FloorName { get; set; } = string.Empty;
+        public string ListingType { get; set; } = string.Empty;
+        public decimal AdvanceAmount { get; set; }
+        public string ClientSecret { get; set; } = string.Empty;
+        public string StripePaymentIntentId { get; set; } = string.Empty;
+        public DateTime? ReservationExpiresAt { get; set; }
+        public string ApplicantName { get; set; } = string.Empty;
+        public string ApplicantEmail { get; set; } = string.Empty;
+        public string ApplicantPhone { get; set; } = string.Empty;
+        public string? VehicleType { get; set; }
+        public string? VehicleRegNumber { get; set; }
+        public bool IsOutsider { get; set; }
+        public string? FlatNumber { get; set; }
+        public string PublishableKey { get; set; } = string.Empty;
+        public bool IsSimulatedDevPayment { get; set; }
+    }
+
+    public class ParkingBookingSuccessViewModel
+    {
+        public int ParkingSpotId { get; set; }
+        public string SpotNumber { get; set; } = string.Empty;
+        public string FloorName { get; set; } = string.Empty;
+        public string FlatNumber { get; set; } = string.Empty;
+        public string ResidentName { get; set; } = string.Empty;
+        public string VehicleType { get; set; } = string.Empty;
+        public string? VehicleRegNumber { get; set; }
+        public string ListingType { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public decimal AdvanceAmount { get; set; }
+        public string BookingReference { get; set; } = string.Empty;
+        public DateTime BookedAt { get; set; } = DateTime.UtcNow;
+        public bool IsLoggedIn { get; set; }
+        public bool IsOutsider { get; set; }
+        public string? GeneratedAccountEmail { get; set; }
+        public string? TemporaryPassword { get; set; }
+        public bool EmailSent { get; set; }
     }
 }

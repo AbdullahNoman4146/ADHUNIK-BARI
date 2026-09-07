@@ -1,4 +1,4 @@
-﻿using ADHUNIK_BARI.Data;
+using ADHUNIK_BARI.Data;
 using ADHUNIK_BARI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -20,15 +20,7 @@ public class ParkingController : Controller
 
     public IActionResult Index()
     {
-
-        var parking =
-        _context.ParkingSpots
-        .Include(x => x.Flat)
-        .ToList();
-
-
-        return View(parking);
-
+        return RedirectToAction("Parking", "Manager");
     }
 
 

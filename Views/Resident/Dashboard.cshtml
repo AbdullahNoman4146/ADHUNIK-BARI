@@ -12,7 +12,73 @@
     {
         <section class="ab-home-overview" data-reveal>
             <div class="ab-home-visual"><div class="ab-home-visual-image"></div><div class="ab-home-visual-wash"></div><div class="ab-home-status"><i></i> Active residence</div><div class="ab-home-title"><span>YOUR HOME</span><h2>Flat @assignment.Flat?.FlatNumber</h2><p>Floor @assignment.Flat?.FloorNumber · ADHUNIK BARI</p></div></div>
-            <div class="ab-home-details"><div class="ab-panel-head"><div><span class="ab-panel-kicker">RESIDENCE PROFILE</span><h2>Apartment details</h2></div><span class="ab-status ab-status-success"><i></i> Occupied</span></div><dl><div><dt>Flat number</dt><dd>@(assignment.Flat?.FlatNumber ?? "—")</dd></div><div><dt>Floor</dt><dd>@(assignment.Flat?.FloorNumber.ToString() ?? "—")</dd></div><div><dt>Resident type</dt><dd>@assignment.ResidentType</dd></div><div><dt>Member since</dt><dd>@assignment.AssignmentDate.ToString("dd MMM yyyy")</dd></div></dl><div class="ab-home-assurance"><i class="fa-solid fa-circle-check"></i><span><strong>Your assignment is active</strong><small>Building services and resident tools are available.</small></span></div></div>
+            <div class="ab-home-details">
+                <div class="ab-panel-head">
+                    <div><span class="ab-panel-kicker">RESIDENCE PROFILE</span><h2>Apartment details</h2></div>
+                    <span class="ab-status ab-status-success"><i></i> Occupied</span>
+                </div>
+                <dl>
+                    <div><dt>Flat number</dt><dd>@(assignment.Flat?.FlatNumber ?? "—")</dd></div>
+                    <div><dt>Floor</dt><dd>@(assignment.Flat?.FloorNumber.ToString() ?? "—")</dd></div>
+                    <div><dt>Resident type</dt><dd>@assignment.ResidentType</dd></div>
+                    <div><dt>Member since</dt><dd>@assignment.AssignmentDate.ToString("dd MMM yyyy")</dd></div>
+                </dl>
+
+                @{
+                    var residentParking = ViewBag.ResidentParking as ADHUNIK_BARI.ViewModels.ResidentParkingViewModel;
+                }
+                @if (residentParking != null && residentParking.HasAssignedParking)
+                {
+                    foreach (var p in residentParking.Spots)
+                    {
+                        <div class="ab-resident-parking-card">
+                            <div class="ab-resident-parking-head">
+                                <h3><i class="fa-solid fa-square-parking text-success"></i> My Parking</h3>
+                                <span class="badge @(p.PaymentStatus == "Paid" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") fw-bold" style="font-size:11px;">
+                                    <i class="fa-solid fa-circle-dot me-1"></i>@p.PaymentStatus
+                                </span>
+                            </div>
+                            <dl class="ab-resident-parking-details">
+                                <div>
+                                    <dt>Spot Number</dt>
+                                    <dd class="text-primary">@p.SpotNumber</dd>
+                                </div>
+                                <div>
+                                    <dt>Floor</dt>
+                                    <dd>@p.FloorName</dd>
+                                </div>
+                                <div>
+                                    <dt>Type</dt>
+                                    <dd>Reserved (@p.VehicleType)</dd>
+                                </div>
+                                <div>
+                                    <dt>Monthly Fee</dt>
+                                    <dd>@p.MonthlyFee.ToString("N0") BDT</dd>
+                                </div>
+                                <div>
+                                    <dt>Payment Status</dt>
+                                    <dd class="@(p.PaymentStatus == "Paid" ? "text-success" : "text-danger")">@p.PaymentStatus</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="ab-resident-parking-card" style="background:#f8faf8;">
+                        <div class="ab-resident-parking-head mb-1">
+                            <h3 class="text-muted" style="font-size:14px;"><i class="fa-solid fa-square-parking text-muted"></i> My Parking</h3>
+                            <span class="text-muted small">No spot assigned</span>
+                        </div>
+                        <p class="small text-muted mb-2">You currently do not have a dedicated basement parking space.</p>
+                        <a asp-controller="Property" asp-action="Index" asp-route-type="Parking" class="btn btn-sm btn-outline-success rounded-pill">
+                            <i class="fa-solid fa-square-parking me-1"></i> Browse &amp; Book Parking
+                        </a>
+                    </div>
+                }
+
+                <div class="ab-home-assurance mt-3"><i class="fa-solid fa-circle-check"></i><span><strong>Your assignment is active</strong><small>Building services and resident tools are available.</small></span></div>
+            </div>
         </section>
     }
     else

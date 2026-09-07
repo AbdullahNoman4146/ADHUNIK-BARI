@@ -15,7 +15,7 @@
                         View monthly apartment invoices, select charges, and pay securely online
                     </p>
                 </div>
-                <a asp-controller="Resident" asp-action="Dashboard" class="btn btn-outline-secondary">
+                <a asp-controller="Resident" asp-action="@(User.IsInRole("ParkingUser") ? "ParkingDashboard" : "Dashboard")" class="btn btn-outline-secondary">
                     <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
                 </a>
             </div>
@@ -37,16 +37,16 @@
                     <div class="card-body p-4">
                         <div class="row align-items-center g-3">
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Resident Name</small>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Member Name</small>
                                 <strong class="fs-6 text-dark">@Model.ResidentName</strong>
                             </div>
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Apartment Unit</small>
-                                <strong class="fs-6 text-primary">Flat @Model.FlatNumber</strong>
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Allocation / Unit</small>
+                                <strong class="fs-6 text-primary">@(Model.FlatNumber.StartsWith("Flat") || Model.FlatNumber.StartsWith("Parking") ? Model.FlatNumber : $"Flat {Model.FlatNumber}")</strong>
                             </div>
                             <div class="col-md-3 col-6">
-                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Resident Type</small>
-                                <span class="badge @(Model.ResidentType == "Tenant" ? "bg-info text-dark" : "bg-secondary")">
+                                <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Member Type</small>
+                                <span class="badge @(Model.ResidentType == "Tenant" ? "bg-info text-dark" : (Model.ResidentType == "Parking Member" ? "bg-success text-white" : "bg-secondary"))">
                                     @Model.ResidentType
                                 </span>
                             </div>

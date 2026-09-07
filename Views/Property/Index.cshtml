@@ -4,6 +4,7 @@
     var allFilterClass = Model.SelectedType == null ? "active" : string.Empty;
     var toLetFilterClass = Model.SelectedType == PropertyListingTypes.ToLet ? "active" : string.Empty;
     var forSaleFilterClass = Model.SelectedType == PropertyListingTypes.ForSale ? "active" : string.Empty;
+    var parkingFilterClass = Model.SelectedType == "Parking" ? "active" : string.Empty;
 }
 
 <div class="public-marketplace-page">
@@ -13,13 +14,13 @@
             <div data-reveal>
                 <div class="ab-eyebrow ab-eyebrow-light"><span></span> ADHUNIK BARI marketplace</div>
                 <h1>Find a place that already <em>feels like home.</em></h1>
-                <p>Explore to-let and for-sale homes within a professionally managed apartment community.</p>
-                <a class="ab-button ab-button-primary" href="#properties">View available homes <i class="fa-solid fa-arrow-down"></i></a>
+                <p>Explore to-let, for-sale homes and reserved parking bays within a professionally managed apartment community.</p>
+                <a class="ab-button ab-button-primary" href="#properties">View availability <i class="fa-solid fa-arrow-down"></i></a>
             </div>
             <div class="ab-market-finder" data-reveal aria-label="Marketplace overview">
                 <div class="ab-finder-top"><span><i class="fa-solid fa-location-crosshairs"></i> Community finder</span><strong>@Model.Listings.Count available</strong></div>
                 <div class="ab-finder-map" aria-hidden="true"><i class="p1"></i><i class="p2"></i><i class="p3"></i><span class="ab-map-home"><i class="fa-solid fa-house"></i></span></div>
-                <div class="ab-finder-tags"><span><i class="fa-solid fa-key"></i> To-let</span><span><i class="fa-solid fa-tag"></i> For sale</span><span><i class="fa-solid fa-shield-halved"></i> Managed</span></div>
+                <div class="ab-finder-tags"><span><i class="fa-solid fa-key"></i> To-let</span><span><i class="fa-solid fa-tag"></i> For sale</span><span><i class="fa-solid fa-square-parking"></i> Parking</span></div>
             </div>
         </div>
     </section>
@@ -28,16 +29,17 @@
         <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4 ab-market-list-heading">
             <div>
                 <div class="ab-eyebrow"><span></span> Available now</div>
-                <h2 class="h1 fw-bold mt-2 mb-1">To-let &amp; for sale</h2>
-                <p class="text-muted mb-0">Browse currently published properties and view every detail before you apply.</p>
+                <h2 class="h1 fw-bold mt-2 mb-1">To-let, For sale &amp; Parking</h2>
+                <p class="text-muted mb-0">Browse currently published flats and parking spaces. View every detail and book with confidence.</p>
             </div>
-            <div class="public-property-count"><strong>@Model.Listings.Count</strong> @(Model.Listings.Count == 1 ? "property" : "properties")</div>
+            <div class="public-property-count"><strong>@Model.Listings.Count</strong> @(Model.Listings.Count == 1 ? "listing" : "listings")</div>
         </div>
 
         <div class="public-filter-bar mb-4" role="navigation" aria-label="Property type filters">
             <a asp-action="Index" class="public-filter-pill @allFilterClass"><i class="fa-solid fa-border-all me-2"></i>All</a>
             <a asp-action="Index" asp-route-type="ToLet" class="public-filter-pill @toLetFilterClass"><i class="fa-solid fa-key me-2"></i>To-Let</a>
             <a asp-action="Index" asp-route-type="ForSale" class="public-filter-pill @forSaleFilterClass"><i class="fa-solid fa-tag me-2"></i>For Sale</a>
+            <a asp-action="Index" asp-route-type="Parking" class="public-filter-pill @parkingFilterClass"><i class="fa-solid fa-square-parking me-2"></i>Parking Spots</a>
         </div>
 
         @if (Model.Listings.Count > 0)

@@ -1,22 +1,908 @@
-@model IEnumerable<ADHUNIK_BARI.Models.ParkingSpot>
-@{ ViewData["Title"] = "Parking"; var total = Model.Count(); var available = Model.Count(p => p.IsAvailable); var assigned = total - available; }
+@model ADHUNIK_BARI.ViewModels.ParkingFloorPlanViewModel
+@{
+    ViewData["Title"] = "Basement Parking Management";
+    var currentFloorName = Model.CurrentFloor?.FloorName ?? "Basement Floor";
+}
+
 <div class="ab-app-page">
+    <!-- Header -->
     <header class="ab-page-heading ab-page-heading-compact">
-        <div><div class="ab-page-kicker"><span></span>Mobility operations</div><h1>Parking, <em>perfectly allocated.</em></h1><p>Manage every vehicle space and connect available parking to the right apartment.</p></div>
-        <a asp-action="CreateParking" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Create parking spot</a>
+        <div>
+            <div class="ab-page-kicker"><span></span>Mobility Operations</div>
+            <h1>Basement Parking, <em>perfectly allocated.</em></h1>
+            <p>Visual floor plan, spot allocation, and revenue monitoring across all building garage levels.</p>
+        </div>
+        <div class="ab-page-heading-actions">
+            <button type="button" class="ab-app-btn ab-app-btn-primary" data-bs-toggle="modal" data-bs-target="#createFloorModal">
+                <i class="fa-solid fa-layer-group"></i>Add parking floor
+            </button>
+        </div>
     </header>
-    @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> }
-    <section class="ab-stat-strip" aria-label="Parking summary">
-        <article class="ab-stat-chip"><span><i class="fa-solid fa-square-parking"></i></span><div><strong>@total</strong><small>Total spaces</small></div></article>
-        <article class="ab-stat-chip"><span><i class="fa-solid fa-circle-check"></i></span><div><strong>@available</strong><small>Available now</small></div></article>
-        <article class="ab-stat-chip"><span><i class="fa-solid fa-car-side"></i></span><div><strong>@assigned</strong><small>Assigned spaces</small></div></article>
+
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success ab-toast-alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger ab-toast-alert"><i class="fa-solid fa-circle-exclamation"></i>@TempData["Error"]</div>
+    }
+
+    <!-- Revenue & Capacity KPIs -->
+    <section class="ab-parking-rev-grid" aria-label="Parking KPIs">
+        <article class="ab-parking-kpi">
+            <div class="ab-parking-kpi-icon icon-green">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="ab-parking-kpi-copy">
+                <small>Parking Collected</small>
+                <strong>৳@Model.RevenueCollected.ToString("N0")</strong>
+            </div>
+        </article>
+        <article class="ab-parking-kpi">
+            <div class="ab-parking-kpi-icon" style="background:#fef2f2; color:#ef4444;">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div class="ab-parking-kpi-copy">
+                <small>Parking Due</small>
+                <strong class="text-danger">৳@Model.RevenueDue.ToString("N0")</strong>
+            </div>
+        </article>
+        <article class="ab-parking-kpi">
+            <div class="ab-parking-kpi-icon icon-green">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="ab-parking-kpi-copy">
+                <small>Available Spaces</small>
+                <strong class="text-success">@Model.AvailableCount</strong>
+            </div>
+        </article>
+        <article class="ab-parking-kpi">
+            <div class="ab-parking-kpi-icon icon-blue">
+                <i class="fa-solid fa-car-side"></i>
+            </div>
+            <div class="ab-parking-kpi-copy">
+                <small>Assigned Spaces</small>
+                <strong class="text-primary">@Model.AssignedCount</strong>
+            </div>
+        </article>
+        <article class="ab-parking-kpi">
+            <div class="ab-parking-kpi-icon icon-orange">
+                <i class="fa-solid fa-tags"></i>
+            </div>
+            <div class="ab-parking-kpi-copy">
+                <small>For Sale / To-Let</small>
+                <strong style="color:#ea580c;">@(Model.ForSaleCount + Model.ToLetCount)</strong>
+            </div>
+        </article>
     </section>
-    <section class="ab-panel ab-data-panel">
-        <div class="ab-panel-head"><div class="ab-table-title"><span><i class="fa-solid fa-square-parking"></i></span><div><div class="ab-panel-kicker">PARKING INVENTORY</div><h2>Space directory</h2></div></div><div class="ab-panel-status"><i></i>@total records</div></div>
-        @if (Model.Any()) {
-        <div class="table-responsive"><table class="table ab-app-table align-middle"><thead><tr><th>Space</th><th>Vehicle type</th><th>Monthly fee</th><th>Status</th><th>Assigned flat</th><th class="text-end">Action</th></tr></thead><tbody>
-        @foreach (var parking in Model) { <tr><td><div class="ab-unit-name"><span><i class="fa-solid fa-square-parking"></i></span><strong>@parking.SpotNumber</strong></div></td><td><i class="fa-solid @(parking.ParkingType == "Bike" ? "fa-motorcycle" : "fa-car-side") me-2 text-success"></i>@(parking.ParkingType ?? "General")</td><td><strong class="ab-money">৳@parking.ParkingFee.ToString("N0")</strong><small class="ab-table-sub">per month</small></td><td><span class="ab-status @(parking.IsAvailable ? "ab-status-success" : "ab-status-info")"><i></i>@(parking.IsAvailable ? "Available" : "Assigned")</span></td><td>@if (parking.Flat != null) { <span class="ab-unit-pill">@parking.Flat.FlatNumber</span> } else { <span class="ab-table-sub">Not assigned</span> }</td><td class="text-end">@if (parking.IsAvailable) { <a asp-action="AssignParking" asp-route-id="@parking.ParkingSpotId" class="ab-app-btn ab-app-btn-secondary ab-app-btn-small">Assign space<i class="fa-solid fa-arrow-right"></i></a> } else { <span class="ab-status ab-status-neutral"><i></i>In use</span> }</td></tr> }
-        </tbody></table></div>
-        } else { <div class="ab-empty-state-app"><i class="fa-solid fa-square-parking"></i><h2>No parking spaces yet</h2><p>Create the first space, choose its vehicle type, and set the monthly fee.</p><a asp-action="CreateParking" class="ab-app-btn ab-app-btn-primary">Create first space</a></div> }
+
+    <!-- Floor Switching Tabs -->
+    <div class="ab-parking-nav-bar">
+        <div class="ab-floor-tabs">
+            @foreach (var floor in Model.Floors)
+            {
+                var isActive = (Model.SelectedFloorId == floor.ParkingFloorId);
+                <a asp-action="Parking" asp-route-floorId="@floor.ParkingFloorId"
+                   class="ab-floor-tab @(isActive ? "active" : "")">
+                    <i class="fa-solid fa-warehouse"></i>
+                    <span>@floor.FloorName</span>
+                    <span class="badge-cap">@floor.Capacity slots</span>
+                </a>
+            }
+        </div>
+        <button type="button" class="ab-btn-add-floor" data-bs-toggle="modal" data-bs-target="#createFloorModal">
+            <i class="fa-solid fa-plus"></i>New Floor
+        </button>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="ab-parking-filter-bar">
+        <div class="ab-parking-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="parkingSearchInput" placeholder="Search spot (e.g. B2-05) or flat number..." autocomplete="off" />
+        </div>
+        <div class="ab-parking-filter-pills" role="tablist">
+            <button type="button" class="ab-filter-pill active" data-filter="all">All Spaces</button>
+            <button type="button" class="ab-filter-pill pill-green" data-filter="Available"><span class="ab-filter-dot dot-green"></span>Available</button>
+            <button type="button" class="ab-filter-pill pill-blue" data-filter="Assigned"><span class="ab-filter-dot dot-blue"></span>Assigned</button>
+            <button type="button" class="ab-filter-pill pill-orange" data-filter="ForSale"><span class="ab-filter-dot dot-orange"></span>For Sale</button>
+            <button type="button" class="ab-filter-pill pill-purple" data-filter="ToLet"><span class="ab-filter-dot dot-purple"></span>To-Let</button>
+            <button type="button" class="ab-filter-pill pill-due" data-filter="Due"><span class="ab-filter-dot dot-due"></span>Payment Due</button>
+        </div>
+    </div>
+
+    <!-- Visual Garage Canvas -->
+    <section class="ab-garage-canvas">
+        <div class="ab-garage-header">
+            <div class="ab-garage-title">
+                <div class="ab-garage-icon">
+                    <i class="fa-solid fa-square-parking"></i>
+                </div>
+                <div>
+                    <h2>@currentFloorName Level Plan</h2>
+                    <p>Total capacity: <strong>@Model.Spots.Count spaces</strong> · Click any tile to assign, release, or list.</p>
+                </div>
+            </div>
+            <div class="ab-garage-legend">
+                <span class="ab-legend-item"><span class="ab-legend-indicator legend-green"></span> Available</span>
+                <span class="ab-legend-item"><span class="ab-legend-indicator legend-blue"></span> Assigned</span>
+                <span class="ab-legend-item"><span class="ab-legend-indicator legend-orange"></span> For Sale</span>
+                <span class="ab-legend-item"><span class="ab-legend-indicator legend-purple"></span> To-Let</span>
+            </div>
+        </div>
+
+        @if (Model.Spots.Any())
+        {
+            <div class="ab-parking-grid" id="parkingGrid">
+                @{
+                    var halfIndex = (Model.Spots.Count + 1) / 2;
+                    int currentIndex = 0;
+                }
+                @foreach (var spot in Model.Spots)
+                {
+                    currentIndex++;
+                    var statusClass = spot.Status.ToLowerInvariant() switch
+                    {
+                        "assigned" => "status-assigned",
+                        "forsale" => "status-forsale",
+                        "tolet" => "status-tolet",
+                        _ => "status-available"
+                    };
+
+                    <article class="ab-parking-spot-tile @statusClass"
+                             id="spot-tile-@spot.ParkingSpotId"
+                             data-spot-id="@spot.ParkingSpotId"
+                             data-spot-number="@spot.SpotNumber"
+                             data-status="@spot.Status"
+                             data-vehicle-type="@spot.VehicleType"
+                             data-monthly-fee="@spot.MonthlyFee.ToString("F0")"
+                             data-listing-price="@(spot.ListingPrice?.ToString("F0") ?? "")"
+                             data-listing-notes="@(spot.ListingNotes ?? "")"
+                             data-flat-id="@(spot.FlatId?.ToString() ?? "")"
+                             data-flat-number="@(spot.FlatNumber ?? "")"
+                             data-resident-name="@(spot.ResidentName ?? "")"
+                             data-payment-status="@spot.PaymentStatus"
+                             onclick="openSpotModal(this)">
+                        <div class="spot-top">
+                            <span class="spot-code">@spot.SpotNumber</span>
+                            <span class="status-badge">
+                                <i class="fa-solid fa-circle"></i>
+                                @(spot.Status == "ForSale" ? "For Sale" : (spot.Status == "ToLet" ? "To-Let" : spot.Status))
+                            </span>
+                        </div>
+
+                        <div class="spot-mid">
+                            @if (spot.Status == "Assigned" && !string.IsNullOrEmpty(spot.FlatNumber))
+                            {
+                                <div class="assigned-flat-pill">
+                                    <i class="fa-solid fa-house"></i>
+                                    <span>Flat @spot.FlatNumber</span>
+                                </div>
+                            }
+                            else if (spot.Status == "ForSale")
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis" style="font-size:11px;">
+                                    <i class="fa-solid fa-tag me-1"></i>Sale: ৳@((spot.ListingPrice ?? spot.MonthlyFee).ToString("N0"))
+                                </span>
+                            }
+                            else if (spot.Status == "ToLet")
+                            {
+                                <span class="badge bg-purple-subtle text-primary" style="font-size:11px;">
+                                    <i class="fa-solid fa-key me-1"></i>Rent: ৳@((spot.ListingPrice ?? spot.MonthlyFee).ToString("N0"))/mo
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="unassigned-label"><i class="fa-regular fa-circle-check me-1"></i>Vacant</span>
+                            }
+                        </div>
+
+                        <div class="spot-bottom">
+                            <span class="spot-fee">
+                                <i class="fa-solid @(spot.VehicleType == "Bike" ? "fa-motorcycle" : "fa-car") me-1"></i>
+                                ৳@spot.MonthlyFee.ToString("N0")<small class="text-muted">/mo</small>
+                            </span>
+                            @if (spot.Status == "Assigned")
+                            {
+                                <span class="payment-pill @(spot.PaymentStatus == "Paid" ? "pill-paid" : "pill-due")">
+                                    @spot.PaymentStatus
+                                </span>
+                            }
+                        </div>
+                    </article>
+
+                    @if (currentIndex == halfIndex && Model.Spots.Count > 6)
+                    {
+                        <div class="ab-driveway-aisle">
+                            <i class="fa-solid fa-chevron-left"></i>
+                            <span>Central Access Driveway · Driving Lane</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-white-50">
+                <i class="fa-solid fa-square-parking fa-3x mb-3 text-success"></i>
+                <h5>No parking spaces in this floor yet</h5>
+                <p>Spaces will be automatically generated according to floor capacity.</p>
+            </div>
+        }
+    </section>
+
+    <!-- Activity Log Timeline -->
+    <section class="ab-parking-activity-panel">
+        <div class="ab-panel-head">
+            <div class="ab-table-title">
+                <span><i class="fa-solid fa-clock-rotate-left"></i></span>
+                <div>
+                    <div class="ab-panel-kicker">AUDIT LOG</div>
+                    <h2>Parking Activity History</h2>
+                </div>
+            </div>
+            <span class="ab-panel-status"><i></i>Live operations</span>
+        </div>
+
+        @if (Model.RecentActivities.Any())
+        {
+            <div class="ab-activity-timeline">
+                @foreach (var log in Model.RecentActivities)
+                {
+                    <div class="ab-activity-entry">
+                        <div class="ab-activity-icon">
+                            <i class="fa-solid @(log.Action.Contains("Assign") ? "fa-link" : (log.Action.Contains("Release") ? "fa-link-slash" : "fa-square-parking"))"></i>
+                        </div>
+                        <div class="ab-activity-body">
+                            <strong>@log.Action · Space @log.SpotNumber</strong>
+                            <small>@log.Details</small>
+                        </div>
+                        <div class="ab-activity-time">
+                            @log.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mt-3 mb-0">No recorded activity yet. Parking assignments, status changes, and releases will appear here.</p>
+        }
     </section>
 </div>
+
+<!-- ========================================================
+     MODAL 1: INTERACTIVE SPOT MANAGEMENT (ASSIGN/RELEASE/STATUS)
+     ======================================================== -->
+<div class="modal fade ab-parking-modal" id="spotActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-square-parking text-success"></i>
+                    <span id="modalSpotTitle">Parking Space</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Card -->
+                <dl class="ab-spot-summary-card">
+                    <div>
+                        <dt>Spot Number</dt>
+                        <dd id="modalSpotNumber">—</dd>
+                    </div>
+                    <div>
+                        <dt>Current Status</dt>
+                        <dd id="modalSpotStatus">—</dd>
+                    </div>
+                    <div>
+                        <dt>Vehicle Type</dt>
+                        <dd id="modalSpotVehicle">—</dd>
+                    </div>
+                    <div>
+                        <dt>Monthly Fee</dt>
+                        <dd id="modalSpotFee">—</dd>
+                    </div>
+                    <div class="col-12" id="modalAssignedContainer" style="display:none;">
+                        <dt>Currently Assigned To</dt>
+                        <dd id="modalAssignedFlat" class="text-primary">—</dd>
+                    </div>
+                    <div class="col-12" id="modalMarketplaceLinkContainer" style="display:none;">
+                        <dt>Live Marketplace</dt>
+                        <dd>
+                            <a id="modalMarketplaceLinkBtn" href="#" target="_blank" class="btn btn-sm btn-outline-info rounded-pill py-1 px-3">
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View Live Listing on Marketplace
+                            </a>
+                        </dd>
+                    </div>
+                </dl>
+
+                <!-- Action Navigation Tabs -->
+                <nav class="ab-action-nav-tabs" role="tablist">
+                    <button type="button" class="ab-action-tab-btn active" id="tabBtnAssign" onclick="switchModalTab('assign')">
+                        <i class="fa-solid fa-link me-1"></i>Assign Flat
+                    </button>
+                    <button type="button" class="ab-action-tab-btn" id="tabBtnSale" onclick="switchModalTab('sale')">
+                        <i class="fa-solid fa-tag me-1"></i>Mark For Sale
+                    </button>
+                    <button type="button" class="ab-action-tab-btn" id="tabBtnToLet" onclick="switchModalTab('tolet')">
+                        <i class="fa-solid fa-key me-1"></i>Mark To-Let
+                    </button>
+                    <button type="button" class="ab-action-tab-btn text-danger" id="tabBtnRelease" onclick="switchModalTab('release')" style="display:none;">
+                        <i class="fa-solid fa-link-slash me-1"></i>Release
+                    </button>
+                </nav>
+
+                <!-- TAB 1: ASSIGN TO FLAT WITH TYPEAHEAD -->
+                <div id="tabContentAssign" class="modal-tab-pane">
+                    <form id="assignParkingForm" onsubmit="submitAssignForm(event)">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="assignSpotId" name="ParkingSpotId" />
+                        <input type="hidden" id="selectedFlatId" name="FlatId" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Search Apartment (Typeahead)</label>
+                            <div class="ab-typeahead-container">
+                                <input type="text" id="flatTypeaheadInput" class="form-control"
+                                       placeholder="Type flat number (e.g. A10, 101, B-02)..."
+                                       autocomplete="off" oninput="onFlatTypeaheadInput(this.value)" />
+                                <div id="flatTypeaheadDropdown" class="ab-typeahead-dropdown"></div>
+                            </div>
+                            <small class="text-muted">Type to instantly filter across all occupied apartments.</small>
+                        </div>
+
+                        <div id="selectedFlatBanner" class="ab-selected-flat-pill" style="display:none;">
+                            <div>
+                                <i class="fa-solid fa-check-circle me-1"></i>
+                                <span id="selectedFlatText">Flat Selected</span>
+                            </div>
+                            <button type="button" class="btn-close btn-sm" onclick="clearFlatSelection()"></button>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" id="btnConfirmAssign" class="btn btn-primary" disabled>
+                                <i class="fa-solid fa-link me-1"></i>Confirm Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TAB 2: MARK FOR SALE -->
+                <div id="tabContentSale" class="modal-tab-pane" style="display:none;">
+                    <form id="saleParkingForm" onsubmit="submitStatusForm(event, 'ForSale')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="saleSpotId" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Asking Sale Price (BDT)</label>
+                            <input type="number" id="salePriceInput" class="form-control" min="0" step="1000" placeholder="e.g. 350000" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Listing Description / Features</label>
+                            <textarea id="saleNotesInput" class="form-control" rows="2" placeholder="e.g. Spacious basement corner spot near lift entrance."></textarea>
+                        </div>
+                        <div class="alert alert-warning small py-2 mb-3">
+                            <i class="fa-solid fa-info-circle me-1"></i>Spot will be marked as <strong>For Sale</strong> and visible in marketplace listings.
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold">
+                                <i class="fa-solid fa-tag me-1"></i>List For Sale
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TAB 3: MARK TO-LET -->
+                <div id="tabContentToLet" class="modal-tab-pane" style="display:none;">
+                    <form id="toletParkingForm" onsubmit="submitStatusForm(event, 'ToLet')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="toletSpotId" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Monthly Rental Rate (BDT)</label>
+                            <input type="number" id="toletPriceInput" class="form-control" min="0" step="100" placeholder="e.g. 2000" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Rental Terms / Notes</label>
+                            <textarea id="toletNotesInput" class="form-control" rows="2" placeholder="e.g. Dedicated 24/7 covered security spot. Immediate handover."></textarea>
+                        </div>
+                        <div class="alert alert-info small py-2 mb-3">
+                            <i class="fa-solid fa-info-circle me-1"></i>Spot will be marked as <strong>To-Let</strong> for prospective tenants.
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" style="background:#7c3aed; border-color:#7c3aed;">
+                                <i class="fa-solid fa-key me-1"></i>List To-Let
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TAB 4: RELEASE SPACE -->
+                <div id="tabContentRelease" class="modal-tab-pane" style="display:none;">
+                    <div class="alert alert-danger py-3">
+                        <h6 class="fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>Release this parking space?</h6>
+                        <p class="small mb-0">The flat assignment will be removed and the spot will instantly return to Available.</p>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="submitReleaseSpot()">
+                            <i class="fa-solid fa-link-slash me-1"></i>Confirm Release
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Marketplace Notification Toast -->
+<div id="parkingMarketplaceToast" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1200; display: none;">
+    <div class="toast show align-items-center text-bg-success border-0 shadow-lg rounded-4 p-2" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check fs-5 text-white"></i>
+                <div class="text-white">
+                    <span id="toastMessageText" class="fw-semibold">Spot published to marketplace!</span>
+                    <a id="toastMarketplaceLink" href="#" target="_blank" class="btn btn-sm btn-light rounded-pill ms-2 text-dark fw-bold px-3">
+                        View <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('parkingMarketplaceToast').style.display='none'"></button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================
+     MODAL 2: CREATE PARKING FLOOR (AUTO-GENERATED CAPACITY)
+     ======================================================== -->
+<div class="modal fade ab-parking-modal" id="createFloorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-layer-group text-success"></i>
+                    <span>Create Parking Floor</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreateFloor" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Floor Name</label>
+                        <input type="text" name="FloorName" class="form-control" placeholder="e.g. Basement 2 or Ground Floor" required />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Floor Code / Prefix</label>
+                            <input type="text" name="FloorCode" class="form-control" placeholder="e.g. B2, B1, GF" maxlength="10" required />
+                            <small class="text-muted">Used for spot numbers (e.g. B2-01)</small>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Capacity (Total Spaces)</label>
+                            <input type="number" name="Capacity" class="form-control" min="1" max="500" value="20" required />
+                            <small class="text-muted">Auto-generates all spaces</small>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Default Vehicle Type</label>
+                            <select name="DefaultVehicleType" class="form-select">
+                                <option value="Car" selected>Car</option>
+                                <option value="Bike">Bike</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Default Monthly Fee (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">৳</span>
+                                <input type="number" name="DefaultMonthlyFee" class="form-control" min="0" step="100" value="1500" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success small py-2 mb-0">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i>
+                        The system will automatically generate all spots (e.g. <strong>B2-01</strong> to <strong>B2-20</strong>).
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Generate Parking Floor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script type="application/json" id="occupiedFlatsData">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OccupiedFlats))
+</script>
+<script>
+    // Occupied flats lookup data passed from server for instant typeahead
+    const flatsData = JSON.parse(document.getElementById('occupiedFlatsData')?.textContent || '[]');
+    let activeSpot = null;
+
+    // Search and Filter Logic
+    const searchInput = document.getElementById('parkingSearchInput');
+    const filterPills = document.querySelectorAll('.ab-filter-pill');
+    let currentFilter = 'all';
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterSpots);
+    }
+
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', function () {
+            filterPills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.getAttribute('data-filter');
+            filterSpots();
+        });
+    });
+
+    function filterSpots() {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const tiles = document.querySelectorAll('.ab-parking-spot-tile');
+
+        tiles.forEach(tile => {
+            const spotNum = (tile.getAttribute('data-spot-number') || '').toLowerCase();
+            const flatNum = (tile.getAttribute('data-flat-number') || '').toLowerCase();
+            const status = tile.getAttribute('data-status') || '';
+            const paymentStatus = tile.getAttribute('data-payment-status') || '';
+
+            const matchesQuery = !query || spotNum.includes(query) || flatNum.includes(query);
+
+            let matchesFilter = true;
+            if (currentFilter === 'all') {
+                matchesFilter = true;
+            } else if (currentFilter === 'Due') {
+                matchesFilter = (status === 'Assigned' && paymentStatus === 'Due');
+            } else {
+                matchesFilter = (status === currentFilter);
+            }
+
+            if (matchesQuery && matchesFilter) {
+                tile.style.display = 'flex';
+            } else {
+                tile.style.display = 'none';
+            }
+        });
+    }
+
+    // Modal Opening & Pre-filling
+    function openSpotModal(tile) {
+        activeSpot = {
+            id: tile.getAttribute('data-spot-id'),
+            spotNumber: tile.getAttribute('data-spot-number'),
+            status: tile.getAttribute('data-status'),
+            vehicleType: tile.getAttribute('data-vehicle-type'),
+            monthlyFee: tile.getAttribute('data-monthly-fee'),
+            listingPrice: tile.getAttribute('data-listing-price'),
+            listingNotes: tile.getAttribute('data-listing-notes'),
+            flatId: tile.getAttribute('data-flat-id'),
+            flatNumber: tile.getAttribute('data-flat-number'),
+            residentName: tile.getAttribute('data-resident-name'),
+            paymentStatus: tile.getAttribute('data-payment-status')
+        };
+
+        document.getElementById('modalSpotTitle').textContent = `Manage Space ${activeSpot.spotNumber}`;
+        document.getElementById('modalSpotNumber').textContent = activeSpot.spotNumber;
+        document.getElementById('modalSpotStatus').textContent = activeSpot.status;
+        document.getElementById('modalSpotVehicle').textContent = activeSpot.vehicleType;
+        document.getElementById('modalSpotFee').textContent = `৳${Number(activeSpot.monthlyFee).toLocaleString()}/month`;
+
+        // IDs for forms
+        document.getElementById('assignSpotId').value = activeSpot.id;
+        document.getElementById('saleSpotId').value = activeSpot.id;
+        document.getElementById('toletSpotId').value = activeSpot.id;
+
+        // Default prices
+        document.getElementById('salePriceInput').value = activeSpot.listingPrice || 350000;
+        document.getElementById('toletPriceInput').value = activeSpot.listingPrice || activeSpot.monthlyFee;
+        document.getElementById('saleNotesInput').value = activeSpot.listingNotes || '';
+        document.getElementById('toletNotesInput').value = activeSpot.listingNotes || '';
+
+        // Assigned info & Marketplace info display
+        const assignedContainer = document.getElementById('modalAssignedContainer');
+        const assignedFlatEl = document.getElementById('modalAssignedFlat');
+        const marketContainer = document.getElementById('modalMarketplaceLinkContainer');
+        const marketLinkBtn = document.getElementById('modalMarketplaceLinkBtn');
+        const tabBtnRelease = document.getElementById('tabBtnRelease');
+
+        if (activeSpot.status === 'Assigned' && activeSpot.flatNumber) {
+            assignedContainer.style.display = 'block';
+            assignedFlatEl.textContent = `Flat ${activeSpot.flatNumber} (${activeSpot.residentName || 'Resident'}) · Payment: ${activeSpot.paymentStatus}`;
+            tabBtnRelease.style.display = 'inline-block';
+            if (marketContainer) marketContainer.style.display = 'none';
+        } else if (activeSpot.status === 'ForSale' || activeSpot.status === 'ToLet') {
+            assignedContainer.style.display = 'none';
+            if (marketContainer && marketLinkBtn) {
+                marketContainer.style.display = 'block';
+                marketLinkBtn.href = `/Property/ParkingDetails/${activeSpot.id}`;
+            }
+            tabBtnRelease.style.display = 'inline-block';
+        } else {
+            assignedContainer.style.display = 'none';
+            if (marketContainer) marketContainer.style.display = 'none';
+            tabBtnRelease.style.display = 'none';
+        }
+
+        clearFlatSelection();
+        switchModalTab('assign');
+
+        const modalEl = document.getElementById('spotActionModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    // Modal Tab Switching
+    function switchModalTab(tab) {
+        document.querySelectorAll('.ab-action-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.modal-tab-pane').forEach(pane => pane.style.display = 'none');
+
+        if (tab === 'assign') {
+            document.getElementById('tabBtnAssign').classList.add('active');
+            document.getElementById('tabContentAssign').style.display = 'block';
+        } else if (tab === 'sale') {
+            document.getElementById('tabBtnSale').classList.add('active');
+            document.getElementById('tabContentSale').style.display = 'block';
+        } else if (tab === 'tolet') {
+            document.getElementById('tabBtnToLet').classList.add('active');
+            document.getElementById('tabContentToLet').style.display = 'block';
+        } else if (tab === 'release') {
+            document.getElementById('tabBtnRelease').classList.add('active');
+            document.getElementById('tabContentRelease').style.display = 'block';
+        }
+    }
+
+    // Typeahead Flat Search
+    function onFlatTypeaheadInput(query) {
+        const dropdown = document.getElementById('flatTypeaheadDropdown');
+        const q = (query || '').trim().toLowerCase();
+
+        if (!q) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        const matches = flatsData.filter(f =>
+            f.flatNumber.toLowerCase().includes(q) ||
+            f.residentName.toLowerCase().includes(q) ||
+            f.floorNumber.toString().includes(q)
+        );
+
+        if (matches.length === 0) {
+            dropdown.innerHTML = '<div class="p-3 text-muted text-center small">No matching occupied flat found</div>';
+            dropdown.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        matches.slice(0, 8).forEach(f => {
+            html += `
+                <div class="ab-typeahead-item" onclick="selectFlat(${f.flatId}, '${f.flatNumber}', '${f.residentName}', ${f.floorNumber})">
+                    <div>
+                        <strong>Flat ${f.flatNumber}</strong>
+                        <small class="ms-2">Floor ${f.floorNumber} · ${f.residentName}</small>
+                    </div>
+                    <span class="badge bg-light text-dark">${f.residentType}</span>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+    }
+
+    function selectFlat(flatId, flatNumber, residentName, floorNumber) {
+        document.getElementById('selectedFlatId').value = flatId;
+        document.getElementById('flatTypeaheadInput').value = `Flat ${flatNumber}`;
+        document.getElementById('flatTypeaheadDropdown').style.display = 'none';
+
+        document.getElementById('selectedFlatText').textContent = `Flat ${flatNumber} (Floor ${floorNumber} · ${residentName})`;
+        document.getElementById('selectedFlatBanner').style.display = 'flex';
+        document.getElementById('btnConfirmAssign').disabled = false;
+    }
+
+    function clearFlatSelection() {
+        document.getElementById('selectedFlatId').value = '';
+        document.getElementById('flatTypeaheadInput').value = '';
+        document.getElementById('flatTypeaheadDropdown').style.display = 'none';
+        document.getElementById('selectedFlatBanner').style.display = 'none';
+        document.getElementById('btnConfirmAssign').disabled = true;
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+        const container = document.querySelector('.ab-typeahead-container');
+        if (container && !container.contains(e.target)) {
+            const dropdown = document.getElementById('flatTypeaheadDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        }
+    });
+
+    // Submit AJAX Assignment
+    async function submitAssignForm(e) {
+        e.preventDefault();
+        if (!activeSpot) return;
+
+        const flatId = document.getElementById('selectedFlatId').value;
+        if (!flatId) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        try {
+            const response = await fetch('@Url.Action("AssignSpotAjax", "Manager")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    parkingSpotId: parseInt(activeSpot.id),
+                    flatId: parseInt(flatId)
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Update DOM Tile
+                const tile = document.getElementById(`spot-tile-${activeSpot.id}`);
+                if (tile) {
+                    tile.className = 'ab-parking-spot-tile status-assigned animate-stamp';
+                    tile.setAttribute('data-status', 'Assigned');
+                    tile.setAttribute('data-flat-number', data.flatNumber);
+                    tile.setAttribute('data-resident-name', data.residentName);
+                    tile.setAttribute('data-payment-status', 'Due');
+
+                    const badge = tile.querySelector('.status-badge');
+                    if (badge) badge.innerHTML = '<i class="fa-solid fa-circle"></i> Assigned';
+
+                    const mid = tile.querySelector('.spot-mid');
+                    if (mid) mid.innerHTML = `<div class="assigned-flat-pill"><i class="fa-solid fa-house"></i><span>Flat ${data.flatNumber}</span></div>`;
+
+                    const bottom = tile.querySelector('.spot-bottom');
+                    if (bottom && !bottom.querySelector('.payment-pill')) {
+                        bottom.innerHTML += '<span class="payment-pill pill-due">Due</span>';
+                    }
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('spotActionModal')).hide();
+            } else {
+                alert(data.message || 'Failed to assign space.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('An unexpected error occurred while assigning the parking space.');
+        }
+    }
+
+    // Submit AJAX Release Spot
+    async function submitReleaseSpot() {
+        if (!activeSpot) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        try {
+            const response = await fetch(`@Url.Action("ReleaseSpotAjax", "Manager")?spotId=${activeSpot.id}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                const tile = document.getElementById(`spot-tile-${activeSpot.id}`);
+                if (tile) {
+                    tile.className = 'ab-parking-spot-tile status-available animate-pulse';
+                    tile.setAttribute('data-status', 'Available');
+                    tile.setAttribute('data-flat-number', '');
+                    tile.setAttribute('data-resident-name', '');
+                    tile.setAttribute('data-payment-status', '');
+
+                    const badge = tile.querySelector('.status-badge');
+                    if (badge) badge.innerHTML = '<i class="fa-solid fa-circle"></i> Available';
+
+                    const mid = tile.querySelector('.spot-mid');
+                    if (mid) mid.innerHTML = '<span class="unassigned-label"><i class="fa-regular fa-circle-check me-1"></i>Vacant</span>';
+
+                    const pill = tile.querySelector('.payment-pill');
+                    if (pill) pill.remove();
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('spotActionModal')).hide();
+            } else {
+                alert(data.message || 'Failed to release space.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('An unexpected error occurred while releasing the parking space.');
+        }
+    }
+
+    // Submit AJAX Status Change (For Sale / To-Let)
+    async function submitStatusForm(e, status) {
+        e.preventDefault();
+        if (!activeSpot) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const price = status === 'ForSale'
+            ? parseFloat(document.getElementById('salePriceInput').value)
+            : parseFloat(document.getElementById('toletPriceInput').value);
+
+        const notes = status === 'ForSale'
+            ? document.getElementById('saleNotesInput').value
+            : document.getElementById('toletNotesInput').value;
+
+        try {
+            const response = await fetch('@Url.Action("UpdateSpotStatusAjax", "Manager")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    parkingSpotId: parseInt(activeSpot.id),
+                    status: status,
+                    listingPrice: price,
+                    listingNotes: notes
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                const tile = document.getElementById(`spot-tile-${activeSpot.id}`);
+                if (tile) {
+                    const statusClass = status === 'ForSale' ? 'status-forsale' : 'status-tolet';
+                    tile.className = `ab-parking-spot-tile ${statusClass} animate-stamp`;
+                    tile.setAttribute('data-status', status);
+                    tile.setAttribute('data-listing-price', price);
+                    tile.setAttribute('data-listing-notes', notes);
+
+                    const badge = tile.querySelector('.status-badge');
+                    if (badge) badge.innerHTML = `<i class="fa-solid fa-circle"></i> ${status === 'ForSale' ? 'For Sale' : 'To-Let'}`;
+
+                    const mid = tile.querySelector('.spot-mid');
+                    if (mid) {
+                        if (status === 'ForSale') {
+                            mid.innerHTML = `<span class="badge bg-warning-subtle text-warning-emphasis" style="font-size:11px;"><i class="fa-solid fa-tag me-1"></i>Sale: ৳${Number(price).toLocaleString()}</span>`;
+                        } else {
+                            mid.innerHTML = `<span class="badge bg-purple-subtle text-primary" style="font-size:11px;"><i class="fa-solid fa-key me-1"></i>Rent: ৳${Number(price).toLocaleString()}/mo</span>`;
+                        }
+                    }
+
+                    const pill = tile.querySelector('.payment-pill');
+                    if (pill) pill.remove();
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('spotActionModal')).hide();
+
+                // Show toast notification
+                const toast = document.getElementById('parkingMarketplaceToast');
+                if (toast && data.marketplaceUrl) {
+                    const msgEl = document.getElementById('toastMessageText');
+                    const linkEl = document.getElementById('toastMarketplaceLink');
+                    if (msgEl) msgEl.textContent = data.message;
+                    if (linkEl) linkEl.href = data.marketplaceUrl;
+                    toast.style.display = 'block';
+                    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+                }
+            } else {
+                alert(data.message || 'Failed to update spot status.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('An unexpected error occurred while updating status.');
+        }
+    }
+</script>
+}
+

@@ -33,9 +33,14 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Tenant,FlatOwner")]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
         public async Task<IActionResult> Dashboard()
         {
+            if (User.IsInRole("ParkingUser") && !User.IsInRole("Tenant") && !User.IsInRole("FlatOwner"))
+            {
+                return RedirectToAction(nameof(ParkingDashboard));
+            }
+
             var user = await userManager.GetUserAsync(User);
             var assignment = user == null ? null : await dbContext.FlatAssignments
                 .Include(item => item.Flat)
@@ -43,6 +48,55 @@ namespace ADHUNIK_BARI.Controllers
                 .SingleOrDefaultAsync(item => item.UserId == user.Id && item.IsActive);
 
             ViewBag.Assignment = assignment;
+
+            var residentParking = new ResidentParkingViewModel();
+
+            if (assignment != null)
+            {
+                var assignedSpots = await dbContext.ParkingSpots
+                    .Where(p => p.FlatId == assignment.FlatId)
+                    .Include(p => p.Floor)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                if (assignedSpots.Any())
+                {
+                    var parkingBillItems = await dbContext.BillItems
+                        .Include(bi => bi.Bill)
+                        .Where(bi => bi.ItemType == BillItemTypes.Parking && bi.Bill != null && bi.Bill.AssignmentId == assignment.AssignmentId)
+                        .OrderByDescending(bi => bi.CreatedAt)
+                        .ToListAsync();
+
+                    var latestBill = await dbContext.Bills
+                        .Where(b => b.AssignmentId == assignment.AssignmentId)
+                        .OrderByDescending(b => b.BillYear)
+                        .ThenByDescending(b => b.BillMonth)
+                        .FirstOrDefaultAsync();
+
+                    foreach (var spot in assignedSpots)
+                    {
+                        string paymentStatus = "Due";
+                        var matchingItem = parkingBillItems.FirstOrDefault(bi => bi.PaymentStatus == "Paid");
+                        if (matchingItem != null || (latestBill != null && latestBill.BillStatus == "Paid"))
+                        {
+                            paymentStatus = "Paid";
+                        }
+
+                        residentParking.Spots.Add(new ResidentParkingSpotItem
+                        {
+                            ParkingSpotId = spot.ParkingSpotId,
+                            SpotNumber = spot.SpotNumber,
+                            FloorName = spot.Floor?.FloorName ?? "Basement",
+                            VehicleType = spot.ParkingType ?? "Car",
+                            MonthlyFee = spot.ParkingFee,
+                            PaymentStatus = paymentStatus,
+                            AssignedDate = spot.CreatedAt
+                        });
+                    }
+                }
+            }
+
+            ViewBag.ResidentParking = residentParking;
 
             if (user != null)
             {
@@ -54,7 +108,47 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Tenant,FlatOwner")]
+        [Authorize(Roles = "ParkingUser")]
+        public async Task<IActionResult> ParkingDashboard()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var spots = await dbContext.ParkingSpots
+                .Include(p => p.Floor)
+                .Where(p => p.AssignedUserId == user.Id)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var applications = await dbContext.ParkingApplications
+                .Include(a => a.ParkingSpot)
+                    .ThenInclude(p => p!.Floor)
+                .Where(a => (a.CreatedUserId == user.Id || a.Email == user.Email) && a.PaymentStatus == PropertyPaymentStatuses.Succeeded)
+                .OrderByDescending(a => a.PaidAt ?? a.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ViewBag.User = user;
+            ViewBag.Spots = spots;
+            ViewBag.Applications = applications;
+            ViewBag.RequirePasswordChange = user.TemporaryPasswordStatus;
+
+            return View();
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        public IActionResult MyParking()
+        {
+            if (User.IsInRole("ParkingUser"))
+            {
+                return RedirectToAction(nameof(ParkingDashboard));
+            }
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
         public async Task<IActionResult> MyBills()
         {
             var user = await userManager.GetUserAsync(User);
@@ -64,17 +158,8 @@ namespace ADHUNIK_BARI.Controllers
             }
 
             var assignment = await GetActiveAssignment(user.Id);
-            if (assignment == null)
-            {
-                return View(new MyBillsViewModel
-                {
-                    ResidentName = user.FullName ?? "Resident",
-                    FlatNumber = "N/A",
-                    ResidentType = "Resident"
-                });
-            }
 
-            var bills = await dbContext.Bills
+            var bills = assignment == null ? new List<Bill>() : await dbContext.Bills
                 .Include(b => b.BillItems)
                 .Include(b => b.Payments)
                 .Where(b => b.AssignmentId == assignment.AssignmentId)
@@ -95,8 +180,8 @@ namespace ADHUNIK_BARI.Controllers
                 BillId = b.BillId,
                 BillMonth = b.BillMonth,
                 BillYear = b.BillYear,
-                FlatNumber = assignment.Flat?.FlatNumber ?? "N/A",
-                ResidentType = assignment.ResidentType,
+                FlatNumber = assignment?.Flat?.FlatNumber ?? "N/A",
+                ResidentType = assignment?.ResidentType ?? "Parking Member",
                 TotalAmount = b.TotalAmount,
                 PaidAmount = b.PaidAmount,
                 DueAmount = b.DueAmount,
@@ -124,13 +209,34 @@ namespace ADHUNIK_BARI.Controllers
                 ItemsDescription = p.PaidItemsJson
             }).ToList();
 
+            // Include parking payments for this user (outsider or direct parking applications)
+            var parkingApps = await dbContext.ParkingApplications
+                .Include(a => a.ParkingSpot)
+                .Where(a => (a.CreatedUserId == user.Id || a.Email == user.Email) && a.PaymentStatus == PropertyPaymentStatuses.Succeeded)
+                .AsNoTracking()
+                .OrderByDescending(a => a.PaidAt ?? a.CreatedAt)
+                .ToListAsync();
+
+            foreach (var pa in parkingApps)
+            {
+                paymentHistoryVms.Add(new ResidentPaymentHistoryViewModel
+                {
+                    PaymentId = 900000 + pa.ParkingApplicationId,
+                    AmountPaid = pa.AdvanceAmount,
+                    PaymentDate = pa.PaidAt ?? pa.CreatedAt,
+                    PaymentStatus = "Completed",
+                    Reference = $"PRK-{pa.ParkingSpot?.SpotNumber ?? ""}-{pa.ParkingApplicationId}",
+                    ItemsDescription = $"Parking Bay {pa.ParkingSpot?.SpotNumber ?? ""} ({pa.ApplicationType})"
+                });
+            }
+
             var model = new MyBillsViewModel
             {
                 ResidentName = user.FullName ?? "Resident",
-                FlatNumber = assignment.Flat?.FlatNumber ?? "N/A",
-                ResidentType = assignment.ResidentType,
+                FlatNumber = assignment?.Flat?.FlatNumber ?? "Parking Space",
+                ResidentType = assignment?.ResidentType ?? "Parking Member",
                 CurrentBills = currentBillVms,
-                PaymentHistory = paymentHistoryVms
+                PaymentHistory = paymentHistoryVms.OrderByDescending(p => p.PaymentDate).ToList()
             };
 
             ViewBag.StripePublicKey = configuration["Stripe:PublishableKey"] ?? "pk_test_placeholder";
@@ -140,7 +246,7 @@ namespace ADHUNIK_BARI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Manager,Admin,Tenant,FlatOwner")]
+        [Authorize(Roles = "Manager,Admin,Tenant,FlatOwner,ParkingUser")]
         public async Task<IActionResult> Receipt(int id, [FromQuery] int? paymentId)
         {
             var targetPaymentId = id > 0 ? id : paymentId.GetValueOrDefault();

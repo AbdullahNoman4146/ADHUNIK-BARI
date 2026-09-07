@@ -1,0 +1,188 @@
+@model ADHUNIK_BARI.ViewModels.PublicParkingDetailsViewModel
+@{
+    ViewData["Title"] = $"Parking Spot {Model.SpotNumber} · {Model.FloorName}";
+    var isToLet = Model.ListingType == PropertyListingTypes.ToLet;
+    var listingTypeClass = isToLet ? "bg-primary-subtle text-primary" : "bg-warning-subtle text-warning-emphasis";
+    var listingTypeLabel = isToLet ? "To-Let" : "For Sale";
+}
+
+<div class="public-marketplace-page">
+    <div class="container py-4 py-lg-5">
+        <div class="mb-4">
+            <a asp-action="Index" asp-route-type="Parking" class="public-back-link">
+                <i class="fa-solid fa-arrow-left me-2"></i>Back to marketplace
+            </a>
+        </div>
+
+        <div class="row g-4 align-items-start">
+            <!-- Left Column: Visual Showcase -->
+            <div class="col-lg-7">
+                <div class="public-details-gallery card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; padding: 48px 32px; text-align: center; position: relative;">
+                        <div style="position: absolute; top: 16px; right: 16px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px;">
+                            <i class="fa-solid fa-shield-halved me-1"></i>24/7 CCTV Monitored
+                        </div>
+                        <div style="display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 24px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 16px;">
+                            <i class="fa-solid fa-square-parking" style="font-size: 48px; color: #38bdf8;"></i>
+                        </div>
+                        <h1 class="h2 fw-bold text-white mb-1">Spot @Model.SpotNumber</h1>
+                        <p class="text-white-50 mb-0">@Model.FloorName · Dedicated @Model.VehicleType Parking Bay</p>
+                    </div>
+
+                    <div class="p-4 p-md-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <div class="property-eyebrow mb-1">Basement Specification</div>
+                                <h2 class="h5 fw-bold mb-0">Space Details &amp; Infrastructure</h2>
+                            </div>
+                            <span class="badge bg-white text-dark border px-3 py-2 rounded-pill font-monospace">@Model.FloorCode-BAY</span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-car"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Vehicle Compatibility</div>
+                                        <div class="fw-bold">@Model.VehicleType / Standard</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-info-subtle text-info p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-elevator"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Elevator Access</div>
+                                        <div class="fw-bold">Direct Lift Lobby Access</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-success-subtle text-success p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Security Guard</div>
+                                        <div class="fw-bold">Round-the-clock stationed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-warning-subtle text-warning-emphasis p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-lightbulb"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Lighting &amp; Sensors</div>
+                                        <div class="fw-bold">Automated LED illumination</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Pricing & Booking Action -->
+            <div class="col-lg-5">
+                <div class="public-details-summary card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <span class="badge rounded-pill @listingTypeClass">
+                            <i class="fa-solid @(isToLet ? "fa-key" : "fa-tag") me-1"></i>Parking · @listingTypeLabel
+                        </span>
+                        <h2 class="h3 fw-bold mt-3 mb-2">Parking Space @Model.SpotNumber</h2>
+                        <p class="text-muted mb-4">
+                            @(string.IsNullOrWhiteSpace(Model.ListingNotes)
+                                ? $"Dedicated parking space on {Model.FloorName} with easy maneuverability, high clearance, and 24/7 security."
+                                : Model.ListingNotes)
+                        </p>
+
+                        <div class="public-price-panel rounded-4 p-3 mb-4">
+                            <span class="small text-muted d-block">@(isToLet ? "Monthly rental fee" : "Purchase price")</span>
+                            <strong>৳@Model.Price.ToString("N0")</strong>
+                            <span class="small text-muted d-block mt-1">
+                                Advance / Booking token: <b class="text-dark">৳@Model.AdvanceAmount.ToString("N0")</b>
+                            </span>
+                        </div>
+
+                        <div class="public-flat-reference rounded-3 p-3 mb-4">
+                            <i class="fa-solid fa-square-parking text-primary me-2"></i>
+                            <strong>@Model.FloorName</strong><span class="text-muted ms-2">Spot @Model.SpotNumber</span>
+                        </div>
+
+                        <div class="public-details-stats mb-4">
+                            <div><i class="fa-solid fa-car"></i><strong>@Model.VehicleType</strong><span>Vehicle</span></div>
+                            <div><i class="fa-solid fa-layer-group"></i><strong>@Model.FloorCode</strong><span>Floor</span></div>
+                            <div><i class="fa-solid fa-video"></i><strong>Active</strong><span>CCTV</span></div>
+                            <div><i class="fa-solid fa-door-open"></i><strong>Quick</strong><span>Exit</span></div>
+                        </div>
+
+                        <a asp-controller="Property" asp-action="ApplyParking" asp-route-id="@Model.ParkingSpotId"
+                           class="btn btn-primary btn-lg rounded-pill w-100 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-paper-plane me-2"></i>Book Parking Space
+                        </a>
+
+                        <div class="public-coming-soon mt-3">
+                            <i class="fa-solid fa-circle-info me-2"></i>Tenants and Flat Owners can link this space to their active flat.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="row g-4 mt-1">
+            <div class="col-lg-8">
+                <section class="public-details-section card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h2 class="h4 fw-bold mb-3">About this parking space</h2>
+                        <div class="public-description">
+                            <p>
+                                This dedicated parking spot is situated within the basement level of ADHUNIK BARI. Designed for convenient vehicular ingress and egress, the bay features marked boundaries, high head clearance, and seamless access to passenger elevators connecting directly to residential floors.
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(Model.ListingNotes))
+                            {
+                                <div class="alert alert-light border rounded-3 p-3 mt-3">
+                                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-note-sticky text-primary me-2"></i>Manager's Listing Notes</h6>
+                                    <p class="mb-0 text-muted">@Model.ListingNotes</p>
+                                </div>
+                            }
+                        </div>
+
+                        <h3 class="h6 fw-bold mt-4 mb-2"><i class="fa-solid fa-list-check text-primary me-2"></i>Community Amenities &amp; Services</h3>
+                        <div class="public-features">
+                            <ul class="list-unstyled mb-0 d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                                <li><i class="fa-solid fa-check text-success me-2"></i>24/7 Guarded entry boom barrier</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i>High-definition CCTV coverage</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i>Automated fire safety sprinklers</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i>Regular floor cleaning &amp; drainage</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i>Elevator lobby within 25 steps</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i>Monthly fee billed with flat utilities</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <div class="col-lg-4">
+                <section class="public-details-section card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h2 class="h5 fw-bold mb-3">Listing Details</h2>
+                        <dl class="public-information-list mb-0">
+                            <div><dt>Status</dt><dd><span class="badge bg-success-subtle text-success rounded-pill">Available for Booking</span></dd></div>
+                            <div><dt>Type</dt><dd>@(isToLet ? "To-Let (Rental)" : "For Sale")</dd></div>
+                            <div><dt>Floor</dt><dd>@Model.FloorName (@Model.FloorCode)</dd></div>
+                            <div><dt>Spot No.</dt><dd class="fw-bold">@Model.SpotNumber</dd></div>
+                            <div><dt>Listed</dt><dd>@(Model.PublishedAt?.ToString("dd MMM yyyy") ?? "Recently")</dd></div>
+                        </dl>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using ADHUNIK_BARI.Models;
 using ADHUNIK_BARI.ViewModels;
@@ -35,21 +35,21 @@ namespace ADHUNIK_BARI.Controllers
         // =========================
 
         [HttpGet]
-        public IActionResult Login()
+        public async Task<IActionResult> Login(string? returnUrl = null, string? email = null, bool forceLogout = false)
         {
-
+            if (forceLogout || (!string.IsNullOrWhiteSpace(email) && User.Identity != null && User.Identity.IsAuthenticated && !string.Equals(User.Identity.Name, email, StringComparison.OrdinalIgnoreCase)))
+            {
+                await signInManager.SignOutAsync();
+                return View(new LoginViewModel { Email = email ?? string.Empty });
+            }
 
             if (User.Identity != null &&
                User.Identity.IsAuthenticated)
             {
-
                 return RedirectToDashboard();
-
             }
 
-
-            return View();
-
+            return View(new LoginViewModel { Email = email ?? string.Empty });
         }
 
 
@@ -262,7 +262,15 @@ namespace ADHUNIK_BARI.Controllers
 
 
 
-                // Stay in resident dashboard
+                // Stay in appropriate dashboard
+                var isParkingUser = await userManager.IsInRoleAsync(user, "ParkingUser");
+                if (isParkingUser)
+                {
+                    return RedirectToAction(
+                        "ParkingDashboard",
+                        "Resident"
+                    );
+                }
 
                 return RedirectToAction(
                     "Dashboard",
@@ -384,6 +392,14 @@ namespace ADHUNIK_BARI.Controllers
 
             }
 
+            if (roles.Contains("ParkingUser"))
+            {
+                return RedirectToAction(
+                    "ParkingDashboard",
+                    "Resident"
+                );
+            }
+
 
 
 
@@ -437,6 +453,14 @@ namespace ADHUNIK_BARI.Controllers
                     "Resident"
                 );
 
+            }
+
+            if (User.IsInRole("ParkingUser"))
+            {
+                return RedirectToAction(
+                    "ParkingDashboard",
+                    "Resident"
+                );
             }
 
 
