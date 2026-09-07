@@ -178,6 +178,26 @@ namespace ADHUNIK_BARI.Services
                         });
                     }
 
+                    // 4. PARKING FEE: For flats with assigned parking spots
+                    if (assignment.FlatId > 0)
+                    {
+                        var assignedParkingSpots = await _dbContext.ParkingSpots
+                            .Where(p => p.FlatId == assignment.FlatId && p.ParkingFee > 0)
+                            .ToListAsync();
+
+                        foreach (var spot in assignedParkingSpots)
+                        {
+                            billItems.Add(new BillItem
+                            {
+                                ItemType = BillItemTypes.Parking,
+                                Amount = spot.ParkingFee,
+                                Description = $"Parking Fee ({spot.SpotNumber}) for Flat {assignment.Flat?.FlatNumber}",
+                                PaymentStatus = "Unpaid",
+                                CreatedAt = createdAt
+                            });
+                        }
+                    }
+
                     bill.TotalAmount = billItems.Sum(item => item.Amount);
                     bill.DueAmount = bill.TotalAmount;
                     bill.PaidAmount = 0;
@@ -207,11 +227,12 @@ namespace ADHUNIK_BARI.Services
             {
                 var overview = await _dbContext.Bills
                     .Include(b => b.Assignment)
-                        .ThenInclude(a => a.Flat)
+                        .ThenInclude(a => a!.Flat)
                     .Include(b => b.Assignment)
-                        .ThenInclude(a => a.User)
+                        .ThenInclude(a => a!.User)
                     .AsNoTracking()
-                    .GroupBy(b => new { b.Assignment.Flat.FlatNumber, b.Assignment.ResidentType })
+                    .Where(b => b.Assignment != null && b.Assignment.Flat != null)
+                    .GroupBy(b => new { FlatNumber = b.Assignment!.Flat!.FlatNumber, ResidentType = b.Assignment!.ResidentType })
                     .Select(g => new BillingOverviewViewModel
                     {
                         FlatNumber = g.Key.FlatNumber,

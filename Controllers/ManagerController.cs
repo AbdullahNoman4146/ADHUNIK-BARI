@@ -789,178 +789,654 @@ Date:
         // ==========================================
 
 
+        // ==========================================
+        // PARKING MANAGEMENT & BASEMENT FLOOR PLAN
+        // ==========================================
+
         [HttpGet]
-        public async Task<IActionResult> Parking()
+        public async Task<IActionResult> Parking(int? floorId = null, string? search = null, string? status = null)
         {
-            var parkingSpots = await dbContext.ParkingSpots
-                .Include(p => p.Flat)
-                .AsNoTracking()
-                .OrderBy(p => p.SpotNumber)
+            // Ensure at least one floor exists (e.g. Basement 1)
+            var floors = await dbContext.ParkingFloors
+                .OrderBy(f => f.FloorCode)
                 .ToListAsync();
 
+            if (!floors.Any())
+            {
+                var defaultFloor = new ParkingFloor
+                {
+                    FloorName = "Basement 1",
+                    FloorCode = "B1",
+                    Capacity = 20,
+                    CreatedAt = DateTime.UtcNow
+                };
+                dbContext.ParkingFloors.Add(defaultFloor);
+                await dbContext.SaveChangesAsync();
 
-            return View(parkingSpots);
+                // Generate default 20 spots for B1
+                var initialSpots = new List<ParkingSpot>();
+                for (int i = 1; i <= 20; i++)
+                {
+                    initialSpots.Add(new ParkingSpot
+                    {
+                        ParkingFloorId = defaultFloor.ParkingFloorId,
+                        SpotNumber = $"B1-{i:D2}",
+                        Status = "Available",
+                        IsAvailable = true,
+                        ParkingType = "Car",
+                        ParkingFee = 1500m,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                dbContext.ParkingSpots.AddRange(initialSpots);
+                dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+                {
+                    Action = "Floor Created",
+                    Details = "System initialized Basement 1 with 20 parking spaces.",
+                    CreatedBy = "System",
+                    CreatedAt = DateTime.UtcNow
+                });
+                await dbContext.SaveChangesAsync();
+
+                floors = await dbContext.ParkingFloors.OrderBy(f => f.FloorCode).ToListAsync();
+            }
+
+            // Assign any orphaned spots to first floor
+            var orphanedSpots = await dbContext.ParkingSpots.Where(s => s.ParkingFloorId == null).ToListAsync();
+            if (orphanedSpots.Any())
+            {
+                var firstFloorId = floors.First().ParkingFloorId;
+                foreach (var s in orphanedSpots)
+                {
+                    s.ParkingFloorId = firstFloorId;
+                }
+                await dbContext.SaveChangesAsync();
+            }
+
+            // Selected active floor
+            var currentFloor = floorId.HasValue
+                ? floors.FirstOrDefault(f => f.ParkingFloorId == floorId.Value) ?? floors.First()
+                : floors.First();
+
+            // Load all spots for current floor
+            var floorSpots = await dbContext.ParkingSpots
+                .Where(s => s.ParkingFloorId == currentFloor.ParkingFloorId)
+                .Include(s => s.Flat)
+                .OrderBy(s => s.SpotNumber)
+                .ToListAsync();
+
+            // Check if floor has missing spots up to capacity; auto-generate missing tiles if needed
+            if (floorSpots.Count < currentFloor.Capacity)
+            {
+                int nextIndex = floorSpots.Count + 1;
+                var missingSpots = new List<ParkingSpot>();
+                for (int i = nextIndex; i <= currentFloor.Capacity; i++)
+                {
+                    var spotNum = $"{currentFloor.FloorCode}-{i:D2}";
+                    if (!floorSpots.Any(s => s.SpotNumber.Equals(spotNum, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        missingSpots.Add(new ParkingSpot
+                        {
+                            ParkingFloorId = currentFloor.ParkingFloorId,
+                            SpotNumber = spotNum,
+                            Status = "Available",
+                            IsAvailable = true,
+                            ParkingType = "Car",
+                            ParkingFee = 1500m,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                if (missingSpots.Any())
+                {
+                    dbContext.ParkingSpots.AddRange(missingSpots);
+                    await dbContext.SaveChangesAsync();
+                    floorSpots = await dbContext.ParkingSpots
+                        .Where(s => s.ParkingFloorId == currentFloor.ParkingFloorId)
+                        .Include(s => s.Flat)
+                        .OrderBy(s => s.SpotNumber)
+                        .ToListAsync();
+                }
+            }
+
+            // Load active flat assignments for occupied flats to display resident names and compute payments
+            var activeAssignments = await dbContext.FlatAssignments
+                .Include(a => a.User)
+                .Include(a => a.Flat)
+                .Where(a => a.IsActive)
+                .ToListAsync();
+
+            var assignmentMap = activeAssignments.ToDictionary(a => a.FlatId, a => a);
+
+            // Fetch parking bill items to accurately determine payment status (Paid vs Due)
+            var parkingBillItems = await dbContext.BillItems
+                .Include(bi => bi.Bill)
+                .Where(bi => bi.ItemType == BillItemTypes.Parking && bi.Bill != null)
+                .OrderByDescending(bi => bi.CreatedAt)
+                .ToListAsync();
+
+            // Map each spot to ParkingSpotTileViewModel
+            var spotTiles = floorSpots.Select(s =>
+            {
+                string residentName = string.Empty;
+                string residentType = string.Empty;
+                int? flatFloor = null;
+                FlatAssignment? assign = null;
+
+                if (s.FlatId.HasValue && assignmentMap.TryGetValue(s.FlatId.Value, out assign))
+                {
+                    residentName = assign.User?.FullName ?? string.Empty;
+                    residentType = assign.ResidentType ?? string.Empty;
+                    flatFloor = assign.Flat?.FloorNumber;
+                }
+
+                // Determine payment status:
+                string paymentStatus = "Due";
+                if (s.FlatId.HasValue)
+                {
+                    var matchingBillItem = parkingBillItems
+                        .FirstOrDefault(bi => bi.Bill?.Assignment != null && bi.Bill.Assignment.FlatId == s.FlatId.Value);
+
+                    if (matchingBillItem != null && (matchingBillItem.PaymentStatus == "Paid" || matchingBillItem.Bill?.BillStatus == "Paid"))
+                    {
+                        paymentStatus = "Paid";
+                    }
+                    else if (assign != null)
+                    {
+                        var latestBill = dbContext.Bills
+                            .Where(b => b.AssignmentId == assign.AssignmentId)
+                            .OrderByDescending(b => b.BillYear)
+                            .ThenByDescending(b => b.BillMonth)
+                            .FirstOrDefault();
+
+                        if (latestBill != null && latestBill.BillStatus == "Paid")
+                        {
+                            paymentStatus = "Paid";
+                        }
+                    }
+                }
+
+                return new ParkingSpotTileViewModel
+                {
+                    ParkingSpotId = s.ParkingSpotId,
+                    ParkingFloorId = s.ParkingFloorId,
+                    FloorName = currentFloor.FloorName,
+                    SpotNumber = s.SpotNumber,
+                    Status = s.Status,
+                    VehicleType = s.ParkingType ?? "Car",
+                    MonthlyFee = s.ParkingFee,
+                    ListingPrice = s.ListingPrice,
+                    ListingNotes = s.ListingNotes,
+                    FlatId = s.FlatId,
+                    FlatNumber = s.Flat?.FlatNumber,
+                    FlatFloor = flatFloor,
+                    ResidentName = residentName,
+                    ResidentType = residentType,
+                    PaymentStatus = paymentStatus
+                };
+            }).ToList();
+
+            // Global stats across all floors
+            var allSpots = await dbContext.ParkingSpots.AsNoTracking().ToListAsync();
+            int totalCap = floors.Sum(f => f.Capacity);
+            if (totalCap < allSpots.Count) totalCap = allSpots.Count;
+
+            int availCount = allSpots.Count(s => s.Status == "Available");
+            int assignedCount = allSpots.Count(s => s.Status == "Assigned");
+            int forSaleCount = allSpots.Count(s => s.Status == "ForSale");
+            int toLetCount = allSpots.Count(s => s.Status == "ToLet");
+
+            // Calculate revenue summary
+            decimal revenueCollected = parkingBillItems
+                .Where(bi => bi.PaymentStatus == "Paid" || (bi.Bill != null && bi.Bill.BillStatus == "Paid"))
+                .Sum(bi => bi.Amount);
+
+            decimal revenueDue = spotTiles
+                .Where(st => st.Status == "Assigned" && st.PaymentStatus == "Due")
+                .Sum(st => st.MonthlyFee);
+
+            if (revenueCollected == 0 && assignedCount > 0)
+            {
+                revenueDue = allSpots.Where(s => s.Status == "Assigned").Sum(s => s.ParkingFee);
+            }
+
+            // Occupied flats for searchable typeahead dropdown
+            var occupiedFlats = await dbContext.Flats
+                .Where(f => f.FlatStatus == "Occupied")
+                .OrderBy(f => f.FlatNumber)
+                .Select(f => new FlatLookupItem
+                {
+                    FlatId = f.FlatId,
+                    FlatNumber = f.FlatNumber,
+                    FloorNumber = f.FloorNumber,
+                    ResidentName = f.Assignments.Where(a => a.IsActive).Select(a => a.User.FullName).FirstOrDefault() ?? "Resident",
+                    ResidentType = f.Assignments.Where(a => a.IsActive).Select(a => a.ResidentType).FirstOrDefault() ?? "Tenant"
+                })
+                .ToListAsync();
+
+            // Recent activity logs
+            var recentLogs = await dbContext.ParkingActivityLogs
+                .Include(l => l.ParkingSpot)
+                .OrderByDescending(l => l.CreatedAt)
+                .Take(20)
+                .Select(l => new ParkingActivityLogViewModel
+                {
+                    ActivityId = l.ActivityId,
+                    SpotNumber = l.ParkingSpot != null ? l.ParkingSpot.SpotNumber : "—",
+                    Action = l.Action,
+                    Details = l.Details,
+                    CreatedBy = l.CreatedBy,
+                    CreatedAt = l.CreatedAt
+                })
+                .ToListAsync();
+
+            var viewModel = new ParkingFloorPlanViewModel
+            {
+                SelectedFloorId = currentFloor.ParkingFloorId,
+                CurrentFloor = currentFloor,
+                Floors = floors,
+                Spots = spotTiles,
+                TotalCapacity = totalCap,
+                AvailableCount = availCount,
+                AssignedCount = assignedCount,
+                ForSaleCount = forSaleCount,
+                ToLetCount = toLetCount,
+                RevenueCollected = revenueCollected,
+                RevenueDue = revenueDue,
+                SearchQuery = search,
+                StatusFilter = status,
+                OccupiedFlats = occupiedFlats,
+                RecentActivities = recentLogs
+            };
+
+            return View(viewModel);
         }
 
+        // CREATE NEW PARKING FLOOR WITH AUTO-GENERATED SPOTS
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFloor(CreateParkingFloorViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please fill in all required floor details correctly.";
+                return RedirectToAction(nameof(Parking));
+            }
 
+            var cleanCode = model.FloorCode.Trim().ToUpperInvariant();
+            if (await dbContext.ParkingFloors.AnyAsync(f => f.FloorCode.ToUpper() == cleanCode))
+            {
+                TempData["Error"] = $"A parking floor with code '{cleanCode}' already exists.";
+                return RedirectToAction(nameof(Parking));
+            }
 
+            var floor = new ParkingFloor
+            {
+                FloorName = model.FloorName.Trim(),
+                FloorCode = cleanCode,
+                Capacity = model.Capacity,
+                CreatedAt = DateTime.UtcNow
+            };
 
-        // CREATE PARKING PAGE
+            dbContext.ParkingFloors.Add(floor);
+            await dbContext.SaveChangesAsync();
 
+            var spots = new List<ParkingSpot>();
+            for (int i = 1; i <= model.Capacity; i++)
+            {
+                spots.Add(new ParkingSpot
+                {
+                    ParkingFloorId = floor.ParkingFloorId,
+                    SpotNumber = $"{cleanCode}-{i:D2}",
+                    Status = "Available",
+                    IsAvailable = true,
+                    ParkingType = model.DefaultVehicleType,
+                    ParkingFee = model.DefaultMonthlyFee,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            dbContext.ParkingSpots.AddRange(spots);
+
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                Action = "Floor Created",
+                Details = $"Manager created parking floor '{floor.FloorName}' with {model.Capacity} automated spaces.",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            TempData["Success"] = $"Parking floor '{floor.FloorName}' created with {model.Capacity} spaces generated automatically ({cleanCode}-01 to {cleanCode}-{model.Capacity:D2}).";
+
+            return RedirectToAction(nameof(Parking), new { floorId = floor.ParkingFloorId });
+        }
+
+        // AJAX ASSIGN PARKING SPOT TO FLAT
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignSpotAjax([FromBody] AssignParkingInputModel model)
+        {
+            if (model == null || model.ParkingSpotId <= 0 || model.FlatId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid parking spot or flat specified." });
+            }
+
+            var spot = await dbContext.ParkingSpots
+                .Include(s => s.Floor)
+                .FirstOrDefaultAsync(s => s.ParkingSpotId == model.ParkingSpotId);
+
+            if (spot == null)
+            {
+                return Json(new { success = false, message = "Parking spot not found." });
+            }
+
+            var flat = await dbContext.Flats
+                .Include(f => f.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(f => f.FlatId == model.FlatId);
+
+            if (flat == null)
+            {
+                return Json(new { success = false, message = "Flat not found." });
+            }
+
+            spot.FlatId = flat.FlatId;
+            spot.Status = "Assigned";
+            spot.IsAvailable = false;
+            spot.ListingPrice = null;
+            spot.ListingNotes = null;
+
+            var resident = flat.Assignments.FirstOrDefault()?.User?.FullName ?? "Resident";
+
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                ParkingSpotId = spot.ParkingSpotId,
+                Action = "Parking Assigned",
+                Details = $"Manager assigned {spot.SpotNumber} to Flat {flat.FlatNumber} ({resident}).",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = $"Space {spot.SpotNumber} assigned to Flat {flat.FlatNumber}.",
+                spotId = spot.ParkingSpotId,
+                spotNumber = spot.SpotNumber,
+                flatNumber = flat.FlatNumber,
+                residentName = resident,
+                fee = spot.ParkingFee,
+                status = "Assigned"
+            });
+        }
+
+        // AJAX RELEASE PARKING SPOT
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReleaseSpotAjax(int spotId)
+        {
+            var spot = await dbContext.ParkingSpots
+                .Include(s => s.Flat)
+                .FirstOrDefaultAsync(s => s.ParkingSpotId == spotId);
+
+            if (spot == null)
+            {
+                return Json(new { success = false, message = "Parking spot not found." });
+            }
+
+            var prevFlat = spot.Flat?.FlatNumber ?? "Flat";
+
+            spot.FlatId = null;
+            spot.Status = "Available";
+            spot.IsAvailable = true;
+            spot.ListingPrice = null;
+            spot.ListingNotes = null;
+
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                ParkingSpotId = spot.ParkingSpotId,
+                Action = "Parking Released",
+                Details = $"Manager released parking spot {spot.SpotNumber} (previously assigned to Flat {prevFlat}).",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = $"Space {spot.SpotNumber} released and returned to Available.",
+                spotId = spot.ParkingSpotId,
+                spotNumber = spot.SpotNumber,
+                status = "Available"
+            });
+        }
+
+        // AJAX UPDATE SPOT STATUS (FOR SALE / TO-LET / AVAILABLE)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSpotStatusAjax([FromBody] UpdateSpotStatusInputModel model)
+        {
+            if (model == null || model.ParkingSpotId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid spot specified." });
+            }
+
+            var spot = await dbContext.ParkingSpots.FirstOrDefaultAsync(s => s.ParkingSpotId == model.ParkingSpotId);
+            if (spot == null)
+            {
+                return Json(new { success = false, message = "Parking spot not found." });
+            }
+
+            var validStatuses = new[] { "Available", "ForSale", "ToLet" };
+            if (!validStatuses.Contains(model.Status))
+            {
+                return Json(new { success = false, message = "Invalid status specified." });
+            }
+
+            spot.Status = model.Status;
+            spot.ListingPrice = model.ListingPrice;
+            spot.ListingNotes = model.ListingNotes;
+
+            if (model.Status == "Available")
+            {
+                spot.IsAvailable = true;
+                spot.FlatId = null;
+            }
+            else
+            {
+                spot.IsAvailable = false;
+                spot.FlatId = null; // Unlink flat so it is cleanly open for booking on the marketplace
+            }
+
+            string actionLabel = model.Status switch
+            {
+                "ForSale" => "Listed For Sale on Marketplace",
+                "ToLet" => "Listed To-Let on Marketplace",
+                _ => "Status Updated"
+            };
+
+            string friendlyStatus = model.Status switch
+            {
+                "ForSale" => "For Sale",
+                "ToLet" => "To-Let",
+                _ => "Available"
+            };
+
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                ParkingSpotId = spot.ParkingSpotId,
+                Action = actionLabel,
+                Details = model.Status == "Available"
+                    ? $"Spot {spot.SpotNumber} released and returned to Available."
+                    : $"Spot {spot.SpotNumber} published to Marketplace as {friendlyStatus} (৳{(model.ListingPrice ?? spot.ParkingFee):N0}).",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            var marketUrl = Url.Action("ParkingDetails", "Property", new { id = spot.ParkingSpotId });
+            var responseMessage = model.Status == "Available"
+                ? $"Spot {spot.SpotNumber} marked as Available."
+                : $"Spot {spot.SpotNumber} is now published to the Marketplace as {friendlyStatus}!";
+
+            return Json(new
+            {
+                success = true,
+                message = responseMessage,
+                spotId = spot.ParkingSpotId,
+                spotNumber = spot.SpotNumber,
+                status = spot.Status,
+                listingPrice = spot.ListingPrice ?? spot.ParkingFee,
+                marketplaceUrl = marketUrl
+            });
+        }
+
+        // TYPEAHEAD SEARCH FLATS (FOR MODAL ASSIGNMENT)
+        [HttpGet]
+        public async Task<IActionResult> SearchFlats(string? term)
+        {
+            var cleanTerm = term?.Trim() ?? string.Empty;
+
+            var query = dbContext.Flats
+                .Where(f => f.FlatStatus == "Occupied");
+
+            if (!string.IsNullOrWhiteSpace(cleanTerm))
+            {
+                query = query.Where(f => f.FlatNumber.Contains(cleanTerm) || f.FloorNumber.ToString().Contains(cleanTerm));
+            }
+
+            var flats = await query
+                .OrderBy(f => f.FlatNumber)
+                .Take(25)
+                .Select(f => new
+                {
+                    flatId = f.FlatId,
+                    flatNumber = f.FlatNumber,
+                    floorNumber = f.FloorNumber,
+                    residentName = f.Assignments.Where(a => a.IsActive).Select(a => a.User.FullName).FirstOrDefault() ?? "Resident",
+                    residentType = f.Assignments.Where(a => a.IsActive).Select(a => a.ResidentType).FirstOrDefault() ?? "Tenant"
+                })
+                .ToListAsync();
+
+            return Json(flats);
+        }
+
+        // LEGACY CREATE PARKING SPOT (PRESERVED)
         [HttpGet]
         public IActionResult CreateParking()
         {
             return View();
         }
 
-
-
-
-
-        // SAVE PARKING SPOT
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateParking(ParkingSpot model)
         {
-
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-
-
-            if (await dbContext.ParkingSpots
-                .AnyAsync(p => p.SpotNumber == model.SpotNumber))
+            if (await dbContext.ParkingSpots.AnyAsync(p => p.SpotNumber == model.SpotNumber))
             {
-                ModelState.AddModelError(
-                    nameof(model.SpotNumber),
-                    "Parking spot number already exists."
-                );
-
+                ModelState.AddModelError(nameof(model.SpotNumber), "Parking spot number already exists.");
                 return View(model);
             }
 
-
-
             model.IsAvailable = true;
-            model.CreatedAt = DateTime.Now;
+            model.Status = "Available";
+            model.CreatedAt = DateTime.UtcNow;
 
-
+            // Associate with first floor if not set
+            if (!model.ParkingFloorId.HasValue)
+            {
+                var firstFloor = await dbContext.ParkingFloors.OrderBy(f => f.FloorCode).FirstOrDefaultAsync();
+                if (firstFloor != null)
+                {
+                    model.ParkingFloorId = firstFloor.ParkingFloorId;
+                }
+            }
 
             dbContext.ParkingSpots.Add(model);
-
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                Action = "Spot Created",
+                Details = $"Manager created spot {model.SpotNumber}.",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
 
             await dbContext.SaveChangesAsync();
 
-
-
-            TempData["Success"] =
-                "Parking spot created successfully.";
-
-
+            TempData["Success"] = "Parking spot created successfully.";
             return RedirectToAction(nameof(Parking));
-
         }
 
-
-
-
-
-        // ASSIGN PARKING PAGE
-
+        // LEGACY ASSIGN PARKING PAGE (PRESERVED)
         [HttpGet]
         public async Task<IActionResult> AssignParking(int id)
         {
-
-            var parking =
-                await dbContext.ParkingSpots
+            var parking = await dbContext.ParkingSpots
                 .Include(p => p.Flat)
-                .FirstOrDefaultAsync(
-                    p => p.ParkingSpotId == id);
-
-
+                .FirstOrDefaultAsync(p => p.ParkingSpotId == id);
 
             if (parking == null)
             {
                 return NotFound();
             }
 
-
-
-            ViewBag.Flats =
-                await dbContext.Flats
-                .Where(f =>
-                    f.FlatStatus == "Occupied")
+            ViewBag.Flats = await dbContext.Flats
+                .Where(f => f.FlatStatus == "Occupied")
                 .OrderBy(f => f.FlatNumber)
                 .ToListAsync();
 
-
-
             return View(parking);
-
         }
-
-
-
-
-
-
-        // SAVE PARKING ASSIGNMENT
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignParking(
-            int ParkingSpotId,
-            int FlatId)
+        public async Task<IActionResult> AssignParking(int ParkingSpotId, int FlatId)
         {
-
-
-            var parking =
-                await dbContext.ParkingSpots
-                .FirstOrDefaultAsync(
-                    p => p.ParkingSpotId == ParkingSpotId);
-
-
+            var parking = await dbContext.ParkingSpots
+                .FirstOrDefaultAsync(p => p.ParkingSpotId == ParkingSpotId);
 
             if (parking == null)
             {
                 return NotFound();
             }
 
-
-
-            var flat =
-                await dbContext.Flats
-                .FirstOrDefaultAsync(
-                    f => f.FlatId == FlatId);
-
-
+            var flat = await dbContext.Flats
+                .FirstOrDefaultAsync(f => f.FlatId == FlatId);
 
             if (flat == null)
             {
-                TempData["Error"] =
-                    "Invalid flat selected.";
-
+                TempData["Error"] = "Invalid flat selected.";
                 return RedirectToAction(nameof(Parking));
             }
 
-
-
             parking.FlatId = flat.FlatId;
-
+            parking.Status = "Assigned";
             parking.IsAvailable = false;
 
-
+            dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+            {
+                ParkingSpotId = parking.ParkingSpotId,
+                Action = "Parking Assigned",
+                Details = $"Manager assigned {parking.SpotNumber} to Flat {flat.FlatNumber}.",
+                CreatedBy = User.Identity?.Name ?? "Manager",
+                CreatedAt = DateTime.UtcNow
+            });
 
             await dbContext.SaveChangesAsync();
 
-
-
-            TempData["Success"] =
-                $"Parking {parking.SpotNumber} assigned successfully.";
-
+            TempData["Success"] = $"Parking {parking.SpotNumber} assigned successfully.";
             return RedirectToAction(nameof(Parking));
         }
 

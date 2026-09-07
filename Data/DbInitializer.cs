@@ -15,7 +15,8 @@ namespace ADHUNIK_BARI.Data
             {
                 "Manager",
                 "Tenant",
-                "FlatOwner"
+                "FlatOwner",
+                "ParkingUser"
             };
 
 

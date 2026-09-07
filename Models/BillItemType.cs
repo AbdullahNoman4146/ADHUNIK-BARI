@@ -11,7 +11,8 @@ namespace ADHUNIK_BARI.Models
         Water = 4,
         Electricity = 5,
         Maintenance = 6,
-        Other = 7
+        Other = 7,
+        Parking = 8
     }
 
     /// <summary>
@@ -26,6 +27,7 @@ namespace ADHUNIK_BARI.Models
         public const string Electricity = "Electricity";
         public const string Maintenance = "Maintenance";
         public const string Other = "Other";
+        public const string Parking = "Parking";
 
         public static string GetDescription(string itemType) => itemType switch
         {
@@ -36,6 +38,7 @@ namespace ADHUNIK_BARI.Models
             Electricity => "Electricity Bill",
             Maintenance => "Maintenance Fee",
             Other => "Other Charges",
+            Parking => "Parking Fee",
             _ => "Unknown"
         };
 
@@ -47,7 +50,9 @@ namespace ADHUNIK_BARI.Models
             Water,
             Electricity,
             Maintenance,
-            Other
+            Other,
+            Parking
         };
     }
 }
+

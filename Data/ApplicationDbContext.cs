@@ -22,6 +22,8 @@ namespace ADHUNIK_BARI.Data
         public DbSet<Flat> Flats { get; set; }
         public DbSet<FlatAssignment> FlatAssignments { get; set; }
         public DbSet<ParkingSpot> ParkingSpots { get; set; }
+        public DbSet<ParkingFloor> ParkingFloors { get; set; }
+        public DbSet<ParkingActivityLog> ParkingActivityLogs { get; set; }
         public DbSet<Notice> Notices { get; set; }
         public DbSet<NoticeTarget> NoticeTargets { get; set; }
         public DbSet<Complaint> Complaints { get; set; }
@@ -30,6 +32,7 @@ namespace ADHUNIK_BARI.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PropertyListing> PropertyListings { get; set; }
         public DbSet<PropertyApplication> PropertyApplications { get; set; }
+        public DbSet<ParkingApplication> ParkingApplications { get; set; }
         public DbSet<CctvCamera> CctvCameras { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -59,9 +62,42 @@ namespace ADHUNIK_BARI.Data
                 b.Property(a => a.ResidentType).HasMaxLength(50);
             });
 
+            // Parking Floor & Spots
+            builder.Entity<ParkingFloor>(b =>
+            {
+                b.HasKey(pf => pf.ParkingFloorId);
+                b.Property(pf => pf.FloorName).IsRequired().HasMaxLength(100);
+                b.Property(pf => pf.FloorCode).IsRequired().HasMaxLength(20);
+                b.HasMany(pf => pf.ParkingSpots)
+                    .WithOne(ps => ps.Floor)
+                    .HasForeignKey(ps => ps.ParkingFloorId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
             builder.Entity<ParkingSpot>(b =>
             {
+                b.HasKey(p => p.ParkingSpotId);
+                b.Property(p => p.SpotNumber).IsRequired().HasMaxLength(50);
+                b.Property(p => p.Status).IsRequired().HasMaxLength(50);
                 b.Property(p => p.ParkingFee).HasPrecision(18, 2);
+                b.Property(p => p.ListingPrice).HasPrecision(18, 2);
+                b.HasIndex(p => p.SpotNumber);
+                b.HasMany(p => p.ActivityLogs)
+                    .WithOne(al => al.ParkingSpot)
+                    .HasForeignKey(al => al.ParkingSpotId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(p => p.AssignedUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.AssignedUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<ParkingActivityLog>(b =>
+            {
+                b.HasKey(al => al.ActivityId);
+                b.Property(al => al.Action).IsRequired().HasMaxLength(100);
+                b.Property(al => al.Details).IsRequired().HasMaxLength(500);
+                b.Property(al => al.CreatedBy).HasMaxLength(150);
             });
 
             builder.Entity<Notice>(b =>
@@ -237,6 +273,45 @@ namespace ADHUNIK_BARI.Data
                 b.Property(c => c.Location).IsRequired().HasMaxLength(100);
                 b.Property(c => c.StreamUrl).IsRequired().HasMaxLength(1000);
                 b.Property(c => c.Status).HasMaxLength(50);
+            });
+
+            builder.Entity<ParkingApplication>(b =>
+            {
+                b.HasKey(a => a.ParkingApplicationId);
+                b.Property(a => a.FullName).IsRequired().HasMaxLength(200);
+                b.Property(a => a.Email).IsRequired().HasMaxLength(256);
+                b.Property(a => a.Phone).IsRequired().HasMaxLength(50);
+                b.Property(a => a.VehicleType).HasMaxLength(50);
+                b.Property(a => a.VehicleRegNumber).HasMaxLength(50);
+                b.Property(a => a.Notes).HasMaxLength(1000);
+                b.Property(a => a.ApplicationType).IsRequired().HasMaxLength(20);
+                b.Property(a => a.Status).IsRequired().HasMaxLength(40);
+                b.Property(a => a.AdvanceAmount).HasPrecision(18, 2);
+                b.Property(a => a.StripePaymentIntentId).HasMaxLength(255);
+                b.Property(a => a.PaymentStatus).IsRequired().HasMaxLength(30);
+                b.Property(a => a.FailureReason).HasMaxLength(2000);
+
+                b.HasOne(a => a.ParkingSpot)
+                    .WithMany()
+                    .HasForeignKey(a => a.ParkingSpotId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(a => a.Flat)
+                    .WithMany()
+                    .HasForeignKey(a => a.FlatId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasOne(a => a.CreatedUser)
+                    .WithMany()
+                    .HasForeignKey(a => a.CreatedUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasIndex(a => a.ParkingSpotId);
+                b.HasIndex(a => new { a.Status, a.PaymentStatus });
+                b.HasIndex(a => a.CreatedUserId);
+                b.HasIndex(a => a.StripePaymentIntentId)
+                    .IsUnique()
+                    .HasFilter("[StripePaymentIntentId] IS NOT NULL");
             });
 
         }

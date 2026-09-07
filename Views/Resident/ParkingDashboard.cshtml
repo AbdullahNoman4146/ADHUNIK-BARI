@@ -1,0 +1,181 @@
+@{
+    ViewData["Title"] = "My Parking Space";
+    var user = ViewBag.User as ADHUNIK_BARI.Models.ApplicationUser;
+    var spots = ViewBag.Spots as List<ADHUNIK_BARI.Models.ParkingSpot> ?? new List<ADHUNIK_BARI.Models.ParkingSpot>();
+    var applications = ViewBag.Applications as List<ADHUNIK_BARI.Models.ParkingApplication> ?? new List<ADHUNIK_BARI.Models.ParkingApplication>();
+    var residentName = user?.FullName ?? "Member";
+    var firstName = residentName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Member";
+}
+
+<div class="ab-app-page ab-resident-dashboard">
+    @if (ViewBag.RequirePasswordChange == true)
+    {
+        <div class="ab-security-banner">
+            <span><i class="fa-solid fa-shield-halved"></i></span>
+            <div>
+                <strong>Secure your new account</strong>
+                <p>You are using a temporary password. Please set a permanent password for your security.</p>
+            </div>
+            <a asp-controller="Account" asp-action="ChangePassword">Update password <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    }
+
+    <header class="ab-page-heading" data-reveal>
+        <div>
+            <div class="ab-page-kicker"><span></span> Dedicated parking portal</div>
+            <h1>Welcome, <em>@firstName.</em></h1>
+            <p>Review your assigned parking space, access status and billing statements.</p>
+        </div>
+        <a class="ab-app-btn ab-app-btn-primary" asp-action="MyBills">
+            <i class="fa-solid fa-credit-card me-2"></i>View bills &amp; receipts
+        </a>
+    </header>
+
+    <!-- Allocated Parking Bay Overview -->
+    <section class="ab-home-overview mb-4" data-reveal>
+        <div class="ab-home-visual" style="background: linear-gradient(135deg, #064e3b 0%, #047857 60%, #10b981 100%);">
+            <div class="ab-home-visual-image" style="opacity: 0.15; background-image: radial-gradient(#fff 2px, transparent 2px); background-size: 24px 24px;"></div>
+            <div class="ab-home-visual-wash"></div>
+            <div class="ab-home-status"><i style="background:#4ade80;"></i> Active parking allocation</div>
+            <div class="ab-home-title">
+                <span>DEDICATED BAY</span>
+                <h2>@(spots.FirstOrDefault()?.SpotNumber ?? "Basement Space")</h2>
+                <p>@(spots.FirstOrDefault()?.Floor?.FloorName ?? "Basement Floor") · ADHUNIK BARI</p>
+            </div>
+        </div>
+
+        <div class="ab-home-details">
+            <div class="ab-panel-head">
+                <div>
+                    <span class="ab-panel-kicker">ALLOCATION PROFILE</span>
+                    <h2>Parking space details</h2>
+                </div>
+                <span class="ab-status ab-status-success"><i></i> Assigned</span>
+            </div>
+
+            @if (spots.Any())
+            {
+                foreach (var spot in spots)
+                {
+                    <dl>
+                        <div><dt>Spot number</dt><dd class="text-primary fw-bold">@spot.SpotNumber</dd></div>
+                        <div><dt>Floor / Level</dt><dd>@(spot.Floor?.FloorName ?? "Basement") (@(spot.Floor?.FloorCode ?? "B"))</dd></div>
+                        <div><dt>Vehicle permitted</dt><dd>@(spot.ParkingType ?? "Car")</dd></div>
+                        <div><dt>Monthly maintenance</dt><dd>৳@spot.ParkingFee.ToString("N0") BDT</dd></div>
+                        <div><dt>Member type</dt><dd>External Parking Member</dd></div>
+                        <div><dt>Allocated on</dt><dd>@spot.CreatedAt.ToString("dd MMM yyyy")</dd></div>
+                    </dl>
+                }
+            }
+            else
+            {
+                <div class="py-3 text-muted">
+                    <p>No active spot assigned to this profile. If you recently completed payment, refresh this page or contact building management.</p>
+                </div>
+            }
+
+            <div class="ab-home-assurance mt-3">
+                <i class="fa-solid fa-circle-check text-success"></i>
+                <span><strong>Access is active</strong><small>You have 24/7 designated entry and exit to your parking bay.</small></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Cards -->
+    <section class="ab-resident-actions mb-4" data-reveal>
+        <a class="ab-resident-action ab-action-featured" asp-action="MyBills">
+            <span class="ab-action-icon"><i class="fa-solid fa-wallet"></i></span>
+            <div>
+                <small>FINANCES</small>
+                <h2>Bills &amp; payments</h2>
+                <p>View advance payment confirmations, receipts and future parking bills.</p>
+            </div>
+            <i class="fa-solid fa-arrow-right"></i>
+            <div class="ab-action-glow"></div>
+        </a>
+
+        <a class="ab-resident-action" asp-controller="Account" asp-action="ChangePassword">
+            <span class="ab-action-icon"><i class="fa-solid fa-shield-halved"></i></span>
+            <div>
+                <small>SECURITY</small>
+                <h2>Account safety</h2>
+                <p>Update your password and manage account credentials.</p>
+            </div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+
+        <a class="ab-resident-action" asp-controller="Property" asp-action="Index" asp-route-type="Parking">
+            <span class="ab-action-icon"><i class="fa-solid fa-compass"></i></span>
+            <div>
+                <small>MARKETPLACE</small>
+                <h2>Browse spaces</h2>
+                <p>View additional available parking bays in ADHUNIK BARI.</p>
+            </div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </section>
+
+    <!-- Payment & Transaction History Table -->
+    @if (applications.Any())
+    {
+        <section class="card border-0 shadow-sm rounded-4 mb-4 p-4" data-reveal>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Payment &amp; Booking History</h2>
+                    <p class="text-muted small mb-0">Record of all transactions and advance payments completed under this account.</p>
+                </div>
+                <a asp-action="MyBills" class="btn btn-sm btn-outline-primary rounded-pill">
+                    View in Bills &amp; Receipts
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-muted">
+                            <th>REFERENCE</th>
+                            <th>PARKING BAY</th>
+                            <th>TYPE</th>
+                            <th>VEHICLE REG</th>
+                            <th>AMOUNT PAID</th>
+                            <th>DATE</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var app in applications)
+                        {
+                            <tr>
+                                <td><code class="text-primary fw-bold">PRK-@app.ParkingSpotId-@app.ParkingApplicationId</code></td>
+                                <td>
+                                    <strong>@(app.ParkingSpot?.SpotNumber ?? "Bay " + app.ParkingSpotId)</strong>
+                                    <span class="text-muted small d-block">@(app.ParkingSpot?.Floor?.FloorName ?? "Basement")</span>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@app.ApplicationType</span></td>
+                                <td>@(string.IsNullOrWhiteSpace(app.VehicleRegNumber) ? "—" : app.VehicleRegNumber)</td>
+                                <td><strong class="text-success">৳@app.AdvanceAmount.ToString("N0")</strong></td>
+                                <td class="small text-muted">@((app.PaidAt ?? app.CreatedAt).ToString("dd MMM yyyy, hh:mm tt"))</td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Succeeded
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    <!-- External Member Notice -->
+    <div class="alert alert-light border rounded-4 text-start p-3" data-reveal>
+        <div class="d-flex gap-3 align-items-center">
+            <i class="fa-solid fa-circle-info text-secondary fs-4"></i>
+            <div class="small text-muted">
+                <strong>External Member Portal:</strong> Your account is configured exclusively for basement parking management and parking payments. Residential apartment management features (such as residential notices, tenant complaints, and in-building services) are only available to verified apartment tenants and flat owners.
+            </div>
+        </div>
+    </div>
+</div>
+
