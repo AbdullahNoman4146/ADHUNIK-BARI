@@ -11,6 +11,11 @@
             <button class="ab-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Open workspace navigation" aria-expanded="false">
                 <i class="fa-solid fa-bars-staggered"></i>
             </button>
+            <a class="ab-brand d-lg-none me-2" asp-controller="@(isManager ? "Manager" : "Resident")" asp-action="@(User.IsInRole("ParkingUser") ? "ParkingDashboard" : "Dashboard")" aria-label="Workspace home">
+                <span class="ab-brand-mark" style="width:34px;height:34px;border-radius:10px;" aria-hidden="true">
+                    <img src="~/images/brand/adhunik-logo.png" alt="ADHUNIK BARI" class="ab-brand-logo-img" />
+                </span>
+            </a>
             <div class="ab-topbar-context">
                 <small>@(isManager ? "MANAGEMENT WORKSPACE" : "RESIDENT SPACE")</small>
                 <strong>@ViewData["Title"]</strong>
@@ -39,7 +44,7 @@ else
 {
     <nav class="navbar navbar-expand-xl adhunik-nav sticky-top" aria-label="Primary navigation" data-site-nav>
         <div class="container-fluid ab-nav-inner">
-            <a class="navbar-brand ab-brand" asp-controller="Home" asp-action="Index" aria-label="ADHUNIK BARI home"><span class="ab-brand-mark" aria-hidden="true"><span>AB</span><i></i></span><span class="ab-brand-copy"><strong>ADHUNIK BARI</strong><small>Connected living</small></span></a>
+            <a class="navbar-brand ab-brand" asp-controller="Home" asp-action="Index" aria-label="ADHUNIK BARI home"><span class="ab-brand-mark" aria-hidden="true"><img src="~/images/brand/adhunik-logo.png" alt="ADHUNIK BARI" class="ab-brand-logo-img" /></span><span class="ab-brand-copy"><strong>ADHUNIK BARI</strong><small>Connected living</small></span></a>
             <button class="navbar-toggler ab-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Open navigation menu"><span></span><span></span></button>
             <div class="collapse navbar-collapse" id="navbarMenu">
                 <ul class="navbar-nav ms-auto align-items-xl-center ab-nav-links">

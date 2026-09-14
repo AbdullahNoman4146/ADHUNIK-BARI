@@ -19,6 +19,8 @@ namespace ADHUNIK_BARI.Models
         public string SpotNumber { get; set; } = string.Empty;
 
         [Required]
+
+
         [Range(0, double.MaxValue)]
         public decimal ParkingFee { get; set; }
 

@@ -14,6 +14,16 @@
         margin-bottom: 30px;
     }
 
+    .receipt-brand-logo {
+        width: 68px;
+        height: 68px;
+        object-fit: cover;
+        border-radius: 16px;
+        margin: 0 auto 12px auto;
+        display: block;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    }
+
     .receipt-header h1 {
         margin: 0;
         font-size: 28px;
