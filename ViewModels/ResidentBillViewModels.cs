@@ -46,6 +46,10 @@ namespace ADHUNIK_BARI.ViewModels
 
         public DateTime CreatedAt { get; set; }
 
+        public int? LatestPaymentId { get; set; }
+
+        public bool IsFullyPaid => BillStatus == "Paid" || (DueAmount <= 0 && !BillItems.Any(i => i.IsCheckable));
+
         public List<ResidentBillItemViewModel> BillItems { get; set; } = new();
     }
 

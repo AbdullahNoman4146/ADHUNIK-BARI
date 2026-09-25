@@ -52,7 +52,7 @@
                             </div>
                             <div class="col-md-3 col-6">
                                 <small class="text-muted d-block text-uppercase fw-semibold ab-label-caps">Total Outstanding</small>
-                                <strong class="fs-5 text-danger">৳@Model.TotalOutstanding.ToString("N2")</strong>
+                                <strong class="fs-5 @(Model.TotalOutstanding > 0 ? "text-danger" : "text-success")">৳@Model.TotalOutstanding.ToString("N2")</strong>
                             </div>
                         </div>
                     </div>
@@ -65,12 +65,21 @@
                         <div class="card-header bg-white border-bottom p-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                                    <i class="fa-solid fa-file-invoice-dollar text-danger me-2"></i>
-                                    Pending & Due Invoices (@Model.TotalUnpaidBills)
+                                    <i class="fa-solid fa-file-invoice-dollar @(Model.TotalUnpaidBills > 0 ? "text-danger" : "text-success") me-2"></i>
+                                    @(Model.TotalUnpaidBills > 0 ? $"Pending & Due Invoices ({Model.TotalUnpaidBills})" : "Invoices & Billing History")
                                 </h5>
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
-                                    Action Required
-                                </span>
+                                @if (Model.TotalUnpaidBills > 0)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                        Action Required
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                        <i class="fa-solid fa-circle-check me-1"></i> All Dues Cleared
+                                    </span>
+                                }
                             </div>
                         </div>
                         <div class="card-body p-4">
@@ -89,7 +98,7 @@
                                             <small class="text-muted">Issued: @bill.CreatedAt.ToString("MMM dd, yyyy")</small>
                                         </div>
                                         <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                                            <div class="text-danger fw-bold fs-5">
+                                            <div class="@(bill.IsFullyPaid ? "text-success" : "text-danger") fw-bold fs-5">
                                                 Due: ৳@bill.DueAmount.ToString("N2")
                                             </div>
                                             <small class="text-muted">Payment Deadline: <strong>@bill.Deadline.ToString("MMM dd, yyyy")</strong></small>
@@ -102,7 +111,14 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th class="text-center ab-col-check">
-                                                        <input type="checkbox" class="form-check-input bill-select-all" data-bill-id="@bill.BillId" title="Select all unpaid items">
+                                                        @if (!bill.IsFullyPaid && bill.BillItems.Any(i => i.IsCheckable))
+                                                        {
+                                                            <input type="checkbox" class="form-check-input bill-select-all" data-bill-id="@bill.BillId" title="Select all unpaid items">
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-success small" title="All items paid"><i class="fa-solid fa-check"></i></span>
+                                                        }
                                                     </th>
                                                     <th>Charge Item</th>
                                                     <th>Amount</th>
@@ -139,7 +155,7 @@
                                                                 }
                                                             </td>
                                                             <td>
-                                                                <strong>@item.ItemType</strong>
+                                                                <strong>@BillItemTypes.GetDescription(item.ItemType)</strong>
                                                                 @if (!string.IsNullOrWhiteSpace(item.Description))
                                                                 {
                                                                     <small class="text-muted d-block">@item.Description</small>
@@ -163,11 +179,28 @@
                                     <!-- Bill Action Button -->
                                     <div class="row mt-3">
                                         <div class="col-12 text-end">
-                                            <button type="button" class="btn btn-primary pay-bill-btn px-4 py-2 rounded-3 fw-semibold shadow-sm"
-                                                    data-bill-id="@bill.BillId"
-                                                    data-bs-toggle="modal" data-bs-target="#checkoutModal">
-                                                <i class="fa-solid fa-credit-card me-2"></i> Pay Selected Items
-                                            </button>
+                                            @if (!bill.IsFullyPaid && bill.BillItems.Any(i => i.IsCheckable))
+                                            {
+                                                <button type="button" class="btn btn-primary pay-bill-btn px-4 py-2 rounded-3 fw-semibold shadow-sm"
+                                                        data-bill-id="@bill.BillId"
+                                                        data-bs-toggle="modal" data-bs-target="#checkoutModal">
+                                                    <i class="fa-solid fa-credit-card me-2"></i> Pay Selected Items
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <div class="d-inline-flex align-items-center gap-2">
+                                                    <span class="badge bg-success-subtle text-success fs-6 px-3 py-2 border border-success-subtle rounded-3">
+                                                        <i class="fa-solid fa-circle-check me-1"></i> Paid in Full
+                                                    </span>
+                                                    @if (bill.LatestPaymentId.HasValue)
+                                                    {
+                                                        <a href="/Resident/Receipt/@bill.LatestPaymentId.Value" target="_blank" class="btn btn-outline-success btn-sm px-3 py-2 rounded-3 fw-semibold shadow-sm">
+                                                            <i class="fa-solid fa-file-invoice me-1"></i> View Receipt
+                                                        </a>
+                                                    }
+                                                </div>
+                                            }
                                         </div>
                                     </div>
                                 </div>

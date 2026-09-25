@@ -30,34 +30,27 @@ namespace ADHUNIK_BARI.Migrations
                 oldType: "nvarchar(max)",
                 oldNullable: true);
 
-            migrationBuilder.AddColumn<string>(
-                name: "ListingNotes",
-                table: "ParkingSpots",
-                type: "nvarchar(500)",
-                maxLength: 500,
-                nullable: true);
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ParkingSpots]') AND name = 'ListingNotes')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD [ListingNotes] nvarchar(500) NULL;
+END;
 
-            migrationBuilder.AddColumn<decimal>(
-                name: "ListingPrice",
-                table: "ParkingSpots",
-                type: "decimal(18,2)",
-                precision: 18,
-                scale: 2,
-                nullable: true);
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ParkingSpots]') AND name = 'ListingPrice')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD [ListingPrice] decimal(18,2) NULL;
+END;
 
-            migrationBuilder.AddColumn<int>(
-                name: "ParkingFloorId",
-                table: "ParkingSpots",
-                type: "int",
-                nullable: true);
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ParkingSpots]') AND name = 'ParkingFloorId')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD [ParkingFloorId] int NULL;
+END;
 
-            migrationBuilder.AddColumn<string>(
-                name: "Status",
-                table: "ParkingSpots",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ParkingSpots]') AND name = 'Status')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD [Status] nvarchar(50) NOT NULL DEFAULT N'';
+END;
+");
 
             migrationBuilder.CreateTable(
                 name: "ParkingActivityLogs",
@@ -115,28 +108,28 @@ BEGIN
 END
 ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ParkingSpots_ParkingFloorId",
-                table: "ParkingSpots",
-                column: "ParkingFloorId");
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ParkingSpots_ParkingFloorId' AND object_id = OBJECT_ID(N'[ParkingSpots]'))
+BEGIN
+    CREATE INDEX [IX_ParkingSpots_ParkingFloorId] ON [ParkingSpots] ([ParkingFloorId]);
+END;
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ParkingSpots_SpotNumber",
-                table: "ParkingSpots",
-                column: "SpotNumber");
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ParkingSpots_SpotNumber' AND object_id = OBJECT_ID(N'[ParkingSpots]'))
+BEGIN
+    CREATE INDEX [IX_ParkingSpots_SpotNumber] ON [ParkingSpots] ([SpotNumber]);
+END;
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ParkingActivityLogs_ParkingSpotId",
-                table: "ParkingActivityLogs",
-                column: "ParkingSpotId");
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ParkingActivityLogs_ParkingSpotId' AND object_id = OBJECT_ID(N'[ParkingActivityLogs]'))
+BEGIN
+    CREATE INDEX [IX_ParkingActivityLogs_ParkingSpotId] ON [ParkingActivityLogs] ([ParkingSpotId]);
+END;
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_ParkingSpots_ParkingFloors_ParkingFloorId",
-                table: "ParkingSpots",
-                column: "ParkingFloorId",
-                principalTable: "ParkingFloors",
-                principalColumn: "ParkingFloorId",
-                onDelete: ReferentialAction.SetNull);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_ParkingSpots_ParkingFloors_ParkingFloorId')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD CONSTRAINT [FK_ParkingSpots_ParkingFloors_ParkingFloorId] 
+    FOREIGN KEY ([ParkingFloorId]) REFERENCES [ParkingFloors] ([ParkingFloorId]) ON DELETE SET NULL;
+END;
+");
         }
 
         /// <inheritdoc />

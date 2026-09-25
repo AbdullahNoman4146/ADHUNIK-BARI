@@ -31,6 +31,17 @@ namespace ADHUNIK_BARI.ViewModels
         public decimal ElectricityCharge { get; set; } = 1500;
 
         public decimal MaintenanceCharge { get; set; } = 500;
+
+        /// <summary>
+        /// Optional Other Charges (৳).
+        /// Initially 0 - no money will be added until admin appoints one.
+        /// </summary>
+        public decimal OtherCharge { get; set; } = 0;
+
+        /// <summary>
+        /// Optional note / reason for Other charges (e.g. repairs, special events, fines).
+        /// </summary>
+        public string? OtherDescription { get; set; }
     }
 
     /// <summary>

@@ -624,7 +624,9 @@ namespace ADHUNIK_BARI.Controllers
                     req.ElectricityCharge,
                     req.MaintenanceCharge,
                     req.TargetAssignmentId > 0 ? req.TargetAssignmentId : null,
-                    req.MonthlyRent
+                    req.MonthlyRent,
+                    req.OtherCharge,
+                    req.OtherDescription
                 );
 
                 if (count > 0)
@@ -639,6 +641,51 @@ namespace ADHUNIK_BARI.Controllers
             catch (Exception ex)
             {
                 TempData["Error"] = $"Failed to generate bills: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Bills));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AppointOtherCharge(int billId, decimal amount, string? description, bool applyToAllMonthBills = false)
+        {
+            try
+            {
+                if (amount < 0)
+                {
+                    TempData["Error"] = "Charge amount cannot be negative.";
+                    return RedirectToAction(nameof(Bills));
+                }
+
+                if (applyToAllMonthBills)
+                {
+                    var targetBill = await dbContext.Bills.FindAsync(billId);
+                    if (targetBill == null)
+                    {
+                        TempData["Error"] = "Target invoice not found.";
+                        return RedirectToAction(nameof(Bills));
+                    }
+
+                    var count = await billingService.AppointOtherChargeForMonthAsync(targetBill.BillMonth, targetBill.BillYear, amount, description);
+                    TempData["Success"] = $"Successfully appointed Other charge of ৳{amount:N0} to {count} invoice(s) for {new DateTime(targetBill.BillYear, targetBill.BillMonth, 1):MMMM yyyy}.";
+                }
+                else
+                {
+                    var success = await billingService.AppointOtherChargeAsync(billId, amount, description);
+                    if (success)
+                    {
+                        TempData["Success"] = $"Successfully appointed Other charge (৳{amount:N0}) for Bill #{billId}.";
+                    }
+                    else
+                    {
+                        TempData["Error"] = $"Bill #{billId} not found.";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Failed to appoint Other charge: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Bills));

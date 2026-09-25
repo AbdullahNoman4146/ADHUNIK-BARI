@@ -36,7 +36,9 @@ namespace ADHUNIK_BARI.Services
             decimal electricityCharge = 0,
             decimal maintenanceCharge = 0,
             int? targetAssignmentId = null,
-            decimal? monthlyRent = null)
+            decimal? monthlyRent = null,
+            decimal otherCharge = 0,
+            string? otherDescription = null)
         {
             try
             {
@@ -181,21 +183,44 @@ namespace ADHUNIK_BARI.Services
                     // 4. PARKING FEE: For flats with assigned parking spots
                     if (assignment.FlatId > 0)
                     {
-                        var assignedParkingSpots = await _dbContext.ParkingSpots
-                            .Where(p => p.FlatId == assignment.FlatId && p.ParkingFee > 0)
-                            .ToListAsync();
-
-                        foreach (var spot in assignedParkingSpots)
+                        try
                         {
-                            billItems.Add(new BillItem
+                            var assignedParkingSpots = await _dbContext.ParkingSpots
+                                .Where(p => p.FlatId == assignment.FlatId && p.ParkingFee > 0)
+                                .Select(p => new { p.SpotNumber, p.ParkingFee })
+                                .ToListAsync();
+
+                            foreach (var spot in assignedParkingSpots)
                             {
-                                ItemType = BillItemTypes.Parking,
-                                Amount = spot.ParkingFee,
-                                Description = $"Parking Fee ({spot.SpotNumber}) for Flat {assignment.Flat?.FlatNumber}",
-                                PaymentStatus = "Unpaid",
-                                CreatedAt = createdAt
-                            });
+                                billItems.Add(new BillItem
+                                {
+                                    ItemType = BillItemTypes.Parking,
+                                    Amount = spot.ParkingFee,
+                                    Description = $"Parking Fee ({spot.SpotNumber}) for Flat {assignment.Flat?.FlatNumber}",
+                                    PaymentStatus = "Unpaid",
+                                    CreatedAt = createdAt
+                                });
+                            }
                         }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning($"Skipped parking fee lookup for Flat {assignment.FlatId}: {ex.Message}");
+                        }
+                    }
+
+                    // 5. OTHER CHARGES: Initially 0 - no money added unless explicitly appointed by admin
+                    if (otherCharge > 0)
+                    {
+                        billItems.Add(new BillItem
+                        {
+                            ItemType = BillItemTypes.Other,
+                            Amount = otherCharge,
+                            Description = !string.IsNullOrWhiteSpace(otherDescription)
+                                ? otherDescription.Trim()
+                                : $"Other Charges for Flat {assignment.Flat?.FlatNumber}",
+                            PaymentStatus = "Unpaid",
+                            CreatedAt = createdAt
+                        });
                     }
 
                     bill.TotalAmount = billItems.Sum(item => item.Amount);
@@ -290,6 +315,177 @@ namespace ADHUNIK_BARI.Services
             catch (Exception ex)
             {
                 _logger.LogError($"Error in GetActiveFlatAssignmentsAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Appoints or updates an "Other" charge on an existing bill.
+        /// Recalculates total bill amount, due amount, and status.
+        /// </summary>
+        public async Task<bool> AppointOtherChargeAsync(int billId, decimal amount, string? description)
+        {
+            try
+            {
+                var bill = await _dbContext.Bills
+                    .Include(b => b.BillItems)
+                    .FirstOrDefaultAsync(b => b.BillId == billId);
+
+                if (bill == null) return false;
+
+                var existingOther = bill.BillItems.FirstOrDefault(bi => bi.ItemType == BillItemTypes.Other);
+                var desc = string.IsNullOrWhiteSpace(description) ? "Other Charges" : description.Trim();
+
+                if (amount <= 0)
+                {
+                    // If amount is 0 and existing item is unpaid, remove it
+                    if (existingOther != null)
+                    {
+                        if (existingOther.PaymentStatus == "Paid")
+                        {
+                            throw new InvalidOperationException("Cannot remove an Other charge that has already been paid.");
+                        }
+                        _dbContext.BillItems.Remove(existingOther);
+                        bill.BillItems.Remove(existingOther);
+                    }
+                }
+                else
+                {
+                    if (existingOther != null)
+                    {
+                        if (existingOther.PaymentStatus == "Paid")
+                        {
+                            throw new InvalidOperationException("Cannot modify an Other charge that has already been paid.");
+                        }
+                        existingOther.Amount = amount;
+                        existingOther.Description = desc;
+                    }
+                    else
+                    {
+                        var newItem = new BillItem
+                        {
+                            BillId = bill.BillId,
+                            ItemType = BillItemTypes.Other,
+                            Amount = amount,
+                            Description = desc,
+                            PaymentStatus = "Unpaid",
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        bill.BillItems.Add(newItem);
+                        _dbContext.BillItems.Add(newItem);
+                    }
+                }
+
+                // Recalculate bill financial totals
+                bill.TotalAmount = bill.BillItems.Sum(bi => bi.Amount);
+                bill.DueAmount = Math.Max(0, bill.TotalAmount - bill.PaidAmount);
+
+                if (bill.DueAmount == 0 && bill.TotalAmount > 0 && bill.PaidAmount >= bill.TotalAmount)
+                {
+                    bill.BillStatus = "Paid";
+                }
+                else if (bill.PaidAmount > 0)
+                {
+                    bill.BillStatus = "PartiallyPaid";
+                }
+                else
+                {
+                    bill.BillStatus = "Unpaid";
+                }
+
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation($"Successfully appointed Other charge ৳{amount} for Bill #{billId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in AppointOtherChargeAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Appoints or updates an "Other" charge to all bills in a specific month and year.
+        /// </summary>
+        public async Task<int> AppointOtherChargeForMonthAsync(int month, int year, decimal amount, string? description)
+        {
+            try
+            {
+                var bills = await _dbContext.Bills
+                    .Include(b => b.BillItems)
+                    .Where(b => b.BillMonth == month && b.BillYear == year)
+                    .ToListAsync();
+
+                if (!bills.Any()) return 0;
+
+                int updatedCount = 0;
+                var desc = string.IsNullOrWhiteSpace(description) ? "Other Charges" : description.Trim();
+
+                foreach (var bill in bills)
+                {
+                    var existingOther = bill.BillItems.FirstOrDefault(bi => bi.ItemType == BillItemTypes.Other);
+                    if (existingOther != null && existingOther.PaymentStatus == "Paid")
+                    {
+                        continue; // Skip if already paid
+                    }
+
+                    if (amount <= 0)
+                    {
+                        if (existingOther != null)
+                        {
+                            _dbContext.BillItems.Remove(existingOther);
+                            bill.BillItems.Remove(existingOther);
+                        }
+                    }
+                    else
+                    {
+                        if (existingOther != null)
+                        {
+                            existingOther.Amount = amount;
+                            existingOther.Description = desc;
+                        }
+                        else
+                        {
+                            var newItem = new BillItem
+                            {
+                                BillId = bill.BillId,
+                                ItemType = BillItemTypes.Other,
+                                Amount = amount,
+                                Description = desc,
+                                PaymentStatus = "Unpaid",
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            bill.BillItems.Add(newItem);
+                            _dbContext.BillItems.Add(newItem);
+                        }
+                    }
+
+                    bill.TotalAmount = bill.BillItems.Sum(bi => bi.Amount);
+                    bill.DueAmount = Math.Max(0, bill.TotalAmount - bill.PaidAmount);
+
+                    if (bill.DueAmount == 0 && bill.TotalAmount > 0 && bill.PaidAmount >= bill.TotalAmount)
+                    {
+                        bill.BillStatus = "Paid";
+                    }
+                    else if (bill.PaidAmount > 0)
+                    {
+                        bill.BillStatus = "PartiallyPaid";
+                    }
+                    else
+                    {
+                        bill.BillStatus = "Unpaid";
+                    }
+
+                    updatedCount++;
+                }
+
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation($"Successfully appointed Other charge to {updatedCount} bills for {month}/{year}");
+                return updatedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in AppointOtherChargeForMonthAsync: {ex.Message}");
                 throw;
             }
         }
