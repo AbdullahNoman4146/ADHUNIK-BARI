@@ -27,6 +27,13 @@ namespace ADHUNIK_BARI.Models
         [Display(Name = "Status")]
         public string Status { get; set; } = "Online";
 
+        [StringLength(50)]
+        [Display(Name = "Access Type")]
+        public string AccessType { get; set; } = "All"; // "All" or "SpecificFlats"
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation property for flat-specific access
+        public ICollection<CctvCameraFlatAccess> FlatAccesses { get; set; } = new List<CctvCameraFlatAccess>();
     }
 }

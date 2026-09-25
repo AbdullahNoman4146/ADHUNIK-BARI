@@ -1441,13 +1441,16 @@ Date:
         }
 
         // ==========================================
-        // CCTV SURVEILLANCE MANAGEMENT (CLEAN & DIRECT)
+        // CCTV controller kaj
         // ==========================================
 
         [HttpGet]
         public async Task<IActionResult> Cctv(string? zone = null)
         {
-            var query = dbContext.CctvCameras.AsNoTracking();
+            var query = dbContext.CctvCameras
+                .Include(c => c.FlatAccesses)
+                .ThenInclude(fa => fa.Flat)
+                .AsNoTracking();
 
             var availableZones = await dbContext.CctvCameras
                 .Select(c => c.Location)
@@ -1468,6 +1471,12 @@ Date:
             var onlineCount = await dbContext.CctvCameras.CountAsync(c => c.Status == "Online");
             var offlineCount = totalCameras - onlineCount;
 
+            var availableFlats = await dbContext.Flats
+                .AsNoTracking()
+                .OrderBy(f => f.FloorNumber)
+                .ThenBy(f => f.FlatNumber)
+                .ToListAsync();
+
             var viewModel = new CctvDashboardViewModel
             {
                 Cameras = cameras,
@@ -1475,19 +1484,28 @@ Date:
                 AvailableZones = availableZones,
                 TotalCameras = totalCameras,
                 OnlineCount = onlineCount,
-                OfflineCount = offlineCount
+                OfflineCount = offlineCount,
+                AvailableFlats = availableFlats
             };
 
             return View(viewModel);
         }
 
         [HttpGet]
-        public IActionResult CreateCctv()
+        public async Task<IActionResult> CreateCctv()
         {
-            var model = new CctvCamera
+            var flats = await dbContext.Flats
+                .AsNoTracking()
+                .OrderBy(f => f.FloorNumber)
+                .ThenBy(f => f.FlatNumber)
+                .ToListAsync();
+
+            var model = new CctvCameraViewModel
             {
                 Location = "Main Gate",
-                Status = "Online"
+                Status = "Online",
+                AccessType = "All",
+                AvailableFlats = flats
             };
 
             return View(model);
@@ -1495,7 +1513,7 @@ Date:
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateCctv(CctvCamera model)
+        public async Task<IActionResult> CreateCctv(CctvCameraViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.CameraName))
             {
@@ -1507,48 +1525,108 @@ Date:
                 ModelState.AddModelError(nameof(model.StreamUrl), "Stream URL is required.");
             }
 
+            if (model.AccessType == "SpecificFlats")
+            {
+                if (model.TargetFlatIds == null || model.TargetFlatIds.Count == 0)
+                {
+                    ModelState.AddModelError(nameof(model.TargetFlatIds), "Please select at least one flat for specific access.");
+                }
+            }
+            else
+            {
+                model.AccessType = "All";
+                model.TargetFlatIds?.Clear();
+            }
+
             if (!ModelState.IsValid)
             {
+                model.AvailableFlats = await dbContext.Flats
+                    .AsNoTracking()
+                    .OrderBy(f => f.FloorNumber)
+                    .ThenBy(f => f.FlatNumber)
+                    .ToListAsync();
                 return View(model);
             }
 
-            model.CameraName = model.CameraName.Trim();
-            model.Location = string.IsNullOrWhiteSpace(model.Location) ? "Main Gate" : model.Location.Trim();
-            // Direct URL as input by user - NO auto format, NO appending!
-            model.StreamUrl = model.StreamUrl.Trim();
-            model.Status = string.IsNullOrWhiteSpace(model.Status) ? "Online" : model.Status.Trim();
-            model.CreatedAt = DateTime.UtcNow;
+            var camera = new CctvCamera
+            {
+                CameraName = model.CameraName.Trim(),
+                Location = string.IsNullOrWhiteSpace(model.Location) ? "Main Gate" : model.Location.Trim(),
+                // Direct URL as input by user - NO auto format, NO appending!
+                StreamUrl = model.StreamUrl.Trim(),
+                Status = string.IsNullOrWhiteSpace(model.Status) ? "Online" : model.Status.Trim(),
+                AccessType = model.AccessType,
+                CreatedAt = DateTime.UtcNow
+            };
 
-            await dbContext.CctvCameras.AddAsync(model);
+            await dbContext.CctvCameras.AddAsync(camera);
             await dbContext.SaveChangesAsync();
 
-            TempData["Success"] = $"Camera '{model.CameraName}' added successfully.";
+            if (model.AccessType == "SpecificFlats" && model.TargetFlatIds != null && model.TargetFlatIds.Count > 0)
+            {
+                var distinctFlatIds = model.TargetFlatIds.Distinct().ToList();
+                var accesses = distinctFlatIds.Select(flatId => new CctvCameraFlatAccess
+                {
+                    CameraId = camera.CameraId,
+                    FlatId = flatId,
+                    AssignedAt = DateTime.UtcNow
+                });
+                await dbContext.CctvCameraFlatAccesses.AddRangeAsync(accesses);
+                await dbContext.SaveChangesAsync();
+            }
+
+            TempData["Success"] = $"Camera '{camera.CameraName}' added successfully.";
             return RedirectToAction(nameof(Cctv));
         }
 
         [HttpGet]
         public async Task<IActionResult> EditCctv(int id)
         {
-            var camera = await dbContext.CctvCameras.FindAsync(id);
+            var camera = await dbContext.CctvCameras
+                .Include(c => c.FlatAccesses)
+                .FirstOrDefaultAsync(c => c.CameraId == id);
+
             if (camera == null)
             {
                 TempData["Error"] = "Camera not found.";
                 return RedirectToAction(nameof(Cctv));
             }
 
-            return View(camera);
+            var flats = await dbContext.Flats
+                .AsNoTracking()
+                .OrderBy(f => f.FloorNumber)
+                .ThenBy(f => f.FlatNumber)
+                .ToListAsync();
+
+            var model = new CctvCameraViewModel
+            {
+                CameraId = camera.CameraId,
+                CameraName = camera.CameraName,
+                Location = camera.Location,
+                StreamUrl = camera.StreamUrl,
+                Status = camera.Status,
+                AccessType = string.IsNullOrWhiteSpace(camera.AccessType) ? "All" : camera.AccessType,
+                TargetFlatIds = camera.FlatAccesses.Select(fa => fa.FlatId).ToList(),
+                AvailableFlats = flats,
+                CreatedAt = camera.CreatedAt
+            };
+
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditCctv(int id, CctvCamera model)
+        public async Task<IActionResult> EditCctv(int id, CctvCameraViewModel model)
         {
             if (id != model.CameraId)
             {
                 return NotFound();
             }
 
-            var camera = await dbContext.CctvCameras.FindAsync(id);
+            var camera = await dbContext.CctvCameras
+                .Include(c => c.FlatAccesses)
+                .FirstOrDefaultAsync(c => c.CameraId == id);
+
             if (camera == null)
             {
                 TempData["Error"] = "Camera not found.";
@@ -1565,8 +1643,26 @@ Date:
                 ModelState.AddModelError(nameof(model.StreamUrl), "Stream URL is required.");
             }
 
+            if (model.AccessType == "SpecificFlats")
+            {
+                if (model.TargetFlatIds == null || model.TargetFlatIds.Count == 0)
+                {
+                    ModelState.AddModelError(nameof(model.TargetFlatIds), "Please select at least one flat for specific access.");
+                }
+            }
+            else
+            {
+                model.AccessType = "All";
+                model.TargetFlatIds?.Clear();
+            }
+
             if (!ModelState.IsValid)
             {
+                model.AvailableFlats = await dbContext.Flats
+                    .AsNoTracking()
+                    .OrderBy(f => f.FloorNumber)
+                    .ThenBy(f => f.FlatNumber)
+                    .ToListAsync();
                 return View(model);
             }
 
@@ -1575,6 +1671,24 @@ Date:
             // Direct URL as input by user - NO auto format, NO appending!
             camera.StreamUrl = model.StreamUrl.Trim();
             camera.Status = string.IsNullOrWhiteSpace(model.Status) ? "Online" : model.Status.Trim();
+            camera.AccessType = model.AccessType;
+
+            // Update flat accesses
+            dbContext.CctvCameraFlatAccesses.RemoveRange(camera.FlatAccesses);
+
+            if (model.AccessType == "SpecificFlats" && model.TargetFlatIds != null && model.TargetFlatIds.Count > 0)
+            {
+                var distinctFlatIds = model.TargetFlatIds.Distinct().ToList();
+                foreach (var flatId in distinctFlatIds)
+                {
+                    dbContext.CctvCameraFlatAccesses.Add(new CctvCameraFlatAccess
+                    {
+                        CameraId = camera.CameraId,
+                        FlatId = flatId,
+                        AssignedAt = DateTime.UtcNow
+                    });
+                }
+            }
 
             await dbContext.SaveChangesAsync();
 

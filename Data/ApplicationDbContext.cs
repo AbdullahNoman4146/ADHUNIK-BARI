@@ -34,6 +34,7 @@ namespace ADHUNIK_BARI.Data
         public DbSet<PropertyApplication> PropertyApplications { get; set; }
         public DbSet<ParkingApplication> ParkingApplications { get; set; }
         public DbSet<CctvCamera> CctvCameras { get; set; }
+        public DbSet<CctvCameraFlatAccess> CctvCameraFlatAccesses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -273,6 +274,22 @@ namespace ADHUNIK_BARI.Data
                 b.Property(c => c.Location).IsRequired().HasMaxLength(100);
                 b.Property(c => c.StreamUrl).IsRequired().HasMaxLength(1000);
                 b.Property(c => c.Status).HasMaxLength(50);
+                b.Property(c => c.AccessType).HasMaxLength(50).HasDefaultValue("All");
+            });
+
+            builder.Entity<CctvCameraFlatAccess>(b =>
+            {
+                b.ToTable("CctvCameraFlatAccesses");
+                b.HasKey(a => a.Id);
+                b.HasOne(a => a.Camera)
+                    .WithMany(c => c.FlatAccesses)
+                    .HasForeignKey(a => a.CameraId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(a => a.Flat)
+                    .WithMany()
+                    .HasForeignKey(a => a.FlatId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(a => new { a.CameraId, a.FlatId }).IsUnique();
             });
 
             builder.Entity<ParkingApplication>(b =>

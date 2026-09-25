@@ -119,9 +119,23 @@
                     <div class="cctv-card-footer">
                         <div>
                             <h6 class="cctv-cam-title">@cam.CameraName</h6>
-                            <span class="cctv-cam-location">
-                                <i class="fa-solid fa-location-dot text-muted"></i> @cam.Location
-                            </span>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                                <span class="cctv-cam-location">
+                                    <i class="fa-solid fa-location-dot text-muted"></i> @cam.Location
+                                </span>
+                                @if (cam.AccessType == "SpecificFlats")
+                                {
+                                    <span class="badge bg-dark border border-warning text-warning small" title="Authorized for your flat">
+                                        <i class="fa-solid fa-door-closed"></i> Flat Access
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-dark border border-secondary text-info small" title="Community-wide feed">
+                                        <i class="fa-solid fa-users"></i> Community
+                                    </span>
+                                }
+                            </div>
                         </div>
                         <span class="badge bg-dark border border-secondary text-success small">
                             <i class="fa-solid fa-signal"></i> Active

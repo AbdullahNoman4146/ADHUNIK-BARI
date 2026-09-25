@@ -700,3 +700,42 @@ input[name="Location"]::placeholder {
     font-size: 0.825rem !important;
     font-weight: 500 !important;
 }
+
+/* CCTV Flat Access Selector in Modal & Create/Edit */
+.cctv-flat-selector-box {
+    background: rgba(4, 9, 7, 0.7);
+    border: 1px solid var(--cctv-border);
+    border-radius: 0.5rem;
+    padding: 0.85rem;
+}
+
+.cctv-flat-grid::-webkit-scrollbar {
+    width: 6px;
+}
+.cctv-flat-grid::-webkit-scrollbar-track {
+    background: #040907;
+}
+.cctv-flat-grid::-webkit-scrollbar-thumb {
+    background: var(--cctv-border);
+    border-radius: 3px;
+}
+.cctv-flat-grid::-webkit-scrollbar-thumb:hover {
+    background: var(--cctv-hud-green);
+}
+
+.cctv-flat-check {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cctv-flat-check:hover {
+    border-color: rgba(0, 245, 155, 0.5) !important;
+    background: rgba(14, 32, 27, 0.9) !important;
+}
+
+.cctv-flat-check input:checked ~ label strong {
+    color: #00f59b !important;
+    text-shadow: 0 0 6px rgba(0, 245, 155, 0.4);
+}

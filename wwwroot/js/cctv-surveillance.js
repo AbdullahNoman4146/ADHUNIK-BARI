@@ -410,6 +410,72 @@
         });
     }
 
+    // 7. Interactive Flat Access Selector & Real-Time Filter
+    function initFlatAccessSelector() {
+        document.querySelectorAll('[data-cctv-access-type]').forEach(select => {
+            const form = select.closest('form');
+            if (!form) return;
+            const container = form.querySelector('[data-cctv-flat-container]');
+            if (!container) return;
+
+            function updateVisibility() {
+                if (select.value === 'SpecificFlats') {
+                    container.style.display = 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+            }
+
+            select.addEventListener('change', updateVisibility);
+            updateVisibility();
+        });
+
+        // Select All / Clear All Flats
+        document.querySelectorAll('[data-select-all-flats]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const form = this.closest('form');
+                if (!form) return;
+                form.querySelectorAll('.cctv-flat-grid input[name="TargetFlatIds"]').forEach(cb => {
+                    const card = cb.closest('.flat-item-card');
+                    if (!card || card.style.display !== 'none') {
+                        cb.checked = true;
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('[data-clear-all-flats]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const form = this.closest('form');
+                if (!form) return;
+                form.querySelectorAll('input[name="TargetFlatIds"]').forEach(cb => {
+                    cb.checked = false;
+                });
+            });
+        });
+
+        // Real-time Flat Search Filter
+        document.querySelectorAll('[data-search-flats]').forEach(input => {
+            input.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                const form = this.closest('form');
+                if (!form) return;
+
+                form.querySelectorAll('.flat-item-card').forEach(card => {
+                    const flatNum = (card.getAttribute('data-flat-num') || '').toLowerCase();
+                    const floor = (card.getAttribute('data-floor') || '').toLowerCase();
+                    const text = card.textContent.toLowerCase();
+
+                    if (!query || flatNum.includes(query) || floor.includes(query) || text.includes(query)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    }
+
     // Initialize on DOM ready
     document.addEventListener('DOMContentLoaded', () => {
         startOsdClock();
@@ -418,5 +484,6 @@
         initUrlTester();
         suppressExtensionToolbars();
         initAlertFadeout();
+        initFlatAccessSelector();
     });
 })();

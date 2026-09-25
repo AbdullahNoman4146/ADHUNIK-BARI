@@ -1,4 +1,4 @@
-@model ADHUNIK_BARI.Models.CctvCamera
+@model ADHUNIK_BARI.ViewModels.CctvCameraViewModel
 @{
     ViewData["Title"] = $"Edit {Model.CameraName}";
 }
@@ -21,7 +21,7 @@
                 <i class="fa-solid fa-sliders text-success"></i> Edit @Model.CameraName
             </h1>
             <p class="cctv-subtitle">
-                Update camera location, stream URL, or status.
+                Update camera location, stream URL, online/offline status, or flat viewing permissions.
             </p>
         </div>
         <div>
@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <div class="card p-4 rounded-3 shadow-sm mx-auto" style="max-width: 650px; background: #091612; border: 1px solid var(--cctv-border); color: #e2ede8;">
+    <div class="card p-4 rounded-3 shadow-sm mx-auto" style="max-width: 700px; background: #091612; border: 1px solid var(--cctv-border); color: #e2ede8;">
         <form asp-action="EditCctv" asp-route-id="@Model.CameraId" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="CameraId" />
@@ -68,12 +68,61 @@
                 <img data-url-preview-media src="" alt="Live Stream Preview" />
             </div>
 
-            <div class="mb-4 mt-3">
-                <label asp-for="Status" class="form-label text-white small fw-bold"></label>
-                <select asp-for="Status" class="form-select" style="background: #040907; border-color: var(--cctv-border); color: #fff;">
-                    <option value="Online">Online</option>
-                    <option value="Offline">Offline</option>
-                </select>
+            <div class="row g-3 mb-3 mt-1">
+                <div class="col-md-6">
+                    <label asp-for="Status" class="form-label text-white small fw-bold"></label>
+                    <select asp-for="Status" class="form-select" style="background: #040907; border-color: var(--cctv-border); color: #fff;">
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AccessType" class="form-label text-white small fw-bold"></label>
+                    <select asp-for="AccessType" class="form-select" data-cctv-access-type style="background: #040907; border-color: var(--cctv-border); color: #fff;">
+                        <option value="All">All Flats (Public / Community Feed)</option>
+                        <option value="SpecificFlats">Specific Flats (Restricted Access)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Flat Selection Box (Toggled when SpecificFlats is chosen) -->
+            <div class="cctv-flat-selector-box mb-4" data-cctv-flat-container style="@(Model.AccessType == "SpecificFlats" ? "display: block;" : "display: none;")">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label text-white small fw-bold mb-0">
+                        <i class="fa-solid fa-door-closed text-success"></i> Select Flats With Live Access
+                    </label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 small text-white" data-select-all-flats>Select All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 small text-white" data-clear-all-flats>Clear</button>
+                    </div>
+                </div>
+                <input type="text" class="form-control form-control-sm mb-2" data-search-flats placeholder="Search flat number or floor..." style="background: #040907; border-color: var(--cctv-border); color: #fff;" />
+
+                <div class="cctv-flat-grid" style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: #040907; border: 1px solid var(--cctv-border); border-radius: 6px;">
+                    <div class="row g-2">
+                        @if (Model.AvailableFlats != null && Model.AvailableFlats.Any())
+                        {
+                            @foreach (var flat in Model.AvailableFlats)
+                            {
+                                <div class="col-sm-6 flat-item-card" data-flat-num="@flat.FlatNumber" data-floor="@flat.FloorNumber">
+                                    <div class="form-check cctv-flat-check p-2 rounded" style="background: #091612; border: 1px solid var(--cctv-border);">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="TargetFlatIds" value="@flat.FlatId" id="edit-flat-@flat.FlatId" @(Model.TargetFlatIds != null && Model.TargetFlatIds.Contains(flat.FlatId) ? "checked" : "") />
+                                        <label class="form-check-label text-white small" for="edit-flat-@flat.FlatId">
+                                            <strong class="text-success">Flat @flat.FlatNumber</strong>
+                                            <span class="text-muted">(Floor @flat.FloorNumber)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12 text-center py-2 text-muted small">No flats found in the building.</div>
+                        }
+                    </div>
+                </div>
+                <span asp-validation-for="TargetFlatIds" class="text-danger small d-block mt-1"></span>
+                <small class="text-muted d-block mt-1">Residents assigned to selected flats will be granted access to this camera feed.</small>
             </div>
 
             <div class="d-flex align-items-center justify-content-between pt-2">
@@ -95,3 +144,4 @@
         </form>
     </div>
 </div>
+

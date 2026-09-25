@@ -423,20 +423,37 @@ namespace ADHUNIK_BARI.Controllers
         public async Task<IActionResult> Cctv(string? zone = null)
         {
             var user = await userManager.GetUserAsync(User);
-            var assignment = user == null ? null : await GetActiveAssignment(user.Id);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var assignment = await GetActiveAssignment(user.Id);
             ViewBag.Assignment = assignment;
 
-            var query = dbContext.CctvCameras
-                .AsNoTracking()
-                .Where(c => c.Status == "Online");
+            // Fetch active flat IDs for this resident (supporting single or multiple flat assignments)
+            var userFlatIds = await dbContext.FlatAssignments
+                .Where(a => a.UserId == user.Id && a.IsActive)
+                .Select(a => a.FlatId)
+                .ToListAsync();
 
-            var availableZones = await dbContext.CctvCameras
+            // Residents can ONLY view cameras that:
+            // 1. Are Online (Status == "Online")
+            // 2. AND have AccessType == "All" OR (AccessType == "SpecificFlats" and the resident's flat is granted access)
+            var baseQuery = dbContext.CctvCameras
+                .Include(c => c.FlatAccesses)
+                .AsNoTracking()
                 .Where(c => c.Status == "Online")
+                .Where(c => c.AccessType == "All" ||
+                            (c.AccessType == "SpecificFlats" && c.FlatAccesses.Any(fa => userFlatIds.Contains(fa.FlatId))));
+
+            var availableZones = await baseQuery
                 .Select(c => c.Location)
                 .Distinct()
                 .OrderBy(z => z)
                 .ToListAsync();
 
+            var query = baseQuery;
             if (!string.IsNullOrWhiteSpace(zone) && zone != "All")
             {
                 query = query.Where(c => c.Location == zone);
