@@ -19,19 +19,22 @@ namespace ADHUNIK_BARI.Controllers
         private readonly IBillingService billingService;
         private readonly IPaymentService paymentService;
         private readonly IAIComplaintSummaryService aiService;
+        private readonly IGymService gymService;
 
         public ManagerController(
-    UserManager<ApplicationUser> userManager,
-    ApplicationDbContext dbContext,
-    IBillingService billingService,
-    IPaymentService paymentService,
-    IAIComplaintSummaryService aiService)
+            UserManager<ApplicationUser> userManager,
+            ApplicationDbContext dbContext,
+            IBillingService billingService,
+            IPaymentService paymentService,
+            IAIComplaintSummaryService aiService,
+            IGymService gymService)
         {
             this.userManager = userManager;
             this.dbContext = dbContext;
             this.billingService = billingService;
             this.paymentService = paymentService;
             this.aiService = aiService;
+            this.gymService = gymService;
         }
 
         [HttpGet]
@@ -41,12 +44,21 @@ namespace ADHUNIK_BARI.Controllers
             var pendingComplaintsCount = await dbContext.Complaints.CountAsync(c => c.ComplaintStatus == "Pending");
             var totalBilled = await dbContext.Bills.SumAsync(b => (decimal?)b.TotalAmount) ?? 0m;
             var totalPaid = await dbContext.Bills.SumAsync(b => (decimal?)b.PaidAmount) ?? 0m;
-            var collectionRate = totalBilled > 0 ? (int)Math.Round((totalPaid / totalBilled) * 100m) : 100;
+
+            // Include collected gym membership fees (each ৳500 paid pass) in revenue
+            var gymPaidRevenue = await dbContext.GymMemberships
+                .Where(m => m.IsFeePaid)
+                .SumAsync(m => (decimal?)(m.PaySlipAmount ?? m.MonthlyFee)) ?? 0m;
+
+            var totalCollected = totalPaid + gymPaidRevenue;
+            var totalBilledWithGym = totalBilled + gymPaidRevenue;
+            var collectionRate = totalBilledWithGym > 0 ? (int)Math.Round((totalCollected / totalBilledWithGym) * 100m) : 100;
 
             ViewBag.ActiveFlatsCount = activeFlatsCount;
             ViewBag.PendingComplaintsCount = pendingComplaintsCount;
             ViewBag.CollectionRate = collectionRate;
-            ViewBag.TotalCollectedRevenue = totalPaid;
+            ViewBag.TotalCollectedRevenue = totalCollected;
+            ViewBag.GymCollectedRevenue = gymPaidRevenue;
 
             ViewBag.RecentComplaints = await dbContext.Complaints
                 .Include(complaint => complaint.Flat)
@@ -587,6 +599,14 @@ namespace ADHUNIK_BARI.Controllers
             var totalDue = await dbContext.Bills.SumAsync(b => (decimal?)b.DueAmount) ?? 0m;
             var totalUnpaidBills = await dbContext.Bills.CountAsync(b => b.BillStatus != "Paid");
 
+            // Include every collected gym membership fee (৳500 each) in collected revenue
+            var gymCollected = await dbContext.GymMemberships
+                .Where(m => m.IsFeePaid)
+                .SumAsync(m => (decimal?)(m.PaySlipAmount ?? m.MonthlyFee)) ?? 0m;
+
+            totalCollected += gymCollected;
+            totalBilled += gymCollected;
+
             var model = new ManagerBillsPageViewModel
             {
                 GenerateRequest = new GenerateMonthlyBillsRequest
@@ -600,6 +620,7 @@ namespace ADHUNIK_BARI.Controllers
                 RecentPayments = recentPayments,
                 TotalBilledAmount = totalBilled,
                 TotalCollectedAmount = totalCollected,
+                TotalGymFeesCollected = gymCollected,
                 TotalDueAmount = totalDue,
                 TotalUnpaidBills = totalUnpaidBills,
                 TotalActiveAssignments = activeAssignments.Count
@@ -1796,6 +1817,165 @@ Date:
             TempData["Success"] = $"Camera '{cameraName}' has been removed.";
             return RedirectToAction(nameof(Cctv));
         }
+
+        #region Gym Management
+
+        [HttpGet]
+        public async Task<IActionResult> Gym()
+        {
+            var model = await gymService.GetManagerGymDashboardAsync();
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateGymSettings(GymSettingsViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please correct the errors in the gym settings form.";
+                var dashboardModel = await gymService.GetManagerGymDashboardAsync();
+                dashboardModel.GymSettings = model;
+                return View("Gym", dashboardModel);
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            var success = await gymService.UpdateGymSettingsAsync(model, user?.Id);
+
+            if (success)
+            {
+                TempData["Success"] = "Gym facility settings, rules, and monthly fee updated successfully.";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to update gym settings. Please try again.";
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveGymMembership(GymApprovalRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please provide valid start and expiry dates.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            var result = await gymService.ApproveMembershipAsync(user?.Id ?? "", request);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectGymMembership(GymRejectionRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please provide a rejection reason.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            var result = await gymService.RejectMembershipAsync(user?.Id ?? "", request);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelGymMembership(int id, string? reason)
+        {
+            var user = await userManager.GetUserAsync(User);
+            var result = await gymService.CancelMembershipByManagerAsync(user?.Id ?? "", id, reason);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RenewGymMembership(int id, int durationMonths = 1)
+        {
+            var user = await userManager.GetUserAsync(User);
+            var result = await gymService.RenewMembershipByManagerAsync(user?.Id ?? "", id, durationMonths);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GymIdCard(int id)
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var cardModel = await gymService.GetGymIdCardDetailsAsync(id, null, isManager: true, baseUrl);
+            if (cardModel == null)
+            {
+                TempData["Error"] = "Gym membership record not found.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            return View(cardModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkGymFeePaid(int id)
+        {
+            var user = await userManager.GetUserAsync(User);
+            var result = await gymService.MarkGymFeePaidAsync(user?.Id ?? "", id);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        #endregion
 
     }
 }

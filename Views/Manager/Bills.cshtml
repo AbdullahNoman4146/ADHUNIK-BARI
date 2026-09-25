@@ -53,6 +53,12 @@
             <div class="metric-label">
                 Collected Revenue
             </div>
+            @if (Model.TotalGymFeesCollected > 0)
+            {
+                <div class="small text-muted mt-1" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-circle-check text-success me-1"></i>Includes ৳@Model.TotalGymFeesCollected.ToString("N0") gym fees
+                </div>
+            }
         </div>
 
         <div class="metric-card">
@@ -427,8 +433,8 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @foreach (var item in bill.BillItems)
                                         {
-                                             <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : (item.ItemType == BillItemTypes.Other ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-light text-dark border"))" title="৳@item.Amount.ToString("N0") - @item.PaymentStatus">
-                                                @(item.ItemType == BillItemTypes.Other ? "Others" : item.ItemType): ৳@item.Amount.ToString("N0")
+                                             <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : (item.ItemType == BillItemTypes.Other ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : (item.ItemType == BillItemTypes.Gym ? "bg-info-subtle text-info-emphasis border border-info-subtle" : "bg-light text-dark border")))" title="৳@item.Amount.ToString("N0") - @item.PaymentStatus">
+                                                @(item.ItemType == BillItemTypes.Other ? "Others" : (item.ItemType == BillItemTypes.Gym ? "Gym" : item.ItemType)): ৳@item.Amount.ToString("N0")
                                             </span>
                                         }
                                     </div>

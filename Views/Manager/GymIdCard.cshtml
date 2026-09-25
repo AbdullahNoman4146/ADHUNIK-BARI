@@ -1,0 +1,53 @@
+@model ADHUNIK_BARI.ViewModels.GymIdCardViewModel
+@{
+    ViewData["Title"] = "Gym Member ID Card - " + Model.ResidentName;
+}
+
+<div class="container py-4 fade-in">
+    <!-- Non-print Action Header -->
+    <div class="no-print d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <div class="text-uppercase text-primary fw-bold small tracking-wide">
+                <i class="fa-solid fa-id-card me-1"></i> Member Credentials
+            </div>
+            <h1 class="h3 fw-bold text-dark mb-0">Gym Member Official ID Pass</h1>
+            <p class="text-muted small mb-0">Printable official membership card for facility entry & equipment access.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary rounded-3 px-4 shadow-sm fw-bold" onclick="window.print();">
+                <i class="fa-solid fa-print me-2"></i> Print ID Card
+            </button>
+            <a asp-controller="Manager" asp-action="Gym" class="btn btn-outline-secondary rounded-3">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Gym Center
+            </a>
+        </div>
+    </div>
+
+    <!-- Instructions / Status Banner for Admin -->
+    <div class="no-print alert alert-light border shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-2 bg-success-subtle text-success rounded-circle fs-4">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <strong class="text-dark d-block">Membership Verified & Ready for Issue</strong>
+                <small class="text-muted">
+                    Member: <strong>@Model.ResidentName</strong> (Flat @Model.FlatNumber) &bull; Pass Number: <span class="font-monospace text-primary fw-bold">@Model.CardNumber</span> &bull; Valid Until: <strong class="text-danger">@Model.ExpiryDate.ToString("MMM dd, yyyy")</strong>
+                </small>
+            </div>
+        </div>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-3" onclick="window.print();">
+                <i class="fa-solid fa-print me-1"></i> Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Printable Card Partial -->
+    <partial name="_GymIdCardContent" model="Model" />
+
+    <!-- Print Tips Notice -->
+    <div class="no-print text-center text-muted small mt-3">
+        <i class="fa-solid fa-lightbulb text-warning me-1"></i> Tip: Use printer setting <strong>"Background graphics"</strong> to print the complete card styling and badges.
+    </div>
+</div>

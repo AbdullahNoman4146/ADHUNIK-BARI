@@ -17,19 +17,22 @@ namespace ADHUNIK_BARI.Controllers
         private readonly IWebHostEnvironment environment;
         private readonly IPaymentService paymentService;
         private readonly IConfiguration configuration;
+        private readonly IGymService gymService;
 
         public ResidentController(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext dbContext,
             IWebHostEnvironment environment,
             IPaymentService paymentService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IGymService gymService)
         {
             this.userManager = userManager;
             this.dbContext = dbContext;
             this.environment = environment;
             this.paymentService = paymentService;
             this.configuration = configuration;
+            this.gymService = gymService;
         }
 
         [HttpGet]
@@ -496,5 +499,195 @@ namespace ADHUNIK_BARI.Controllers
 
             return View(viewModel);
         }
+
+        #region Gym & Health Club
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        public async Task<IActionResult> Gym()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var model = await gymService.GetResidentGymDashboardAsync(user.Id);
+            return View(model);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyGymMembership(GymApplicationRequest request)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var firstError = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                TempData["Error"] = !string.IsNullOrWhiteSpace(firstError) ? firstError : "Please fill in all required fields.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            if (request.MemberPhoto == null || request.MemberPhoto.Length == 0)
+            {
+                TempData["Error"] = "A clear portrait photo is required when applying for a gym membership ID card.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            if (request.MemberPhoto != null && request.MemberPhoto.Length > 0)
+            {
+                try
+                {
+                    var uploadDirectory = Path.Combine(environment.WebRootPath, "uploads", "gym");
+                    Directory.CreateDirectory(uploadDirectory);
+                    var ext = Path.GetExtension(request.MemberPhoto.FileName).ToLowerInvariant();
+                    var fileName = $"{Guid.NewGuid():N}{ext}";
+                    var filePath = Path.Combine(uploadDirectory, fileName);
+                    await using var stream = new FileStream(filePath, FileMode.CreateNew);
+                    await request.MemberPhoto.CopyToAsync(stream);
+                    request.MemberPhotoUrl = $"/uploads/gym/{fileName}";
+                }
+                catch (Exception)
+                {
+                    // Photo upload failed gracefully, continue with application
+                }
+            }
+
+            var result = await gymService.ApplyForGymMembershipAsync(user.Id, request);
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateGymMemberPhoto(GymUpdatePhotoRequest request)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            if (request.MemberPhoto == null || request.MemberPhoto.Length == 0)
+            {
+                TempData["Error"] = "Please select or capture a valid member photo.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            try
+            {
+                var uploadDirectory = Path.Combine(environment.WebRootPath, "uploads", "gym");
+                Directory.CreateDirectory(uploadDirectory);
+                var ext = Path.GetExtension(request.MemberPhoto.FileName).ToLowerInvariant();
+                var fileName = $"{Guid.NewGuid():N}{ext}";
+                var filePath = Path.Combine(uploadDirectory, fileName);
+                await using var stream = new FileStream(filePath, FileMode.CreateNew);
+                await request.MemberPhoto.CopyToAsync(stream);
+                var photoUrl = $"/uploads/gym/{fileName}";
+
+                var result = await gymService.UpdateMemberPhotoAsync(user.Id, request.GymMembershipId, photoUrl, isManager: false);
+                if (result.Success)
+                {
+                    TempData["Success"] = "Member photo updated successfully for official ID card.";
+                }
+                else
+                {
+                    TempData["Error"] = result.Message;
+                }
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Failed to upload member photo. Please try again.";
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestGymCancellation(GymCancellationRequest request)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var result = await gymService.RequestGymCancellationAsync(user.Id, request);
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestGymRenewal(int id)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var result = await gymService.RequestGymRenewalAsync(user.Id, id);
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Gym));
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        public async Task<IActionResult> GymIdCard(int id)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var cardModel = await gymService.GetGymIdCardDetailsAsync(id, user.Id, isManager: false, baseUrl);
+            if (cardModel == null)
+            {
+                TempData["Error"] = "Official gym membership ID card is only available after your membership is approved and active.";
+                return RedirectToAction(nameof(Gym));
+            }
+
+            return View(cardModel);
+        }
+
+        #endregion
+
     }
 }

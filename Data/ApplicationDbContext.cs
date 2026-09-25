@@ -35,6 +35,8 @@ namespace ADHUNIK_BARI.Data
         public DbSet<ParkingApplication> ParkingApplications { get; set; }
         public DbSet<CctvCamera> CctvCameras { get; set; }
         public DbSet<CctvCameraFlatAccess> CctvCameraFlatAccesses { get; set; }
+        public DbSet<GymSetting> GymSettings { get; set; }
+        public DbSet<GymMembership> GymMemberships { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -329,6 +331,39 @@ namespace ADHUNIK_BARI.Data
                 b.HasIndex(a => a.StripePaymentIntentId)
                     .IsUnique()
                     .HasFilter("[StripePaymentIntentId] IS NOT NULL");
+            });
+
+            // Gym Settings
+            builder.Entity<GymSetting>(b =>
+            {
+                b.HasKey(s => s.GymSettingId);
+                b.Property(s => s.MonthlyFee).HasPrecision(18, 2);
+                b.HasOne(s => s.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(s => s.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Gym Memberships
+            builder.Entity<GymMembership>(b =>
+            {
+                b.HasKey(m => m.GymMembershipId);
+                b.Property(m => m.MonthlyFee).HasPrecision(18, 2);
+                b.Property(m => m.Status).HasMaxLength(50).IsRequired();
+                b.HasOne(m => m.User)
+                    .WithMany()
+                    .HasForeignKey(m => m.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(m => m.Flat)
+                    .WithMany()
+                    .HasForeignKey(m => m.FlatId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                b.HasOne(m => m.ApprovedByUser)
+                    .WithMany()
+                    .HasForeignKey(m => m.ApprovedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                b.HasIndex(m => m.UserId);
+                b.HasIndex(m => m.Status);
             });
 
         }
