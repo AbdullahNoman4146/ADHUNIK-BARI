@@ -25,6 +25,7 @@
             <a class="@Active("/Manager/Complaints") @Active("/Manager/ComplaintDetails") @Active("/Manager/ComplaintAISummary")" asp-controller="Manager" asp-action="Complaints"><i class="fa-solid fa-screwdriver-wrench"></i><span>Service requests</span></a>
             <a class="@Active("/Manager/Parking") @Active("/Manager/CreateParking") @Active("/Manager/AssignParking")" asp-controller="Manager" asp-action="Parking"><i class="fa-solid fa-square-parking"></i><span>Parking</span></a>
             <a class="@Active("/Manager/Cctv") @Active("/Manager/CreateCctv") @Active("/Manager/EditCctv")" asp-controller="Manager" asp-action="Cctv"><i class="fa-solid fa-video"></i><span>CCTV Surveillance</span></a>
+            <a class="@Active("/Manager/Gym")" asp-controller="Manager" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
             <span class="ab-sidebar-label">Marketplace</span>
             <a class="@Active("/ManagerProperty")" asp-controller="ManagerProperty" asp-action="Index"><i class="fa-solid fa-house-circle-check"></i><span>Property listings</span></a>
             <a class="@Active("/ManagerProperty/Applications")" asp-controller="ManagerProperty" asp-action="Applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a>
@@ -32,6 +33,7 @@
         else if (isParkingUser)
         {
             <a class="@Active("/Resident/ParkingDashboard")" asp-controller="Resident" asp-action="ParkingDashboard"><i class="fa-solid fa-square-parking"></i><span>My parking</span></a>
+            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
             <a class="@Active("/Resident/MyBills") @Active("/Resident/Receipt")" asp-controller="Resident" asp-action="MyBills"><i class="fa-solid fa-credit-card"></i><span>Bills &amp; payments</span></a>
         }
         else
@@ -39,6 +41,7 @@
             <a class="@Active("/Resident/Dashboard")" asp-controller="Resident" asp-action="Dashboard"><i class="fa-solid fa-house"></i><span>My home</span></a>
             <a class="@Active("/Resident/MyParking")" asp-controller="Resident" asp-action="MyParking"><i class="fa-solid fa-square-parking"></i><span>My parking</span></a>
             <a class="@Active("/Resident/Cctv")" asp-controller="Resident" asp-action="Cctv"><i class="fa-solid fa-video"></i><span>CCTV Live Feed</span></a>
+            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
             <a class="@Active("/Resident/MyBills") @Active("/Resident/Receipt")" asp-controller="Resident" asp-action="MyBills"><i class="fa-solid fa-credit-card"></i><span>Bills & payments</span></a>
             <a class="@Active("/Resident/Notices")" asp-controller="Resident" asp-action="Notices"><i class="fa-solid fa-bell"></i><span>Community notices</span></a>
             <a class="@Active("/Resident/MyComplaints")" asp-controller="Resident" asp-action="MyComplaints"><i class="fa-solid fa-clipboard-list"></i><span>My requests</span></a>

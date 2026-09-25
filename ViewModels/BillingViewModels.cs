@@ -107,6 +107,8 @@ namespace ADHUNIK_BARI.ViewModels
 
         public decimal TotalDueAmount { get; set; }
 
+        public decimal TotalGymFeesCollected { get; set; }
+
         public int TotalUnpaidBills { get; set; }
 
         public int TotalActiveAssignments { get; set; }

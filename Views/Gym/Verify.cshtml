@@ -1,0 +1,115 @@
+@model ADHUNIK_BARI.ViewModels.GymVerificationViewModel
+@{
+    ViewData["Title"] = "Gym Pass Verification - " + (Model.IsValid ? "Valid" : "Invalid");
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Verification Card -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+                <!-- Top Header Banner -->
+                <div class="p-4 text-center text-white position-relative @(Model.IsValid ? "bg-success-gradient" : "bg-danger-gradient")">
+                    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-circle bg-white text-dark shadow-sm mb-3" style="width: 70px; height: 70px;">
+                        @if (Model.IsValid)
+                        {
+                            <i class="fa-solid fa-circle-check fs-1 text-success"></i>
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-triangle-exclamation fs-1 text-danger"></i>
+                        }
+                    </div>
+
+                    <h4 class="fw-bold mb-1">
+                        @(Model.IsValid ? "PASS VERIFIED & ACTIVE" : "VERIFICATION FAILED")
+                    </h4>
+                    <p class="mb-0 opacity-90 small font-monospace">@Model.CardNumber</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Status Message Box -->
+                    <div class="p-3 rounded-3 text-center mb-4 @(Model.IsValid ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle")">
+                        <strong class="d-block">@Model.Message</strong>
+                        <small class="text-muted">Scanned timestamp: @Model.VerifiedAt.ToString("dd MMMM, yyyy hh:mm:ss tt")</small>
+                    </div>
+
+                    <!-- Member & Pass Details -->
+                    <div class="pass-info-box border rounded-3 p-3 bg-light mb-4">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <span class="text-muted small text-uppercase fw-semibold d-block">Pass Holder</span>
+                                <strong class="fs-6 text-dark">@(string.IsNullOrWhiteSpace(Model.MemberName) ? "N/A" : Model.MemberName)</strong>
+                                <small class="text-muted d-block">@Model.MemberRelation of @Model.ApplicantName</small>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted small text-uppercase fw-semibold d-block">Resident Flat</span>
+                                <strong class="fs-6 text-primary">
+                                    <i class="fa-solid fa-door-closed me-1"></i>Flat @Model.FlatNumber
+                                </strong>
+                            </div>
+
+                            <div class="col-12 border-top pt-2">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Valid From</span>
+                                        <strong class="text-dark small">@(Model.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Expires On</span>
+                                        <strong class="text-danger small">@(Model.ExpiryDate?.ToString("MMM dd, yyyy") ?? "N/A")</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (Model.IsValid)
+                            {
+                                <div class="col-12 border-top pt-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small text-uppercase fw-semibold">Validity Remaining:</span>
+                                        <span class="badge bg-success px-3 py-2 rounded-pill font-monospace">
+                                            <i class="fa-solid fa-clock me-1"></i>@Model.DaysRemaining Days Remaining
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="col-12 border-top pt-2">
+                                <div class="row g-2 small text-muted">
+                                    <div class="col-6">
+                                        <strong>Facility:</strong> @Model.GymName
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Access Hours:</strong> @Model.OpeningHours
+                                    </div>
+                                    <div class="col-12">
+                                        <strong>Approved By:</strong> @(Model.ApprovedByName ?? "Building Administration")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <small class="text-muted d-block mb-3">
+                            <i class="fa-solid fa-shield-halved text-primary me-1"></i> Adhunik Bari Smart Security & Pass Verification System
+                        </small>
+                        <a href="/" class="btn btn-outline-secondary rounded-3 btn-sm px-4">
+                            <i class="fa-solid fa-house me-1"></i> Return to Homepage
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-gradient {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    }
+
+    .bg-danger-gradient {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    }
+</style>

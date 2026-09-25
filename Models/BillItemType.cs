@@ -12,7 +12,8 @@ namespace ADHUNIK_BARI.Models
         Electricity = 5,
         Maintenance = 6,
         Other = 7,
-        Parking = 8
+        Parking = 8,
+        Gym = 9
     }
 
     /// <summary>
@@ -28,6 +29,7 @@ namespace ADHUNIK_BARI.Models
         public const string Maintenance = "Maintenance";
         public const string Other = "Other";
         public const string Parking = "Parking";
+        public const string Gym = "Gym";
 
         public static string GetDescription(string itemType) => itemType switch
         {
@@ -39,6 +41,7 @@ namespace ADHUNIK_BARI.Models
             Maintenance => "Maintenance Fee",
             Other => "Other Charges",
             Parking => "Parking Fee",
+            Gym => "Gym Fee",
             _ => "Unknown"
         };
 
@@ -51,7 +54,8 @@ namespace ADHUNIK_BARI.Models
             Electricity,
             Maintenance,
             Other,
-            Parking
+            Parking,
+            Gym
         };
     }
 }

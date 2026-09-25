@@ -1,0 +1,643 @@
+@model ADHUNIK_BARI.ViewModels.ResidentGymDashboardViewModel
+@{
+    ViewData["Title"] = "Gym & Fitness Club";
+}
+
+<div class="container py-4 fade-in">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <div class="text-uppercase text-primary fw-bold small tracking-wide">
+                <i class="fa-solid fa-dumbbell me-1"></i> Community Living & Wellness
+            </div>
+            <h1 class="h2 fw-bold text-dark mb-1">Fitness & Gym Center</h1>
+            <p class="text-muted mb-0">
+                Official building fitness facility for residents of <strong>Flat @Model.FlatNumber</strong>. Multiple family members can enroll.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary rounded-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#applyGymModal">
+                <i class="fa-solid fa-user-plus me-1"></i> Apply for Gym Pass
+            </button>
+            <a asp-controller="Resident" asp-action="@(User.IsInRole("ParkingUser") && !User.IsInRole("Tenant") && !User.IsInRole("FlatOwner") ? "ParkingDashboard" : "Dashboard")" class="btn btn-outline-secondary rounded-3">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-circle-check fs-5 me-2"></i>
+                <div>@TempData["Success"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-circle-exclamation fs-5 me-2"></i>
+                <div>@TempData["Error"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Quick Metrics Row (3 clean balanced cards) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Active Passes</span>
+                        <h3 class="fw-bold mb-0 text-success">@Model.ActiveMembers.Count</h3>
+                        <small class="text-muted">Digital & Print ID Cards</small>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-4 fs-4">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Pending Review</span>
+                        <h3 class="fw-bold mb-0 text-info">@Model.PendingApplications.Count</h3>
+                        <small class="text-muted">Awaiting management approval</small>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-4 fs-4">
+                        <i class="fa-solid fa-hourglass-start"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Membership Packages</span>
+                        <h3 class="fw-bold mb-0 text-primary">From ৳500</h3>
+                        <small class="text-muted">1M: ৳500 &bull; 3M: ৳1,200 &bull; 6M: ৳2,500</small>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-4 fs-4">
+                        <i class="fa-solid fa-tags"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- LEFT: PASSES & APPLICATIONS -->
+        <div class="col-lg-8">
+            <!-- ACTIVE PAID PASSES (ORGANIZED MODERN GRID) -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-id-card text-success me-2"></i>Active Gym Member Passes
+                    </h5>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-bold">
+                        @Model.ActivePaidMembers.Count Active
+                    </span>
+                </div>
+
+                <div class="card-body p-3 p-md-4">
+                    @if (Model.ActivePaidMembers.Count == 0)
+                    {
+                        <div class="text-center py-4">
+                            <div class="p-3 bg-light rounded-circle d-inline-flex text-muted mb-2 fs-3">
+                                <i class="fa-solid fa-dumbbell"></i>
+                            </div>
+                            <h6 class="fw-bold mb-1">No Active Gym Passes</h6>
+                            <p class="text-muted small mb-3">You do not have any active paid gym passes currently.</p>
+                            <button type="button" class="btn btn-outline-primary rounded-3 btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#applyGymModal">
+                                <i class="fa-solid fa-user-plus me-1"></i> Apply for Pass
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var member in Model.ActivePaidMembers)
+                            {
+                                <div class="col-md-6 col-12">
+                                    <div class="card border rounded-4 p-3 h-100 shadow-none hover-shadow transition d-flex flex-column justify-content-between bg-white position-relative">
+                                        <div>
+                                            <!-- Top Member Identity -->
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    @if (!string.IsNullOrWhiteSpace(member.MemberPhotoUrl))
+                                                    {
+                                                        <img src="@member.MemberPhotoUrl" alt="@member.MemberName" class="rounded-circle object-fit-cover border shadow-sm" style="width: 52px; height: 52px; min-width: 52px;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="avatar-sm bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold border" style="width: 52px; height: 52px; min-width: 52px; font-size: 1.25rem;">
+                                                            @(string.IsNullOrWhiteSpace(member.MemberName) ? "M" : member.MemberName.Substring(0, 1).ToUpper())
+                                                        </div>
+                                                    }
+                                                    <div>
+                                                        <h6 class="fw-bold text-dark mb-0">@member.MemberName</h6>
+                                                        <div class="d-flex align-items-center gap-1 flex-wrap mt-1">
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-0 px-2" style="font-size: 0.72rem;">@member.MemberRelation</span>
+                                                            <span class="font-monospace text-secondary small">#@member.FormattedCardNumber</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small text-nowrap">
+                                                    <i class="fa-solid fa-circle-check me-1"></i>Active
+                                                </span>
+                                            </div>
+
+                                            <!-- Validity & Schedule Strip -->
+                                            <div class="bg-light rounded-3 p-2 my-2 small border border-light-subtle">
+                                                <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.78rem;">
+                                                    <span>Valid From:</span>
+                                                    <strong class="text-dark">@(member.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")</strong>
+                                                </div>
+                                                <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.78rem;">
+                                                    <span>Expires On:</span>
+                                                    <strong class="text-danger">@(member.ExpiryDate?.ToString("MMM dd, yyyy") ?? "N/A")</strong>
+                                                </div>
+                                                <div class="pt-1 border-top d-flex justify-content-between align-items-center" style="font-size: 0.78rem;">
+                                                    <span class="text-muted">Remaining:</span>
+                                                    <span class="fw-bold @(member.DaysRemaining <= 7 ? "text-danger" : "text-success")">
+                                                        <i class="fa-solid fa-clock me-1"></i>@member.DaysRemaining Days Remaining
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            @if (member.RenewalStatus == "RenewalPending")
+                                            {
+                                                <div class="alert alert-info py-1 px-2 rounded-2 small text-center mb-2" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Renewal Pending Approval
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <!-- Card Footer: Direct View/Print Pass Button -->
+                                        <div class="pt-2 border-top mt-1">
+                                            <a asp-controller="Resident" asp-action="GymIdCard" asp-route-id="@member.GymMembershipId" class="btn btn-success btn-sm rounded-3 fw-bold w-100 py-2 shadow-xs">
+                                                <i class="fa-solid fa-id-card me-1"></i> View / Print ID Card
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- PENDING APPLICATIONS (IF ANY) -->
+            @if (Model.PendingApplications.Count > 0)
+            {
+                <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0">
+                            <i class="fa-solid fa-hourglass-half text-warning me-2"></i>Applications Under Review
+                        </h6>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill">
+                            @Model.PendingApplications.Count Pending
+                        </span>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var app in Model.PendingApplications)
+                            {
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            @if (!string.IsNullOrWhiteSpace(app.MemberPhotoUrl))
+                                            {
+                                                <img src="@app.MemberPhotoUrl" alt="@app.MemberName" class="rounded-circle object-fit-cover border shadow-sm" style="width: 48px; height: 48px; min-width: 48px;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-sm bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center fw-bold border" style="width: 48px; height: 48px; min-width: 48px; font-size: 1.1rem;">
+                                                    @(string.IsNullOrWhiteSpace(app.MemberName) ? "M" : app.MemberName.Substring(0, 1).ToUpper())
+                                                </div>
+                                            }
+                                            <div>
+                                                <h6 class="fw-bold text-dark mb-0">@app.MemberName</h6>
+                                                <div class="small text-muted">
+                                                    Relation: <strong>@app.MemberRelation</strong>
+                                                    @if (app.MemberAge.HasValue)
+                                                    {
+                                                        <span> &bull; @app.MemberAge yrs</span>
+                                                    }
+                                                    @if (!string.IsNullOrWhiteSpace(app.MemberGender))
+                                                    {
+                                                        <span> &bull; @app.MemberGender</span>
+                                                    }
+                                                </div>
+                                                <small class="text-muted d-block mt-1">
+                                                    Submitted on: @app.RequestedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                                </small>
+                                                @if (!string.IsNullOrWhiteSpace(app.Notes))
+                                                {
+                                                    <div class="small text-muted mt-1"><em>Notes: @app.Notes</em></div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="text-end">
+                                            @if (app.IsPendingPayment)
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1 mb-2 d-inline-block">
+                                                    <i class="fa-solid fa-clock me-1"></i> Approved &mdash; Awaiting Payment (৳@app.PaySlipAmount.ToString("N0"))
+                                                </span>
+                                                <div>
+                                                    <a asp-controller="Gym" asp-action="PaySlip" asp-route-id="@app.GymMembershipId" class="btn btn-sm btn-primary rounded-3 fw-bold px-3">
+                                                        <i class="fa-brands fa-stripe me-1"></i> Pay ৳@app.PaySlipAmount.ToString("N0") via Stripe
+                                                    </a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill px-3 py-1">
+                                                    <i class="fa-solid fa-clock me-1"></i> Awaiting Permission
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+
+            <!-- INACTIVE / HISTORY PASSES -->
+            @if (Model.HistoryMemberships.Count > 0)
+            {
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-header bg-white border-bottom p-3">
+                        <h6 class="fw-bold mb-0 text-muted">
+                            <i class="fa-solid fa-clock-rotate-left me-2"></i>Past / Expired Passes
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Relation</th>
+                                        <th>Status</th>
+                                        <th>Expired / Ended</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var hist in Model.HistoryMemberships)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@hist.MemberName</td>
+                                            <td><span class="badge bg-light text-dark border">@hist.MemberRelation</span></td>
+                                            <td>
+                                                <span class="badge bg-secondary">@hist.Status</span>
+                                            </td>
+                                            <td class="small text-muted">@(hist.ExpiryDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-0" data-bs-toggle="modal" data-bs-target="#applyGymModal">
+                                                    Re-apply
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- RIGHT: GYM DETAILS -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                    <div class="p-3 bg-primary-subtle text-primary rounded-4 me-3 fs-4">
+                        <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">@Model.GymSettings.GymName</h6>
+                        <small class="text-muted"><i class="fa-solid fa-location-dot text-danger me-1"></i>@Model.GymSettings.Location</small>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3 py-2 border-bottom">
+                    <!-- Operating Hours -->
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span class="text-muted"><i class="fa-regular fa-clock me-1 text-primary"></i> Operating Hours</span>
+                        <strong class="text-dark">@Model.GymSettings.OpeningHours</strong>
+                    </div>
+
+                    <!-- Membership Packages Grid -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                <i class="fa-solid fa-layer-group text-primary me-1"></i> Membership Plans
+                            </span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0" style="font-size: 0.65rem;">Resident Rates</span>
+                        </div>
+                        <div class="row g-2 text-center">
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 border bg-light h-100 d-flex flex-column justify-content-between shadow-xs">
+                                    <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.68rem;">1 Month</span>
+                                    <div class="fw-bold text-dark fs-6 my-1">৳500</div>
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1 py-0 mx-auto" style="font-size: 0.62rem;">৳500/mo</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 border border-success-subtle bg-success-subtle bg-opacity-25 h-100 d-flex flex-column justify-content-between shadow-xs position-relative">
+                                    <span class="text-success fw-semibold text-uppercase" style="font-size: 0.68rem;">3 Months</span>
+                                    <div class="fw-bold text-success fs-6 my-1">৳1,200</div>
+                                    <span class="badge bg-success text-white rounded-pill px-1 py-0 mx-auto" style="font-size: 0.62rem;">Save ৳300</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 border border-primary-subtle bg-primary-subtle bg-opacity-25 h-100 d-flex flex-column justify-content-between shadow-xs position-relative">
+                                    <span class="text-primary fw-semibold text-uppercase" style="font-size: 0.68rem;">6 Months</span>
+                                    <div class="fw-bold text-primary fs-6 my-1">৳2,500</div>
+                                    <span class="badge bg-primary text-white rounded-pill px-1 py-0 mx-auto" style="font-size: 0.62rem;">Save ৳500</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Non-refundable Policy Notice -->
+                    <div class="alert alert-warning-subtle border border-warning-subtle text-warning-emphasis rounded-3 small py-2 px-3 mb-0 d-flex align-items-center gap-2" style="font-size: 0.78rem;">
+                        <i class="fa-solid fa-circle-exclamation text-warning flex-shrink-0"></i>
+                        <div>
+                            <strong>Fee Policy:</strong> Membership fees are strictly <strong>non-refundable</strong> upon payment.
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.GymSettings.ContactPhone))
+                    {
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="text-muted"><i class="fa-solid fa-phone me-1 text-info"></i> Helpline:</span>
+                            <span class="text-dark fw-semibold">@Model.GymSettings.ContactPhone</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- RULES & EQUIPMENT (Kept cleanly in accordion so UI stays minimal and uncluttered) -->
+                <div class="accordion accordion-flush mt-3" id="gymDetailsAccordion">
+                    <div class="accordion-item bg-transparent border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed px-0 py-2 small fw-semibold text-secondary bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEquipment" aria-expanded="false">
+                                <i class="fa-solid fa-dumbbell text-primary me-2"></i> Equipment & Amenities
+                            </button>
+                        </h2>
+                        <div id="collapseEquipment" class="accordion-collapse collapse" data-bs-parent="#gymDetailsAccordion">
+                            <div class="p-3 bg-light rounded-3 small text-muted mt-1">
+                                @(string.IsNullOrWhiteSpace(Model.GymSettings.EquipmentInformation) ? "Commercial cardio and strength training equipment." : Model.GymSettings.EquipmentInformation)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item bg-transparent border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed px-0 py-2 small fw-semibold text-secondary bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRules" aria-expanded="false">
+                                <i class="fa-solid fa-scale-balanced text-secondary me-2"></i> Gym Rules
+                            </button>
+                        </h2>
+                        <div id="collapseRules" class="accordion-collapse collapse" data-bs-parent="#gymDetailsAccordion">
+                            <div class="p-3 bg-light rounded-3 small text-muted mt-1" style="max-height: 180px; overflow-y: auto;">
+                                @(string.IsNullOrWhiteSpace(Model.GymSettings.RulesAndGuidelines) ? "Appropriate sports attire and clean shoes required at all times." : Model.GymSettings.RulesAndGuidelines)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- APPLY FOR GYM PASS MODAL (SUPPORTS MULTIPLE PEOPLE & PHOTO UPLOAD) -->
+<div class="modal fade" id="applyGymModal" tabindex="-1" aria-labelledby="applyGymModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold" id="applyGymModalLabel">
+                    <i class="fa-solid fa-dumbbell text-primary me-2"></i>Apply for Gym Member Pass
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Resident" asp-action="ApplyGymMembership" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <!-- PACKAGE SELECTION (1 Month - 500, 3 Month - 1200, 6 Month - 2500) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-2">
+                            <i class="fa-solid fa-layer-group text-primary me-1"></i>Select Membership Package <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-2" id="packageSelectionRow">
+                            <div class="col-4">
+                                <label class="gym-package-card card border rounded-3 p-2 text-center h-100 cursor-pointer border-2 border-primary bg-primary-subtle shadow-xs position-relative" data-months="1" data-fee="500" data-label="1 Month Pass">
+                                    <input type="radio" name="PackageMonths" value="1" class="d-none package-radio" checked />
+                                    <div class="fw-bold text-dark small">1 Month</div>
+                                    <div class="fs-5 fw-extrabold text-primary my-1">৳500</div>
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">৳500/mo</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="gym-package-card card border rounded-3 p-2 text-center h-100 cursor-pointer bg-white position-relative" data-months="3" data-fee="1200" data-label="3 Months Pass">
+                                    <input type="radio" name="PackageMonths" value="3" class="d-none package-radio" />
+                                    <span class="badge bg-success position-absolute top-0 end-0 translate-middle-y me-2 px-1 py-0" style="font-size: 0.65rem;">Save ৳300</span>
+                                    <div class="fw-bold text-dark small">3 Months</div>
+                                    <div class="fs-5 fw-extrabold text-success my-1">৳1,200</div>
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">৳400/mo</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="gym-package-card card border rounded-3 p-2 text-center h-100 cursor-pointer bg-white position-relative" data-months="6" data-fee="2500" data-label="6 Months Pass">
+                                    <input type="radio" name="PackageMonths" value="6" class="d-none package-radio" />
+                                    <span class="badge bg-danger position-absolute top-0 end-0 translate-middle-y me-2 px-1 py-0" style="font-size: 0.65rem;">Save ৳500</span>
+                                    <div class="fw-bold text-dark small">6 Months</div>
+                                    <div class="fs-5 fw-extrabold text-danger my-1">৳2,500</div>
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">৳417/mo</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border rounded-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">Payable Membership Fee:</span>
+                            <strong class="text-success fs-5" id="selectedPackageFeeDisplay">৳500</strong>
+                        </div>
+                        <small class="text-muted d-block">
+                            <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                            Upon approval, management generates a Gym Pay Slip for <strong id="selectedPackageFeeText">৳500</strong> (<span id="selectedPackageDurationText">1 Month Pass</span>). Once paid via Stripe, your membership automatically becomes <strong>Active</strong> and your ID Card is unlocked!
+                        </small>
+                        <div class="alert alert-warning border-0 rounded-3 small py-2 px-3 mt-2 mb-0">
+                            <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
+                            <strong>Important Notice:</strong> Gym Membership Fee (<span id="selectedPackageFeeNotice">৳500</span>) is <strong>strictly non-refundable</strong> once paid.
+                        </div>
+                    </div>
+
+                    <!-- Member Photo Capture / Upload (MANDATORY FOR ID CARD) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">
+                            <i class="fa-solid fa-camera me-1 text-primary"></i>Member Photo (For Official ID Card) <span class="text-danger">*</span>
+                        </label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="photo-preview-box rounded-circle border shadow-sm d-flex align-items-center justify-content-center bg-light overflow-hidden position-relative" style="width: 72px; height: 72px; min-width: 72px;">
+                                <img id="applyPhotoPreview" src="" alt="Preview" class="w-100 h-100 object-fit-cover d-none" />
+                                <i id="applyPhotoIcon" class="fa-solid fa-camera text-secondary fs-3"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <input type="file" name="MemberPhoto" id="memberPhotoInput" accept="image/*" capture="user" class="form-control rounded-3" required />
+                                <small class="text-danger fw-semibold d-block mt-1">
+                                    <i class="fa-solid fa-circle-exclamation me-1"></i>Required: Photo will appear on your official printed/digital ID Card.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Member Full Name (Pass Holder)</label>
+                        <input type="text" name="MemberName" class="form-control rounded-3" placeholder="e.g. John Doe or family member name" value="@Model.ResidentName" required />
+                        <small class="text-muted">Enter the name of the person who will be using the gym pass.</small>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Relationship to Resident</label>
+                            <select name="MemberRelation" class="form-select rounded-3" required>
+                                <option value="Self" selected>Self (Resident)</option>
+                                <option value="Spouse">Spouse</option>
+                                <option value="Son">Son</option>
+                                <option value="Daughter">Daughter</option>
+                                <option value="Father">Father</option>
+                                <option value="Mother">Mother</option>
+                                <option value="Brother">Brother</option>
+                                <option value="Sister">Sister</option>
+                                <option value="Other">Other Family Member</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Direct Phone (Optional)</label>
+                            <input type="text" name="MemberPhone" class="form-control rounded-3" placeholder="+880 17..." />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Gender</label>
+                            <select name="MemberGender" class="form-select rounded-3">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Age</label>
+                            <input type="number" name="MemberAge" min="12" max="100" class="form-control rounded-3" placeholder="e.g. 25" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Fitness Goals or Notes (Optional)</label>
+                        <textarea name="Notes" class="form-control rounded-3" rows="2" placeholder="e.g. Cardio routine, weight training, beginner..."></textarea>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="AgreeToRules" value="true" id="agreeRulesCheck" required>
+                        <label class="form-check-label small fw-semibold" for="agreeRulesCheck">
+                            I agree to the Gym Facility Rules, Dress Code, and acknowledge that the membership fee (<span id="agreeFeeNotice">৳500</span>) is strictly non-refundable.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-3 fw-bold px-4">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function setupImagePreview(inputId, previewImgId, placeholderIconId) {
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewImgId);
+                const icon = document.getElementById(placeholderIconId);
+                if (!input || !preview || !icon) return;
+
+                input.addEventListener('change', function () {
+                    const file = this.files && this.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            preview.src = e.target.result;
+                            preview.classList.remove('d-none');
+                            icon.classList.add('d-none');
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        preview.src = '';
+                        preview.classList.add('d-none');
+                        icon.classList.remove('d-none');
+                    }
+                });
+            }
+
+            setupImagePreview('memberPhotoInput', 'applyPhotoPreview', 'applyPhotoIcon');
+
+            // Package selection interactions
+            const packageCards = document.querySelectorAll('.gym-package-card');
+            packageCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    packageCards.forEach(c => {
+                        c.classList.remove('border-2', 'border-primary', 'bg-primary-subtle', 'shadow-xs');
+                        c.classList.add('bg-white');
+                        const r = c.querySelector('.package-radio');
+                        if (r) r.checked = false;
+                    });
+
+                    this.classList.add('border-2', 'border-primary', 'bg-primary-subtle', 'shadow-xs');
+                    this.classList.remove('bg-white');
+                    const radio = this.querySelector('.package-radio');
+                    if (radio) radio.checked = true;
+
+                    const fee = this.getAttribute('data-fee');
+                    const label = this.getAttribute('data-label');
+                    const formatted = Number(fee).toLocaleString();
+
+                    const displayEl = document.getElementById('selectedPackageFeeDisplay');
+                    const textEl = document.getElementById('selectedPackageFeeText');
+                    const durationEl = document.getElementById('selectedPackageDurationText');
+                    const noticeEl = document.getElementById('selectedPackageFeeNotice');
+                    const agreeEl = document.getElementById('agreeFeeNotice');
+
+                    if (displayEl) displayEl.textContent = '৳' + formatted;
+                    if (textEl) textEl.textContent = '৳' + formatted;
+                    if (durationEl) durationEl.textContent = label;
+                    if (noticeEl) noticeEl.textContent = '৳' + formatted;
+                    if (agreeEl) agreeEl.textContent = '৳' + formatted;
+                });
+            });
+        });
+    </script>
+}

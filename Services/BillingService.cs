@@ -208,7 +208,36 @@ namespace ADHUNIK_BARI.Services
                         }
                     }
 
-                    // 5. OTHER CHARGES: Initially 0 - no money added unless explicitly appointed by admin
+                    // 5. GYM MEMBERSHIP FEE: For flats with active gym memberships
+                    if (assignment.FlatId > 0)
+                    {
+                        try
+                        {
+                            var activeGymMemberships = await _dbContext.GymMemberships
+                                .Where(g => g.FlatId == assignment.FlatId && 
+                                            g.Status == GymMembershipStatuses.Active && 
+                                            g.MonthlyFee > 0)
+                                .ToListAsync();
+
+                            foreach (var gym in activeGymMemberships)
+                            {
+                                billItems.Add(new BillItem
+                                {
+                                    ItemType = BillItemTypes.Gym,
+                                    Amount = gym.MonthlyFee,
+                                    Description = $"Gym Fee ({gym.DisplayMemberName}) for Flat {assignment.Flat?.FlatNumber}",
+                                    PaymentStatus = "Unpaid",
+                                    CreatedAt = createdAt
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning($"Skipped gym fee lookup for Flat {assignment.FlatId}: {ex.Message}");
+                        }
+                    }
+
+                    // 6. OTHER CHARGES: Initially 0 - no money added unless explicitly appointed by admin
                     if (otherCharge > 0)
                     {
                         billItems.Add(new BillItem
@@ -222,6 +251,8 @@ namespace ADHUNIK_BARI.Services
                             CreatedAt = createdAt
                         });
                     }
+
+
 
                     bill.TotalAmount = billItems.Sum(item => item.Amount);
                     bill.DueAmount = bill.TotalAmount;
