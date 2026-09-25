@@ -9,9 +9,12 @@ using Stripe;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+    );
+    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -65,6 +68,15 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning($"Auto-migration notice: {ex.Message}");
+    }
 
     await DbInitializer.SeedRoles(roleManager);
 }

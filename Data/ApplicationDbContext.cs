@@ -90,7 +90,7 @@ namespace ADHUNIK_BARI.Data
                 b.HasOne(p => p.AssignedUser)
                     .WithMany()
                     .HasForeignKey(p => p.AssignedUserId)
-                    .OnDelete(DeleteBehavior.SetNull);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             builder.Entity<ParkingActivityLog>(b =>

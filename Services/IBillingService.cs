@@ -21,7 +21,20 @@ namespace ADHUNIK_BARI.Services
             decimal electricityCharge = 0,
             decimal maintenanceCharge = 0,
             int? targetAssignmentId = null,
-            decimal? monthlyRent = null);
+            decimal? monthlyRent = null,
+            decimal otherCharge = 0,
+            string? otherDescription = null);
+
+        /// <summary>
+        /// Appoints or updates an "Other" charge on an existing bill.
+        /// Recalculates total bill amount, due amount, and status.
+        /// </summary>
+        Task<bool> AppointOtherChargeAsync(int billId, decimal amount, string? description);
+
+        /// <summary>
+        /// Appoints or updates an "Other" charge to all bills in a specific month and year.
+        /// </summary>
+        Task<int> AppointOtherChargeForMonthAsync(int month, int year, decimal amount, string? description);
 
         /// <summary>
         /// Retrieves bill overview grouped by flat and resident type with payment status counts

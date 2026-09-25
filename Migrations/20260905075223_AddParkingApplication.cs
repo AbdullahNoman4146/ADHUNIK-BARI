@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,11 +11,12 @@ namespace ADHUNIK_BARI.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "AssignedUserId",
-                table: "ParkingSpots",
-                type: "nvarchar(450)",
-                nullable: true);
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ParkingSpots]') AND name = 'AssignedUserId')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD [AssignedUserId] nvarchar(450) NULL;
+END;
+");
 
             migrationBuilder.CreateTable(
                 name: "ParkingApplications",
@@ -68,10 +69,12 @@ namespace ADHUNIK_BARI.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ParkingSpots_AssignedUserId",
-                table: "ParkingSpots",
-                column: "AssignedUserId");
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ParkingSpots_AssignedUserId' AND object_id = OBJECT_ID(N'[ParkingSpots]'))
+BEGIN
+    CREATE INDEX [IX_ParkingSpots_AssignedUserId] ON [ParkingSpots] ([AssignedUserId]);
+END;
+");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ParkingApplications_CreatedUserId",
@@ -100,13 +103,13 @@ namespace ADHUNIK_BARI.Migrations
                 unique: true,
                 filter: "[StripePaymentIntentId] IS NOT NULL");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_ParkingSpots_AspNetUsers_AssignedUserId",
-                table: "ParkingSpots",
-                column: "AssignedUserId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_ParkingSpots_AspNetUsers_AssignedUserId')
+BEGIN
+    ALTER TABLE [ParkingSpots] ADD CONSTRAINT [FK_ParkingSpots_AspNetUsers_AssignedUserId] 
+    FOREIGN KEY ([AssignedUserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE NO ACTION;
+END;
+");
         }
 
         /// <inheritdoc />

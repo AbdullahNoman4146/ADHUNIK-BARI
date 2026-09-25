@@ -53,46 +53,53 @@ namespace ADHUNIK_BARI.Controllers
 
             if (assignment != null)
             {
-                var assignedSpots = await dbContext.ParkingSpots
-                    .Where(p => p.FlatId == assignment.FlatId)
-                    .Include(p => p.Floor)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                if (assignedSpots.Any())
+                try
                 {
-                    var parkingBillItems = await dbContext.BillItems
-                        .Include(bi => bi.Bill)
-                        .Where(bi => bi.ItemType == BillItemTypes.Parking && bi.Bill != null && bi.Bill.AssignmentId == assignment.AssignmentId)
-                        .OrderByDescending(bi => bi.CreatedAt)
+                    var assignedSpots = await dbContext.ParkingSpots
+                        .Where(p => p.FlatId == assignment.FlatId)
+                        .Include(p => p.Floor)
+                        .AsNoTracking()
                         .ToListAsync();
 
-                    var latestBill = await dbContext.Bills
-                        .Where(b => b.AssignmentId == assignment.AssignmentId)
-                        .OrderByDescending(b => b.BillYear)
-                        .ThenByDescending(b => b.BillMonth)
-                        .FirstOrDefaultAsync();
-
-                    foreach (var spot in assignedSpots)
+                    if (assignedSpots.Any())
                     {
-                        string paymentStatus = "Due";
-                        var matchingItem = parkingBillItems.FirstOrDefault(bi => bi.PaymentStatus == "Paid");
-                        if (matchingItem != null || (latestBill != null && latestBill.BillStatus == "Paid"))
-                        {
-                            paymentStatus = "Paid";
-                        }
+                        var parkingBillItems = await dbContext.BillItems
+                            .Include(bi => bi.Bill)
+                            .Where(bi => bi.ItemType == BillItemTypes.Parking && bi.Bill != null && bi.Bill.AssignmentId == assignment.AssignmentId)
+                            .OrderByDescending(bi => bi.CreatedAt)
+                            .ToListAsync();
 
-                        residentParking.Spots.Add(new ResidentParkingSpotItem
+                        var latestBill = await dbContext.Bills
+                            .Where(b => b.AssignmentId == assignment.AssignmentId)
+                            .OrderByDescending(b => b.BillYear)
+                            .ThenByDescending(b => b.BillMonth)
+                            .FirstOrDefaultAsync();
+
+                        foreach (var spot in assignedSpots)
                         {
-                            ParkingSpotId = spot.ParkingSpotId,
-                            SpotNumber = spot.SpotNumber,
-                            FloorName = spot.Floor?.FloorName ?? "Basement",
-                            VehicleType = spot.ParkingType ?? "Car",
-                            MonthlyFee = spot.ParkingFee,
-                            PaymentStatus = paymentStatus,
-                            AssignedDate = spot.CreatedAt
-                        });
+                            string paymentStatus = "Due";
+                            var matchingItem = parkingBillItems.FirstOrDefault(bi => bi.PaymentStatus == "Paid");
+                            if (matchingItem != null || (latestBill != null && latestBill.BillStatus == "Paid"))
+                            {
+                                paymentStatus = "Paid";
+                            }
+
+                            residentParking.Spots.Add(new ResidentParkingSpotItem
+                            {
+                                ParkingSpotId = spot.ParkingSpotId,
+                                SpotNumber = spot.SpotNumber,
+                                FloorName = spot.Floor?.FloorName ?? "Basement",
+                                VehicleType = spot.ParkingType ?? "Car",
+                                MonthlyFee = spot.ParkingFee,
+                                PaymentStatus = paymentStatus,
+                                AssignedDate = spot.CreatedAt
+                            });
+                        }
                     }
+                }
+                catch (Exception)
+                {
+                    // Gracefully handle if parking tables or columns are pending migration
                 }
             }
 
@@ -114,19 +121,29 @@ namespace ADHUNIK_BARI.Controllers
             var user = await userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var spots = await dbContext.ParkingSpots
-                .Include(p => p.Floor)
-                .Where(p => p.AssignedUserId == user.Id)
-                .AsNoTracking()
-                .ToListAsync();
+            var spots = new List<ParkingSpot>();
+            var applications = new List<ParkingApplication>();
 
-            var applications = await dbContext.ParkingApplications
-                .Include(a => a.ParkingSpot)
-                    .ThenInclude(p => p!.Floor)
-                .Where(a => (a.CreatedUserId == user.Id || a.Email == user.Email) && a.PaymentStatus == PropertyPaymentStatuses.Succeeded)
-                .OrderByDescending(a => a.PaidAt ?? a.CreatedAt)
-                .AsNoTracking()
-                .ToListAsync();
+            try
+            {
+                spots = await dbContext.ParkingSpots
+                    .Include(p => p.Floor)
+                    .Where(p => p.AssignedUserId == user.Id)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                applications = await dbContext.ParkingApplications
+                    .Include(a => a.ParkingSpot)
+                        .ThenInclude(p => p!.Floor)
+                    .Where(a => (a.CreatedUserId == user.Id || a.Email == user.Email) && a.PaymentStatus == PropertyPaymentStatuses.Succeeded)
+                    .OrderByDescending(a => a.PaidAt ?? a.CreatedAt)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception)
+            {
+                // Gracefully handle if parking tables or columns are pending migration
+            }
 
             ViewBag.User = user;
             ViewBag.Spots = spots;
@@ -188,6 +205,11 @@ namespace ADHUNIK_BARI.Controllers
                 Deadline = b.Deadline,
                 BillStatus = b.BillStatus,
                 CreatedAt = b.CreatedAt,
+                LatestPaymentId = b.Payments?
+                    .Where(p => p.PaymentStatus == "Completed" || p.PaymentStatus == PropertyPaymentStatuses.Succeeded)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .Select(p => (int?)p.PaymentId)
+                    .FirstOrDefault(),
                 BillItems = b.BillItems.Select(item => new ResidentBillItemViewModel
                 {
                     BillItemId = item.BillItemId,

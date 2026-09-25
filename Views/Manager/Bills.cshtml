@@ -177,6 +177,31 @@
                                 <input asp-for="GenerateRequest.MaintenanceCharge" class="form-control" type="number" step="10" />
                             </div>
                         </div>
+
+                        <div class="col-6">
+                            <label class="form-label small d-flex justify-content-between align-items-center">
+                                <span>Others / Special Dues</span>
+                                <span class="badge bg-secondary-subtle text-secondary border small">Initially ৳0</span>
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input asp-for="GenerateRequest.OtherCharge" class="form-control" type="number" step="10" placeholder="0" value="0" id="otherChargeInput" />
+                            </div>
+                            <small class="text-muted d-block mt-1 ab-label-caps">
+                                Initially ৳0. No money added until admin appoints one.
+                            </small>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label small">Others Reason / Note</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fa-solid fa-tag"></i></span>
+                                <input asp-for="GenerateRequest.OtherDescription" class="form-control" placeholder="e.g. Repairs, Festival (Optional)" />
+                            </div>
+                            <small class="text-muted d-block mt-1 ab-label-caps">
+                                Note or reason for appointed other charges.
+                            </small>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-bold mt-3 shadow-sm" id="generateSubmitBtn">
@@ -402,8 +427,8 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @foreach (var item in bill.BillItems)
                                         {
-                                             <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : "bg-light text-dark border")" title="৳@item.Amount.ToString("N0") - @item.PaymentStatus">
-                                                @item.ItemType: ৳@item.Amount.ToString("N0")
+                                             <span class="badge @(item.PaymentStatus == "Paid" ? "bg-success" : (item.ItemType == BillItemTypes.Other ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-light text-dark border"))" title="৳@item.Amount.ToString("N0") - @item.PaymentStatus">
+                                                @(item.ItemType == BillItemTypes.Other ? "Others" : item.ItemType): ৳@item.Amount.ToString("N0")
                                             </span>
                                         }
                                     </div>
@@ -426,27 +451,124 @@
                                     </small>
                                 </td>
                                 <td class="text-end">
-                                    @if (bill.BillStatus != "Paid" && bill.PaidAmount == 0)
-                                    {
-                                        <form asp-controller="Manager" asp-action="DeleteBill" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove Bill #@(bill.BillId) for Flat @(bill.Assignment?.Flat?.FlatNumber)?');">
-                                            <input type="hidden" name="billId" value="@bill.BillId" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Remove this bill">
-                                                <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                    <div class="d-flex justify-content-end align-items-center gap-1">
+                                        @{
+                                            var otherItem = bill.BillItems.FirstOrDefault(bi => bi.ItemType == BillItemTypes.Other);
+                                            var isOtherPaid = otherItem != null && otherItem.PaymentStatus == "Paid";
+                                        }
+                                        @if (!isOtherPaid)
+                                        {
+                                            <button type="button" 
+                                                    class="btn btn-sm @(otherItem != null ? "btn-outline-warning text-dark" : "btn-outline-primary") rounded-3 appoint-other-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#appointOtherModal" 
+                                                    data-bill-id="@bill.BillId" 
+                                                    data-flat="@(bill.Assignment?.Flat?.FlatNumber ?? "N/A")"
+                                                    data-resident="@(bill.Assignment?.User?.FullName ?? "Resident")"
+                                                    data-month="@(new DateTime(bill.BillYear, bill.BillMonth, 1).ToString("MMMM yyyy"))"
+                                                    data-current-amount="@(otherItem?.Amount ?? 0)"
+                                                    data-current-desc="@(otherItem?.Description ?? "")"
+                                                    title="@(otherItem != null ? $"Others appointed: ৳{otherItem.Amount:N0}. Click to update." : "Appoint Others charge for this invoice")">
+                                                <i class="fa-solid fa-coins me-1"></i> @(otherItem != null ? $"Others: ৳{otherItem.Amount:N0}" : "Appoint Others")
                                             </button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-muted border" title="Paid bills cannot be deleted for accounting audit compliance">
-                                            <i class="fa-solid fa-lock me-1"></i> Paid
-                                        </span>
-                                    }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" title="Other charge has already been paid">
+                                                <i class="fa-solid fa-circle-check me-1"></i> Others Paid
+                                            </span>
+                                        }
+
+                                        @if (bill.BillStatus != "Paid" && bill.PaidAmount == 0)
+                                        {
+                                            <form asp-controller="Manager" asp-action="DeleteBill" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove Bill #@(bill.BillId) for Flat @(bill.Assignment?.Flat?.FlatNumber)?');">
+                                                <input type="hidden" name="billId" value="@bill.BillId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Remove this bill">
+                                                    <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (bill.BillStatus == "Paid")
+                                        {
+                                            <span class="badge bg-light text-muted border" title="Paid bills cannot be deleted for accounting audit compliance">
+                                                <i class="fa-solid fa-lock me-1"></i> Paid
+                                            </span>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
                     }
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- APPOINT OTHER CHARGE MODAL -->
+    <div class="modal fade" id="appointOtherModal" tabindex="-1" aria-labelledby="appointOtherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom pb-3">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="appointOtherModalLabel">
+                            <i class="fa-solid fa-coins text-warning me-2"></i>Appoint "Others" Charge
+                        </h5>
+                        <small class="text-muted">Assign or modify extra utility or service charges</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-controller="Manager" asp-action="AppointOtherCharge" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="billId" id="modalBillId" value="" />
+                    <div class="modal-body p-4">
+                        <div class="alert alert-light border rounded-3 p-3 mb-3 d-flex align-items-center">
+                            <div class="me-3 fs-3 text-primary">
+                                <i class="fa-solid fa-building-user"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark" id="modalFlatTitle">Flat N/A</strong>
+                                <small class="text-muted" id="modalResidentTitle">Resident</small>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2" id="modalBillingPeriod">Month</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Charge Amount (৳)</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">৳</span>
+                                <input type="number" step="10" min="0" name="amount" id="modalOtherAmount" class="form-control" placeholder="0" required />
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                Initially ৳0. Enter amount to appoint. Set to 0 to remove an unpaid Other charge.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Reason / Description (Optional)</label>
+                            <input type="text" name="description" id="modalOtherDesc" class="form-control" placeholder="e.g. Festival charge, Common area repair, Waste fund" />
+                            <small class="text-muted mt-1 d-block">
+                                Reason or description visible to the resident on their invoice.
+                            </small>
+                        </div>
+
+                        <div class="form-check p-3 bg-light rounded-3 border">
+                            <input class="form-check-input" type="checkbox" name="applyToAllMonthBills" value="true" id="applyAllMonthCheck">
+                            <label class="form-check-label small fw-semibold text-dark" for="applyAllMonthCheck">
+                                Apply this Others amount & description to ALL active invoices for this billing month
+                            </label>
+                            <small class="text-muted d-block mt-1">
+                                Convenient for building-wide special charges (e.g., festival bonus, collective repairs).
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top pt-3">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">
+                            <i class="fa-solid fa-check me-1"></i> Save & Apply Charge
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -504,6 +626,27 @@
                 residentSelect.addEventListener('change', handleSelectionChange);
                 handleSelectionChange();
             }
+
+            // Wire up Appoint Others modal
+            document.querySelectorAll('.appoint-other-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const billId = this.getAttribute('data-bill-id');
+                    const flat = this.getAttribute('data-flat');
+                    const resident = this.getAttribute('data-resident');
+                    const month = this.getAttribute('data-month');
+                    const currentAmount = parseFloat(this.getAttribute('data-current-amount')) || 0;
+                    const currentDesc = this.getAttribute('data-current-desc') || '';
+
+                    document.getElementById('modalBillId').value = billId;
+                    document.getElementById('modalFlatTitle').textContent = `Flat ${flat}`;
+                    document.getElementById('modalResidentTitle').textContent = resident;
+                    document.getElementById('modalBillingPeriod').textContent = month;
+                    document.getElementById('modalOtherAmount').value = currentAmount > 0 ? currentAmount : '';
+                    document.getElementById('modalOtherDesc').value = currentDesc;
+                    const applyCheck = document.getElementById('applyAllMonthCheck');
+                    if (applyCheck) applyCheck.checked = false;
+                });
+            });
         });
     </script>
 }
