@@ -40,5 +40,9 @@ namespace ADHUNIK_BARI.Services
         Task<GymVerificationViewModel> VerifyGymPassAsync(string code);
 
         Task<(bool Success, string Message)> UpdateMemberPhotoAsync(string? requesterUserId, int membershipId, string photoUrl, bool isManager = false);
+
+        Task<int> GetPendingMembershipRequestsCountAsync();
+
+        Task<int> GetResidentPendingGymCountAsync(string userId);
     }
 }

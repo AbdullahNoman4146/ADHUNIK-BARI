@@ -1,8 +1,15 @@
+@inject ADHUNIK_BARI.Services.IGymService GymService
 @{
     var isManager = User.IsInRole("Manager") || User.IsInRole("Admin");
     var isParkingUser = User.IsInRole("ParkingUser");
     var currentPath = Context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
     string Active(string path) => currentPath == path.ToLowerInvariant() || (path != "/" && currentPath.StartsWith(path.ToLowerInvariant() + "/")) ? "active" : string.Empty;
+
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    var pendingGymCount = isManager ? await GymService.GetPendingMembershipRequestsCountAsync() : 0;
+    var residentPendingGymCount = (!isManager && !string.IsNullOrEmpty(currentUserId)) 
+        ? await GymService.GetResidentPendingGymCountAsync(currentUserId) 
+        : 0;
 }
 <aside class="ab-app-sidebar" data-app-sidebar>
     <div class="ab-sidebar-head">
@@ -25,7 +32,24 @@
             <a class="@Active("/Manager/Complaints") @Active("/Manager/ComplaintDetails") @Active("/Manager/ComplaintAISummary")" asp-controller="Manager" asp-action="Complaints"><i class="fa-solid fa-screwdriver-wrench"></i><span>Service requests</span></a>
             <a class="@Active("/Manager/Parking") @Active("/Manager/CreateParking") @Active("/Manager/AssignParking")" asp-controller="Manager" asp-action="Parking"><i class="fa-solid fa-square-parking"></i><span>Parking</span></a>
             <a class="@Active("/Manager/Cctv") @Active("/Manager/CreateCctv") @Active("/Manager/EditCctv")" asp-controller="Manager" asp-action="Cctv"><i class="fa-solid fa-video"></i><span>CCTV Surveillance</span></a>
-            <a class="@Active("/Manager/Gym")" asp-controller="Manager" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
+            <a class="@Active("/Manager/Gym")" asp-controller="Manager" asp-action="Gym" id="managerGymNavLink">
+                <i class="fa-solid fa-dumbbell"></i>
+                <span>Gym</span>
+                @if (pendingGymCount > 0)
+                {
+                    <span class="ab-nav-badge-light" id="managerGymPendingBadge" title="@pendingGymCount pending membership request@(pendingGymCount > 1 ? "s" : "")">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">@pendingGymCount</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="ab-nav-badge-light d-none" id="managerGymPendingBadge">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">0</span>
+                    </span>
+                }
+            </a>
             <span class="ab-sidebar-label">Marketplace</span>
             <a class="@Active("/ManagerProperty")" asp-controller="ManagerProperty" asp-action="Index"><i class="fa-solid fa-house-circle-check"></i><span>Property listings</span></a>
             <a class="@Active("/ManagerProperty/Applications")" asp-controller="ManagerProperty" asp-action="Applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a>
@@ -33,7 +57,24 @@
         else if (isParkingUser)
         {
             <a class="@Active("/Resident/ParkingDashboard")" asp-controller="Resident" asp-action="ParkingDashboard"><i class="fa-solid fa-square-parking"></i><span>My parking</span></a>
-            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
+            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym" id="parkingUserGymNavLink">
+                <i class="fa-solid fa-dumbbell"></i>
+                <span>Gym</span>
+                @if (residentPendingGymCount > 0)
+                {
+                    <span class="ab-nav-badge-light resident-gym-badge" title="@residentPendingGymCount pending gym pass@(residentPendingGymCount > 1 ? "es" : "") / fee slip@(residentPendingGymCount > 1 ? "s" : "")">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">@residentPendingGymCount</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="ab-nav-badge-light resident-gym-badge d-none">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">0</span>
+                    </span>
+                }
+            </a>
             <a class="@Active("/Resident/MyBills") @Active("/Resident/Receipt")" asp-controller="Resident" asp-action="MyBills"><i class="fa-solid fa-credit-card"></i><span>Bills &amp; payments</span></a>
         }
         else
@@ -41,7 +82,24 @@
             <a class="@Active("/Resident/Dashboard")" asp-controller="Resident" asp-action="Dashboard"><i class="fa-solid fa-house"></i><span>My home</span></a>
             <a class="@Active("/Resident/MyParking")" asp-controller="Resident" asp-action="MyParking"><i class="fa-solid fa-square-parking"></i><span>My parking</span></a>
             <a class="@Active("/Resident/Cctv")" asp-controller="Resident" asp-action="Cctv"><i class="fa-solid fa-video"></i><span>CCTV Live Feed</span></a>
-            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym"><i class="fa-solid fa-dumbbell"></i><span>Gym</span></a>
+            <a class="@Active("/Resident/Gym")" asp-controller="Resident" asp-action="Gym" id="residentGymNavLink">
+                <i class="fa-solid fa-dumbbell"></i>
+                <span>Gym</span>
+                @if (residentPendingGymCount > 0)
+                {
+                    <span class="ab-nav-badge-light resident-gym-badge" title="@residentPendingGymCount pending gym pass@(residentPendingGymCount > 1 ? "es" : "") / fee slip@(residentPendingGymCount > 1 ? "s" : "")">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">@residentPendingGymCount</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="ab-nav-badge-light resident-gym-badge d-none">
+                        <span class="ab-light-dot" aria-hidden="true"></span>
+                        <span class="ab-badge-count">0</span>
+                    </span>
+                }
+            </a>
             <a class="@Active("/Resident/MyBills") @Active("/Resident/Receipt")" asp-controller="Resident" asp-action="MyBills"><i class="fa-solid fa-credit-card"></i><span>Bills & payments</span></a>
             <a class="@Active("/Resident/Notices")" asp-controller="Resident" asp-action="Notices"><i class="fa-solid fa-bell"></i><span>Community notices</span></a>
             <a class="@Active("/Resident/MyComplaints")" asp-controller="Resident" asp-action="MyComplaints"><i class="fa-solid fa-clipboard-list"></i><span>My requests</span></a>
@@ -55,3 +113,65 @@
         <a asp-controller="Account" asp-action="ChangePassword"><i class="fa-solid fa-shield-halved"></i> Account security</a>
     </div>
 </aside>
+
+@if (isManager)
+{
+    <script>
+        (function () {
+            function refreshGymBadge() {
+                fetch('/Manager/PendingGymRequestsCount')
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        var badge = document.getElementById('managerGymPendingBadge');
+                        if (!badge) return;
+                        var countSpan = badge.querySelector('.ab-badge-count');
+                        if (data.count > 0) {
+                            if (countSpan) countSpan.textContent = data.count;
+                            badge.classList.remove('d-none');
+                            badge.setAttribute('title', data.count + ' pending membership request' + (data.count > 1 ? 's' : ''));
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    })
+                    .catch(function () {});
+            }
+
+            setInterval(refreshGymBadge, 20000);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) refreshGymBadge();
+            });
+        })();
+    </script>
+}
+else if (User.Identity?.IsAuthenticated == true)
+{
+    <script>
+        (function () {
+            function refreshResidentGymBadge() {
+                fetch('/Resident/PendingGymRequestsCount')
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        var badges = document.querySelectorAll('.resident-gym-badge');
+                        badges.forEach(function (badge) {
+                            var countSpan = badge.querySelector('.ab-badge-count');
+                            if (data.count > 0) {
+                                if (countSpan) countSpan.textContent = data.count;
+                                badge.classList.remove('d-none');
+                                badge.setAttribute('title', data.count + ' pending gym pass' + (data.count > 1 ? 'es' : '') + ' / fee slip' + (data.count > 1 ? 's' : ''));
+                            } else {
+                                badge.classList.add('d-none');
+                            }
+                        });
+                    })
+                    .catch(function () {});
+            }
+
+            setInterval(refreshResidentGymBadge, 20000);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) refreshResidentGymBadge();
+            });
+        })();
+    </script>
+}
