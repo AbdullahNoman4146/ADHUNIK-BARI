@@ -1125,5 +1125,48 @@ namespace ADHUNIK_BARI.Services
                 return (false, "Failed to update member photo.");
             }
         }
+
+        public async Task<int> GetPendingMembershipRequestsCountAsync()
+        {
+            try
+            {
+                await EnsureGymSchemaAsync();
+
+                return await _dbContext.GymMemberships
+                    .AsNoTracking()
+                    .CountAsync(m => 
+                        (m.Status == GymMembershipStatuses.Pending && (m.PaySlipNumber == null || m.PaySlipNumber == "")) || 
+                        m.RenewalStatus == "RenewalPending");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to count pending gym membership requests.");
+                return 0;
+            }
+        }
+
+        public async Task<int> GetResidentPendingGymCountAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return 0;
+            }
+
+            try
+            {
+                await EnsureGymSchemaAsync();
+
+                return await _dbContext.GymMemberships
+                    .AsNoTracking()
+                    .CountAsync(m => 
+                        m.UserId == userId && 
+                        ((m.Status == GymMembershipStatuses.Pending && !m.IsFeePaid) || m.RenewalStatus == "RenewalPending"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to count resident pending gym items for user {UserId}.", userId);
+                return 0;
+            }
+        }
     }
 }

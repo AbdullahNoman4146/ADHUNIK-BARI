@@ -1975,6 +1975,13 @@ Date:
             return RedirectToAction(nameof(Gym));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> PendingGymRequestsCount()
+        {
+            var count = await gymService.GetPendingMembershipRequestsCountAsync();
+            return Json(new { count });
+        }
+
         #endregion
 
     }

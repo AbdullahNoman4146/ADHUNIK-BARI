@@ -687,6 +687,20 @@ namespace ADHUNIK_BARI.Controllers
             return View(cardModel);
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        public async Task<IActionResult> PendingGymRequestsCount()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { count = 0 });
+            }
+
+            var count = await gymService.GetResidentPendingGymCountAsync(user.Id);
+            return Json(new { count });
+        }
+
         #endregion
 
     }
