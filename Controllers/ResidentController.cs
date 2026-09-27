@@ -701,6 +701,20 @@ namespace ADHUNIK_BARI.Controllers
             return Json(new { count });
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Tenant,FlatOwner,ParkingUser")]
+        public async Task<IActionResult> PendingBillsCount([FromServices] ADHUNIK_BARI.Services.IBillingService billingService)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { count = 0 });
+            }
+
+            var count = await billingService.GetResidentPendingBillsCountAsync(user.Id);
+            return Json(new { count });
+        }
+
         #endregion
 
     }

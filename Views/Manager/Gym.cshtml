@@ -97,10 +97,6 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active rounded-3 px-3 py-2 fw-semibold" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pendingPane" type="button" role="tab">
                         <i class="fa-solid fa-user-clock me-1"></i> Pending Requests
-                        @if (Model.TotalPendingRequests > 0)
-                        {
-                            <span class="badge bg-warning text-dark ms-1">@Model.TotalPendingRequests</span>
-                        }
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -167,12 +163,12 @@
                                                     </div>
                                                 }
                                                 <div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="fw-bold text-dark">@item.MemberName</span>
-                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-0 px-2 small">@item.MemberRelation</span>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="fw-bold text-dark" style="font-size: 1.05rem;">@item.MemberName</span>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">@item.MemberRelation</span>
                                                     </div>
-                                                    <div class="small text-muted">
-                                                        Res: @item.ResidentName
+                                                    <div class="text-muted" style="font-size: 0.85rem;">
+                                                        Res: <strong>@item.ResidentName</strong>
                                                         @if (!string.IsNullOrWhiteSpace(item.MemberGender) || item.MemberAge.HasValue)
                                                         {
                                                             <span> &bull; @item.MemberGender @(item.MemberAge.HasValue ? $"{item.MemberAge} yrs" : "")</span>
@@ -281,9 +277,11 @@
                                                         </div>
                                                     }
                                                     <div>
-                                                        <span class="fw-bold text-dark">@slip.MemberName</span>
-                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-0 px-2 small">@slip.MemberRelation</span>
-                                                        <div class="small text-muted">Res: @slip.ResidentName</div>
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <span class="fw-bold text-dark" style="font-size: 1.05rem;">@slip.MemberName</span>
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">@slip.MemberRelation</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size: 0.85rem;">Res: <strong>@slip.ResidentName</strong></div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -353,22 +351,19 @@
                                                     </div>
                                                 }
                                                 <div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="fw-bold text-dark">@member.MemberName</span>
-                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-0 px-2 small">@member.MemberRelation</span>
-                                                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill py-0 px-2 small">@member.PackageName</span>
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle py-0 px-2 small">
-                                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Paid
-                                                        </span>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="fw-bold text-dark" style="font-size: 1.05rem;">@member.MemberName</span>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">@member.MemberRelation</span>
+                                                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">@member.PackageName</span>
                                                         @if (member.CancellationRequestedAt.HasValue)
                                                         {
-                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0 px-2 small">
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1 px-2" style="font-size: 0.75rem;">
                                                                 <i class="fa-solid fa-ban me-1"></i>Ends @member.CancellationEffectiveDate?.ToString("MMM dd")
                                                             </span>
                                                         }
                                                     </div>
-                                                    <div class="small text-muted d-flex align-items-center gap-2">
-                                                        <span>Res: @member.ResidentName</span>
+                                                    <div class="text-muted d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                                                        <span>Res: <strong>@member.ResidentName</strong></span>
                                                         <span>&bull;</span>
                                                         <span class="font-monospace text-secondary fw-semibold">@member.FormattedCardNumber</span>
                                                     </div>
@@ -553,7 +548,7 @@
             <!-- TAB 4: FACILITY SETTINGS -->
             <div class="tab-pane fade p-4" id="settingsPane" role="tabpanel">
                 <div class="row">
-                    <div class="col-lg-8">
+                    <div class="col-12 col-xl-10">
                         <form asp-controller="Manager" asp-action="UpdateGymSettings" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="GymSettings.GymSettingId" />
@@ -615,26 +610,6 @@
                                 </div>
                             </div>
                         </form>
-                    </div>
-
-                    <div class="col-lg-4 mt-4 mt-lg-0">
-                        <div class="card border rounded-4 p-4 bg-light">
-                            <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Gym Management Guide</h5>
-                            <ul class="list-unstyled small text-muted mb-0 d-flex flex-column gap-3">
-                                <li>
-                                    <strong class="text-dark d-block mb-1">1. Multi-Member Enrolment & Photos</strong>
-                                    Residents can apply for gym passes for themselves or their family members, complete with photo capture for official ID cards.
-                                </li>
-                                <li>
-                                    <strong class="text-dark d-block mb-1">2. Approval & ৳500 Pay Slip</strong>
-                                    When management approves an application, an official ৳500 Gym Fee Pay Slip is issued to the resident.
-                                </li>
-                                <li>
-                                    <strong class="text-dark d-block mb-1">3. Stripe Payment & Automatic Activation</strong>
-                                    Residents pay the ৳500 fee slip online via Stripe. Once paid, the system automatically activates their membership and issues their official scannable QR Member ID Card.
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
