@@ -50,5 +50,10 @@ namespace ADHUNIK_BARI.Services
         /// Gets all active flat assignments with related entities
         /// </summary>
         Task<List<FlatAssignment>> GetActiveFlatAssignmentsAsync();
+
+        /// <summary>
+        /// Gets count of unpaid bills for a resident user
+        /// </summary>
+        Task<int> GetResidentPendingBillsCountAsync(string userId);
     }
 }

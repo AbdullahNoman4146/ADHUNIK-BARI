@@ -520,5 +520,40 @@ namespace ADHUNIK_BARI.Services
                 throw;
             }
         }
+
+        /// <summary>
+        /// Gets count of unpaid bills for a resident user
+        /// </summary>
+        public async Task<int> GetResidentPendingBillsCountAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return 0;
+            }
+
+            try
+            {
+                var assignment = await _dbContext.FlatAssignments
+                    .AsNoTracking()
+                    .Where(a => a.UserId == userId && a.IsActive)
+                    .OrderByDescending(a => a.AssignmentDate)
+                    .FirstOrDefaultAsync();
+
+                if (assignment == null)
+                {
+                    return 0;
+                }
+
+                return await _dbContext.Bills
+                    .AsNoTracking()
+                    .Where(b => b.AssignmentId == assignment.AssignmentId && b.BillStatus != "Paid" && b.DueAmount > 0)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to count resident pending bills for user {UserId}.", userId);
+                return 0;
+            }
+        }
     }
 }
