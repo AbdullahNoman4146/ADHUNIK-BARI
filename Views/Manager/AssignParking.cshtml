@@ -5,7 +5,17 @@
     <section class="ab-panel ab-form-shell">
         <aside class="ab-form-aside"><i class="fa-solid fa-car-side"></i><small>@(Model.ParkingType ?? "Parking") · ৳@Model.ParkingFee.ToString("N0")/month</small><h2>One space, one clear assignment.</h2><p>The selected apartment will appear in the parking directory immediately after confirmation.</p></aside>
         <form asp-action="AssignParking" method="post" class="ab-form-body"><input type="hidden" name="ParkingSpotId" value="@Model.ParkingSpotId" /><div class="ab-field-grid">
-            <div class="ab-field-span-2"><label for="FlatId" class="form-label">Select flat</label><select id="FlatId" name="FlatId" class="form-select" required><option value="">Choose an apartment</option>@foreach (var flat in ViewBag.Flats) { <option value="@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber</option> }</select></div>
+            <div class="ab-field-span-2">
+                <label for="FlatId" class="form-label">Select flat</label>
+                <select id="FlatId" name="FlatId" class="form-select" required>
+                    <option value="">Choose an apartment</option>
+                    @foreach (var flat in ViewBag.Flats)
+                    {
+                        var resident = flat.Assignments != null ? ((IEnumerable<ADHUNIK_BARI.Models.FlatAssignment>)flat.Assignments).FirstOrDefault(a => a.IsActive)?.User?.FullName : null;
+                        <option value="@flat.FlatId">Flat @flat.FlatNumber · Floor @flat.FloorNumber @(!string.IsNullOrEmpty(resident) ? $"· Resident: {resident}" : "")</option>
+                    }
+                </select>
+            </div>
             <div class="ab-field-span-2 ab-field-note"><i class="fa-solid fa-shield-halved"></i><span>Only one active flat assignment is stored for this parking space.</span></div>
         </div><div class="ab-form-actions"><a asp-action="Parking" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-link"></i>Confirm assignment</button></div></form>
     </section>

@@ -175,12 +175,26 @@
                         </div>
 
                         <div class="spot-mid">
-                            @if ((spot.Status == "Assigned" || spot.Status == "Occupied") && !string.IsNullOrEmpty(spot.FlatNumber))
+                            @if (spot.Status == "Assigned" || spot.Status == "Occupied")
                             {
-                                <div class="assigned-flat-pill">
-                                    <i class="fa-solid fa-house"></i>
-                                    <span>Flat @spot.FlatNumber</span>
-                                </div>
+                                @if (!string.IsNullOrEmpty(spot.FlatNumber))
+                                {
+                                    <div class="assigned-flat-pill">
+                                        <i class="fa-solid fa-house"></i>
+                                        <span>Flat @spot.FlatNumber</span>
+                                    </div>
+                                    <div class="assigned-resident-name" title="@spot.ResidentName">
+                                        <i class="fa-solid fa-user me-1 text-primary"></i>@(string.IsNullOrWhiteSpace(spot.ResidentName) ? "Resident" : spot.ResidentName)
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(spot.ResidentName))
+                                {
+                                    <div class="assigned-flat-pill">
+                                        <i class="fa-solid fa-user-tag"></i>
+                                        <span>@spot.ResidentName</span>
+                                    </div>
+                                    <div class="assigned-resident-name text-muted small">External Member</div>
+                                }
                             }
                             else if (spot.Status == "ForSale")
                             {
@@ -345,14 +359,14 @@
                         <input type="hidden" id="selectedFlatId" name="FlatId" />
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small">Search Apartment (Typeahead)</label>
+                            <label class="form-label fw-bold small">Search Apartment or Resident (Typeahead)</label>
                             <div class="ab-typeahead-container">
                                 <input type="text" id="flatTypeaheadInput" class="form-control"
-                                       placeholder="Type flat number (e.g. A10, 101, B-02)..."
+                                       placeholder="Search by resident name (e.g. Abdullah) or flat number..."
                                        autocomplete="off" oninput="onFlatTypeaheadInput(this.value)" />
                                 <div id="flatTypeaheadDropdown" class="ab-typeahead-dropdown"></div>
                             </div>
-                            <small class="text-muted">Type to instantly filter across all occupied apartments.</small>
+                            <small class="text-muted">Type resident name or flat number to search and assign.</small>
                         </div>
 
                         <div id="selectedFlatBanner" class="ab-selected-flat-pill" style="display:none;">
@@ -524,11 +538,18 @@
 
 @section Scripts {
 <script type="application/json" id="occupiedFlatsData">
-    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OccupiedFlats))
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OccupiedFlats, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
 </script>
 <script>
     // Occupied flats lookup data passed from server for instant typeahead
-    const flatsData = JSON.parse(document.getElementById('occupiedFlatsData')?.textContent || '[]');
+    const rawFlats = JSON.parse(document.getElementById('occupiedFlatsData')?.textContent || '[]');
+    const flatsData = rawFlats.map(f => ({
+        flatId: Number(f.flatId ?? f.FlatId ?? 0),
+        flatNumber: String(f.flatNumber ?? f.FlatNumber ?? ''),
+        floorNumber: Number(f.floorNumber ?? f.FloorNumber ?? 0),
+        residentName: String(f.residentName ?? f.ResidentName ?? 'Resident'),
+        residentType: String(f.residentType ?? f.ResidentType ?? 'Tenant')
+    }));
     let activeSpot = null;
 
     // Search and Filter Logic
@@ -556,10 +577,11 @@
         tiles.forEach(tile => {
             const spotNum = (tile.getAttribute('data-spot-number') || '').toLowerCase();
             const flatNum = (tile.getAttribute('data-flat-number') || '').toLowerCase();
+            const resName = (tile.getAttribute('data-resident-name') || '').toLowerCase();
             const status = tile.getAttribute('data-status') || '';
             const paymentStatus = tile.getAttribute('data-payment-status') || '';
 
-            const matchesQuery = !query || spotNum.includes(query) || flatNum.includes(query);
+            const matchesQuery = !query || spotNum.includes(query) || flatNum.includes(query) || resName.includes(query);
 
             let matchesFilter = true;
             if (currentFilter === 'all') {
@@ -618,9 +640,20 @@
         const marketLinkBtn = document.getElementById('modalMarketplaceLinkBtn');
         const tabBtnRelease = document.getElementById('tabBtnRelease');
 
-        if (activeSpot.status === 'Assigned' && activeSpot.flatNumber) {
+        const isAssigned = (activeSpot.status === 'Assigned' || activeSpot.status === 'Occupied');
+        if (isAssigned && (activeSpot.flatNumber || activeSpot.residentName)) {
             assignedContainer.style.display = 'block';
-            assignedFlatEl.textContent = `Flat ${activeSpot.flatNumber} (${activeSpot.residentName || 'Resident'}) · Payment: ${activeSpot.paymentStatus}`;
+            let desc = '';
+            const paymentBadge = `<span class="badge ${activeSpot.paymentStatus === 'Paid' ? 'bg-success' : 'bg-danger'} ms-1">${activeSpot.paymentStatus || 'Due'}</span>`;
+            
+            if (activeSpot.flatNumber && activeSpot.residentName) {
+                desc = `Flat ${activeSpot.flatNumber} · Assigned to: <strong>${activeSpot.residentName}</strong> · Payment: ${paymentBadge}`;
+            } else if (activeSpot.flatNumber) {
+                desc = `Flat ${activeSpot.flatNumber} · Payment: ${paymentBadge}`;
+            } else {
+                desc = `Assigned to: <strong>${activeSpot.residentName}</strong> (External Parking Member) · Payment: ${paymentBadge}`;
+            }
+            assignedFlatEl.innerHTML = desc;
             tabBtnRelease.style.display = 'inline-block';
             if (marketContainer) marketContainer.style.display = 'none';
         } else if (activeSpot.status === 'ForSale' || activeSpot.status === 'ToLet') {
@@ -674,14 +707,16 @@
             return;
         }
 
-        const matches = flatsData.filter(f =>
-            f.flatNumber.toLowerCase().includes(q) ||
-            f.residentName.toLowerCase().includes(q) ||
-            f.floorNumber.toString().includes(q)
-        );
+        const matches = flatsData.filter(f => {
+            const fNum = f.flatNumber.toLowerCase();
+            const rName = f.residentName.toLowerCase();
+            const flNum = f.floorNumber.toString();
+            const rType = f.residentType.toLowerCase();
+            return fNum.includes(q) || rName.includes(q) || flNum.includes(q) || rType.includes(q);
+        });
 
         if (matches.length === 0) {
-            dropdown.innerHTML = '<div class="p-3 text-muted text-center small">No matching occupied flat found</div>';
+            dropdown.innerHTML = '<div class="p-3 text-muted text-center small"><i class="fa-solid fa-circle-info me-1"></i>No matching occupied flat or resident found</div>';
             dropdown.style.display = 'block';
             return;
         }
@@ -689,12 +724,18 @@
         let html = '';
         matches.slice(0, 8).forEach(f => {
             html += `
-                <div class="ab-typeahead-item" onclick="selectFlat(${f.flatId}, '${f.flatNumber}', '${f.residentName}', ${f.floorNumber})">
-                    <div>
-                        <strong>Flat ${f.flatNumber}</strong>
-                        <small class="ms-2">Floor ${f.floorNumber} · ${f.residentName}</small>
+                <div class="ab-typeahead-item" data-flat-id="${f.flatId}" onclick="selectFlatById(${f.flatId})">
+                    <div class="d-flex flex-column text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>Flat ${f.flatNumber}</strong>
+                            <small class="text-muted">Floor ${f.floorNumber}</small>
+                        </div>
+                        <div class="small mt-1 text-dark">
+                            <i class="fa-solid fa-user me-1 text-primary"></i><strong>${f.residentName}</strong>
+                            <span class="text-muted ms-1">(${f.residentType})</span>
+                        </div>
                     </div>
-                    <span class="badge bg-light text-dark">${f.residentType}</span>
+                    <span class="badge bg-light text-dark border">${f.residentType}</span>
                 </div>
             `;
         });
@@ -703,12 +744,15 @@
         dropdown.style.display = 'block';
     }
 
-    function selectFlat(flatId, flatNumber, residentName, floorNumber) {
-        document.getElementById('selectedFlatId').value = flatId;
-        document.getElementById('flatTypeaheadInput').value = `Flat ${flatNumber}`;
+    function selectFlatById(flatId) {
+        const flat = flatsData.find(f => f.flatId === flatId);
+        if (!flat) return;
+
+        document.getElementById('selectedFlatId').value = flat.flatId;
+        document.getElementById('flatTypeaheadInput').value = `Flat ${flat.flatNumber} (${flat.residentName})`;
         document.getElementById('flatTypeaheadDropdown').style.display = 'none';
 
-        document.getElementById('selectedFlatText').textContent = `Flat ${flatNumber} (Floor ${floorNumber} · ${residentName})`;
+        document.getElementById('selectedFlatText').innerHTML = `<strong>Flat ${flat.flatNumber}</strong> (Floor ${flat.floorNumber}) · Resident: <strong>${flat.residentName}</strong> (${flat.residentType})`;
         document.getElementById('selectedFlatBanner').style.display = 'flex';
         document.getElementById('btnConfirmAssign').disabled = false;
     }
@@ -768,7 +812,17 @@
                     if (badge) badge.innerHTML = '<i class="fa-solid fa-circle"></i> Assigned';
 
                     const mid = tile.querySelector('.spot-mid');
-                    if (mid) mid.innerHTML = `<div class="assigned-flat-pill"><i class="fa-solid fa-house"></i><span>Flat ${data.flatNumber}</span></div>`;
+                    if (mid) {
+                        mid.innerHTML = `
+                            <div class="assigned-flat-pill">
+                                <i class="fa-solid fa-house"></i>
+                                <span>Flat ${data.flatNumber}</span>
+                            </div>
+                            <div class="assigned-resident-name" title="${data.residentName}">
+                                <i class="fa-solid fa-user me-1 text-primary"></i>${data.residentName}
+                            </div>
+                        `;
+                    }
 
                     const bottom = tile.querySelector('.spot-bottom');
                     if (bottom && !bottom.querySelector('.payment-pill')) {

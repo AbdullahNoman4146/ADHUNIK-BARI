@@ -2,14 +2,130 @@
 @{ ViewData["Title"] = "Edit flat"; }
 <div class="ab-app-page">
     <header class="ab-page-heading ab-page-heading-compact"><div><div class="ab-page-kicker"><span></span>Apartment record</div><h1>Edit flat <em>@Model.FlatNumber.</em></h1><p>Update unit details, rent, or current occupancy state.</p></div></header>
+    @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert" role="alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger ab-toast-alert" role="alert"><i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]</div> }
     <section class="ab-panel ab-form-shell">
-        <aside class="ab-form-aside"><i class="fa-solid fa-pen-ruler"></i><small>Live record</small><h2>Keep the building directory precise.</h2><p>Changes here can affect billing and resident context. Confirm the occupancy state before saving.</p></aside>
-        <form asp-action="EditFlat" method="post" class="ab-form-body"><input type="hidden" asp-for="FlatId" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="ab-field-grid">
-            <div><label asp-for="FlatNumber" class="form-label">Flat number</label><input asp-for="FlatNumber" class="form-control" /><span asp-validation-for="FlatNumber" class="text-danger small"></span></div>
-            <div><label asp-for="FloorNumber" class="form-label">Floor number</label><input asp-for="FloorNumber" class="form-control" type="number" min="0" /><span asp-validation-for="FloorNumber" class="text-danger small"></span></div>
-            <div><label asp-for="MonthlyRent" class="form-label">Monthly tenant rent</label><div class="input-group"><span class="input-group-text">৳</span><input asp-for="MonthlyRent" class="form-control" type="number" min="0" step="100" /></div><span asp-validation-for="MonthlyRent" class="text-danger small"></span></div>
-            <div><label asp-for="FlatStatus" class="form-label">Occupancy status</label><select asp-for="FlatStatus" class="form-select"><option value="Available">Available</option><option value="Occupied">Occupied</option></select><span asp-validation-for="FlatStatus" class="text-danger small"></span></div>
-        </div><div class="ab-form-actions"><a asp-action="Flats" class="ab-app-btn ab-app-btn-secondary">Cancel</a><button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-check"></i>Save changes</button></div></form>
+        <aside class="ab-form-aside"><i class="fa-solid fa-pen-ruler"></i><small>Live record</small><h2>Keep the building directory precise.</h2><p>Changes here can affect billing and resident context. When a resident is assigned, the flat remains Occupied until vacated.</p></aside>
+        <form asp-action="EditFlat" method="post" class="ab-form-body">
+            <input type="hidden" asp-for="FlatId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            
+            @if (Model.IsOccupied)
+            {
+                <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 rounded-3 border-warning shadow-sm">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-user-check me-1"></i>Occupied</span>
+                            <strong class="text-dark fs-6">@Model.OccupantName</strong>
+                            <span class="badge bg-light text-secondary border">@Model.OccupantType</span>
+                        </div>
+                        <div class="small text-muted">
+                            <span><i class="fa-solid fa-phone me-1"></i>@(Model.OccupantPhone ?? "—")</span>
+                            <span class="ms-3"><i class="fa-solid fa-envelope me-1"></i>@(Model.OccupantEmail ?? "—")</span>
+                            @if (Model.AssignedDate.HasValue)
+                            {
+                                <span class="ms-3"><i class="fa-solid fa-calendar me-1"></i>Resident since @Model.AssignedDate.Value.ToString("dd MMM yyyy")</span>
+                            }
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#vacateFlatModal">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Resident departure / Vacate flat
+                    </button>
+                </div>
+            }
+
+            <div class="ab-field-grid">
+                <div>
+                    <label asp-for="FlatNumber" class="form-label">Flat number</label>
+                    <input asp-for="FlatNumber" class="form-control" />
+                    <span asp-validation-for="FlatNumber" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="FloorNumber" class="form-label">Floor number</label>
+                    <input asp-for="FloorNumber" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="FloorNumber" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="MonthlyRent" class="form-label">Monthly tenant rent</label>
+                    <div class="input-group">
+                        <span class="input-group-text">৳</span>
+                        <input asp-for="MonthlyRent" class="form-control" type="number" min="0" step="100" />
+                    </div>
+                    <span asp-validation-for="MonthlyRent" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="FlatStatus" class="form-label">Occupancy status</label>
+                    @if (Model.IsOccupied)
+                    {
+                        <div class="input-group">
+                            <span class="input-group-text bg-warning-subtle text-warning-emphasis"><i class="fa-solid fa-lock"></i></span>
+                            <input type="text" class="form-control bg-light" value="Occupied (@Model.OccupantName)" readonly />
+                        </div>
+                        <input type="hidden" asp-for="FlatStatus" value="Occupied" />
+                        <small class="text-muted d-block mt-1"><i class="fa-solid fa-circle-info text-warning me-1"></i>Status is locked while occupied. Use "Vacate flat" to return to Available.</small>
+                    }
+                    else
+                    {
+                        <select asp-for="FlatStatus" class="form-select">
+                            <option value="Available">Available</option>
+                            <option value="Under Maintenance">Under Maintenance</option>
+                        </select>
+                        <span asp-validation-for="FlatStatus" class="text-danger small"></span>
+                        <small class="text-muted d-block mt-1">To occupy this flat, use the "Assign resident" action.</small>
+                    }
+                </div>
+            </div>
+            
+            <div class="ab-form-actions">
+                <a asp-action="Flats" class="ab-app-btn ab-app-btn-secondary">Cancel</a>
+                <button type="submit" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-check"></i>Save changes</button>
+            </div>
+        </form>
     </section>
 </div>
+
+@if (Model.IsOccupied)
+{
+    <div class="modal fade" id="vacateFlatModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Vacate Flat @Model.FlatNumber
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-action="VacateFlat" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="flatId" value="@Model.FlatId" />
+                    <div class="modal-body">
+                        <p>Are you sure the resident <strong>@Model.OccupantName</strong> (@Model.OccupantType) is leaving <strong>Flat @Model.FlatNumber</strong>?</p>
+                        <ul class="small text-muted mb-3">
+                            <li>The flat occupancy status will immediately reset to <strong>Available</strong>.</li>
+                            <li>Any basement parking space assigned to this flat will be automatically released.</li>
+                            <li>The active residency record for this apartment will be closed.</li>
+                        </ul>
+                        <div class="form-check p-3 rounded bg-light border">
+                            <input class="form-check-input" type="checkbox" name="deleteAccount" value="true" id="checkDeleteAccount" />
+                            <label class="form-check-label fw-bold text-danger small" for="checkDeleteAccount">
+                                Also permanently delete resident account and personal data
+                            </label>
+                            <div class="small text-muted mt-1">
+                                Check this if the resident is departing permanently and you wish to delete their login account and records.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Confirm Vacate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }
+
