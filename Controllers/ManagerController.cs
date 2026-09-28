@@ -84,12 +84,38 @@ namespace ADHUNIK_BARI.Controllers
         [HttpGet]
         public async Task<IActionResult> Flats()
         {
+            // Auto-heal any desynced flats where active assignments exist, but FlatStatus was incorrectly Available
+            var desyncedFlats = await dbContext.Flats
+                .Include(f => f.Assignments)
+                .Where(f => f.FlatStatus == "Available" && f.Assignments.Any(a => a.IsActive))
+                .ToListAsync();
+
+            if (desyncedFlats.Any())
+            {
+                foreach (var df in desyncedFlats)
+                {
+                    df.FlatStatus = "Occupied";
+                }
+                await dbContext.SaveChangesAsync();
+            }
+
             var flats = await dbContext.Flats
                 .Include(flat => flat.Assignments.Where(assignment => assignment.IsActive))
+                    .ThenInclude(assignment => assignment.User)
                 .AsNoTracking()
                 .OrderBy(flat => flat.FloorNumber)
                 .ThenBy(flat => flat.FlatNumber)
                 .ToListAsync();
+
+            // Load assigned parking spots for all flats
+            var parkingSpots = await dbContext.ParkingSpots
+                .Where(p => p.FlatId != null)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ViewBag.FlatParking = parkingSpots
+                .GroupBy(p => p.FlatId!.Value)
+                .ToDictionary(g => g.Key, g => string.Join(", ", g.Select(s => s.SpotNumber)));
 
             return View(flats);
         }
@@ -132,10 +158,24 @@ namespace ADHUNIK_BARI.Controllers
         [HttpGet]
         public async Task<IActionResult> EditFlat(int id)
         {
-            var flat = await dbContext.Flats.FindAsync(id);
+            var flat = await dbContext.Flats
+                .Include(f => f.Assignments.Where(a => a.IsActive))
+                    .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(f => f.FlatId == id);
+
             if (flat == null)
             {
                 return NotFound();
+            }
+
+            var activeAssignment = flat.Assignments.FirstOrDefault(a => a.IsActive);
+            bool isOccupied = activeAssignment != null;
+
+            // Auto-heal status if active resident exists
+            if (isOccupied && flat.FlatStatus != "Occupied")
+            {
+                flat.FlatStatus = "Occupied";
+                await dbContext.SaveChangesAsync();
             }
 
             return View(new EditFlatViewModel
@@ -144,7 +184,14 @@ namespace ADHUNIK_BARI.Controllers
                 FlatNumber = flat.FlatNumber,
                 FloorNumber = flat.FloorNumber,
                 MonthlyRent = flat.MonthlyRent,
-                FlatStatus = flat.FlatStatus
+                FlatStatus = flat.FlatStatus,
+                IsOccupied = isOccupied,
+                OccupantName = activeAssignment?.User?.FullName,
+                OccupantType = activeAssignment?.ResidentType,
+                OccupantEmail = activeAssignment?.User?.Email,
+                OccupantPhone = activeAssignment?.User?.Phone ?? activeAssignment?.User?.PhoneNumber,
+                OccupantUserId = activeAssignment?.UserId,
+                AssignedDate = activeAssignment?.AssignmentDate
             });
         }
 
@@ -152,24 +199,117 @@ namespace ADHUNIK_BARI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditFlat(EditFlatViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            var flat = await dbContext.Flats
+                .Include(f => f.Assignments.Where(a => a.IsActive))
+                    .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(f => f.FlatId == model.FlatId);
 
-            var flat = await dbContext.Flats.FindAsync(model.FlatId);
             if (flat == null)
             {
                 return NotFound();
             }
 
+            var activeAssignment = flat.Assignments.FirstOrDefault(a => a.IsActive);
+            bool isOccupied = activeAssignment != null;
+
+            if (isOccupied && model.FlatStatus == "Available")
+            {
+                ModelState.AddModelError(nameof(model.FlatStatus),
+                    $"Flat {flat.FlatNumber} is currently occupied by {activeAssignment?.User?.FullName ?? "a resident"}. You cannot set status to Available while a resident is assigned. Please vacate the flat first.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.IsOccupied = isOccupied;
+                model.OccupantName = activeAssignment?.User?.FullName;
+                model.OccupantType = activeAssignment?.ResidentType;
+                model.OccupantEmail = activeAssignment?.User?.Email;
+                model.OccupantPhone = activeAssignment?.User?.Phone ?? activeAssignment?.User?.PhoneNumber;
+                model.OccupantUserId = activeAssignment?.UserId;
+                model.AssignedDate = activeAssignment?.AssignmentDate;
+                return View(model);
+            }
+
             flat.FlatNumber = model.FlatNumber;
             flat.FloorNumber = model.FloorNumber;
             flat.MonthlyRent = model.MonthlyRent;
-            flat.FlatStatus = model.FlatStatus;
+            flat.FlatStatus = isOccupied ? "Occupied" : model.FlatStatus;
 
             await dbContext.SaveChangesAsync();
             TempData["Success"] = $"Flat {flat.FlatNumber} updated successfully with monthly rent ৳{flat.MonthlyRent:N0}.";
+            return RedirectToAction(nameof(Flats));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VacateFlat(int flatId, bool deleteAccount = false)
+        {
+            var flat = await dbContext.Flats
+                .Include(f => f.Assignments)
+                    .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(f => f.FlatId == flatId);
+
+            if (flat == null)
+            {
+                TempData["Error"] = "Flat not found.";
+                return RedirectToAction(nameof(Flats));
+            }
+
+            var activeAssignment = flat.Assignments.FirstOrDefault(a => a.IsActive);
+            var residentName = activeAssignment?.User?.FullName ?? "Resident";
+            var residentUserId = activeAssignment?.UserId;
+
+            // 1. Release all parking spots assigned to this flat or resident
+            var parkingSpots = await dbContext.ParkingSpots
+                .Where(p => p.FlatId == flatId || (residentUserId != null && p.AssignedUserId == residentUserId))
+                .ToListAsync();
+
+            foreach (var spot in parkingSpots)
+            {
+                spot.FlatId = null;
+                spot.AssignedUserId = null;
+                spot.Status = "Available";
+                spot.IsAvailable = true;
+
+                dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+                {
+                    ParkingSpotId = spot.ParkingSpotId,
+                    Action = "Parking Released",
+                    Details = $"Manager released space {spot.SpotNumber} as Flat {flat.FlatNumber} was vacated.",
+                    CreatedBy = User.Identity?.Name ?? "Manager",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // 2. Mark active assignment as inactive
+            if (activeAssignment != null)
+            {
+                activeAssignment.IsActive = false;
+            }
+
+            // 3. Set flat status to Available
+            flat.FlatStatus = "Available";
+
+            await dbContext.SaveChangesAsync();
+
+            // 4. Optionally delete resident account if requested
+            if (deleteAccount && !string.IsNullOrEmpty(residentUserId))
+            {
+                var deleteResult = await DeleteResidentAccountInternal(residentUserId);
+                if (deleteResult.Success)
+                {
+                    TempData["Success"] = $"Flat {flat.FlatNumber} vacated and resident account for '{residentName}' deleted successfully.";
+                }
+                else
+                {
+                    TempData["Success"] = $"Flat {flat.FlatNumber} vacated successfully. Account cleanup note: {deleteResult.Message}";
+                }
+            }
+            else
+            {
+                TempData["Success"] = $"Flat {flat.FlatNumber} vacated successfully. Status is now Available.";
+            }
+
             return RedirectToAction(nameof(Flats));
         }
 
@@ -543,7 +683,7 @@ namespace ADHUNIK_BARI.Controllers
                 }
 
                 TempData["Success"] = "Resident account created successfully";
-                return RedirectToAction("Dashboard");
+                return RedirectToAction(nameof(Residents));
             }
 
             foreach (var error in result.Errors)
@@ -552,6 +692,226 @@ namespace ADHUNIK_BARI.Controllers
             }
 
             return View(model);
+        }
+
+        // ==========================================
+        // RESIDENT ACCOUNTS & LIFECYCLE MANAGEMENT
+        // ==========================================
+
+        [HttpGet]
+        public async Task<IActionResult> Residents()
+        {
+            var tenants = await userManager.GetUsersInRoleAsync("Tenant");
+            var owners = await userManager.GetUsersInRoleAsync("FlatOwner");
+            var allResidents = tenants.Concat(owners).GroupBy(u => u.Id).Select(g => g.First()).ToList();
+
+            var activeAssignments = await dbContext.FlatAssignments
+                .Include(a => a.Flat)
+                .Where(a => a.IsActive)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var assignmentMap = activeAssignments
+                .GroupBy(a => a.UserId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.AssignmentDate).First());
+
+            var assignedSpots = await dbContext.ParkingSpots
+                .AsNoTracking()
+                .ToListAsync();
+
+            var residentList = new List<ResidentAccountViewModel>();
+
+            foreach (var user in allResidents.OrderBy(u => u.FullName))
+            {
+                assignmentMap.TryGetValue(user.Id, out var assign);
+                var spot = assignedSpots.FirstOrDefault(s => s.AssignedUserId == user.Id || (assign != null && s.FlatId == assign.FlatId));
+                var roles = await userManager.GetRolesAsync(user);
+                var residentType = roles.Contains("FlatOwner") ? "FlatOwner" : "Tenant";
+
+                residentList.Add(new ResidentAccountViewModel
+                {
+                    UserId = user.Id,
+                    FullName = user.FullName ?? user.UserName ?? "Resident",
+                    Email = user.Email ?? "—",
+                    Phone = user.Phone ?? user.PhoneNumber ?? "—",
+                    ResidentType = residentType,
+                    FlatId = assign?.FlatId,
+                    FlatNumber = assign?.Flat?.FlatNumber,
+                    FloorNumber = assign?.Flat?.FloorNumber,
+                    ParkingSpotNumber = spot?.SpotNumber,
+                    CreatedAt = user.CreatedAt != default ? user.CreatedAt : DateTime.MinValue,
+                    HasActiveAssignment = assign != null,
+                    AccountStatus = user.AccountStatus ?? "Active"
+                });
+            }
+
+            return View(residentList);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteResident(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                TempData["Error"] = "Resident user ID is required.";
+                return RedirectToAction(nameof(Residents));
+            }
+
+            var result = await DeleteResidentAccountInternal(userId);
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Residents));
+        }
+
+        private async Task<(bool Success, string Message)> DeleteResidentAccountInternal(string userId)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return (false, "User account not found.");
+            }
+
+            var isManager = await userManager.IsInRoleAsync(user, "Manager") || await userManager.IsInRoleAsync(user, "Admin");
+            if (isManager)
+            {
+                return (false, "Cannot delete manager or administrator accounts.");
+            }
+
+            var userName = user.FullName ?? user.UserName ?? "Resident";
+
+            using var transaction = await dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Release all parking spots assigned to this user or their flat
+                var userAssignments = await dbContext.FlatAssignments
+                    .Include(a => a.Flat)
+                    .Where(a => a.UserId == userId)
+                    .ToListAsync();
+
+                var flatIds = userAssignments.Select(a => a.FlatId).Distinct().ToList();
+
+                var parkingSpots = await dbContext.ParkingSpots
+                    .Where(p => p.AssignedUserId == userId || (p.FlatId.HasValue && flatIds.Contains(p.FlatId.Value)))
+                    .ToListAsync();
+
+                foreach (var spot in parkingSpots)
+                {
+                    spot.AssignedUserId = null;
+                    spot.FlatId = null;
+                    spot.Status = "Available";
+                    spot.IsAvailable = true;
+
+                    dbContext.ParkingActivityLogs.Add(new ParkingActivityLog
+                    {
+                        ParkingSpotId = spot.ParkingSpotId,
+                        Action = "Parking Released",
+                        Details = $"Manager released space {spot.SpotNumber} due to deletion of resident account ({userName}).",
+                        CreatedBy = User.Identity?.Name ?? "Manager",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                // 2. Mark any occupied flats as Available
+                foreach (var a in userAssignments.Where(a => a.IsActive))
+                {
+                    if (a.Flat != null)
+                    {
+                        a.Flat.FlatStatus = "Available";
+                    }
+                }
+
+                // 3. Gym Memberships
+                var gymMemberships = await dbContext.GymMemberships.Where(g => g.UserId == userId).ToListAsync();
+                if (gymMemberships.Any())
+                {
+                    dbContext.GymMemberships.RemoveRange(gymMemberships);
+                }
+
+                // 4. Complaints
+                var complaints = await dbContext.Complaints.Where(c => c.UserId == userId).ToListAsync();
+                if (complaints.Any())
+                {
+                    dbContext.Complaints.RemoveRange(complaints);
+                }
+
+                // 5. Payments and Bills
+                var assignmentIds = userAssignments.Select(a => a.AssignmentId).ToList();
+                var userPayments = await dbContext.Payments.Where(p => p.UserId == userId).ToListAsync();
+                if (userPayments.Any())
+                {
+                    dbContext.Payments.RemoveRange(userPayments);
+                }
+
+                if (assignmentIds.Any())
+                {
+                    var bills = await dbContext.Bills
+                        .Include(b => b.BillItems)
+                        .Include(b => b.Payments)
+                        .Where(b => assignmentIds.Contains(b.AssignmentId))
+                        .ToListAsync();
+
+                    foreach (var b in bills)
+                    {
+                        if (b.Payments != null && b.Payments.Any())
+                        {
+                            dbContext.Payments.RemoveRange(b.Payments);
+                        }
+                        if (b.BillItems != null && b.BillItems.Any())
+                        {
+                            dbContext.BillItems.RemoveRange(b.BillItems);
+                        }
+                    }
+                    if (bills.Any())
+                    {
+                        dbContext.Bills.RemoveRange(bills);
+                    }
+                }
+
+                // 6. Property & Parking applications created user reference
+                var propApps = await dbContext.PropertyApplications.Where(a => a.CreatedResidentUserId == userId).ToListAsync();
+                foreach (var pa in propApps) pa.CreatedResidentUserId = null;
+
+                var parkApps = await dbContext.ParkingApplications.Where(a => a.CreatedUserId == userId).ToListAsync();
+                foreach (var pka in parkApps) pka.CreatedUserId = null;
+
+                // 7. Flat assignments
+                if (userAssignments.Any())
+                {
+                    dbContext.FlatAssignments.RemoveRange(userAssignments);
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                // 8. Remove roles and delete Identity user
+                var roles = await userManager.GetRolesAsync(user);
+                if (roles.Any())
+                {
+                    await userManager.RemoveFromRolesAsync(user, roles);
+                }
+
+                var deleteResult = await userManager.DeleteAsync(user);
+                if (!deleteResult.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, string.Join(", ", deleteResult.Errors.Select(e => e.Description)));
+                }
+
+                await transaction.CommitAsync();
+                return (true, $"Resident account '{userName}' and related records were deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, $"Error while deleting resident account: {ex.Message}");
+            }
         }
 
         // ==========================================
@@ -1089,9 +1449,9 @@ Date:
                 revenueDue = allSpots.Where(s => s.Status == "Assigned" || s.Status == "Occupied").Sum(s => s.ParkingFee);
             }
 
-            // Occupied flats for searchable typeahead dropdown
+            // Occupied flats for searchable typeahead dropdown (include flats with active resident assignments)
             var occupiedFlats = await dbContext.Flats
-                .Where(f => f.FlatStatus == "Occupied")
+                .Where(f => f.FlatStatus == "Occupied" || f.Assignments.Any(a => a.IsActive))
                 .OrderBy(f => f.FlatNumber)
                 .Select(f => new FlatLookupItem
                 {
@@ -1232,6 +1592,7 @@ Date:
             }
 
             spot.FlatId = flat.FlatId;
+            spot.AssignedUserId = flat.Assignments.FirstOrDefault()?.UserId;
             spot.Status = "Assigned";
             spot.IsAvailable = false;
             spot.ListingPrice = null;
@@ -1243,7 +1604,7 @@ Date:
             {
                 ParkingSpotId = spot.ParkingSpotId,
                 Action = "Parking Assigned",
-                Details = $"Manager assigned {spot.SpotNumber} to Flat {flat.FlatNumber} ({resident}).",
+                Details = $"Manager assigned space {spot.SpotNumber} to Flat {flat.FlatNumber} (Resident: {resident}).",
                 CreatedBy = User.Identity?.Name ?? "Manager",
                 CreatedAt = DateTime.UtcNow
             });
@@ -1280,6 +1641,7 @@ Date:
             var prevFlat = spot.Flat?.FlatNumber ?? "Flat";
 
             spot.FlatId = null;
+            spot.AssignedUserId = null;
             spot.Status = "Available";
             spot.IsAvailable = true;
             spot.ListingPrice = null;
@@ -1482,7 +1844,9 @@ Date:
             }
 
             ViewBag.Flats = await dbContext.Flats
-                .Where(f => f.FlatStatus == "Occupied")
+                .Include(f => f.Assignments.Where(a => a.IsActive))
+                    .ThenInclude(a => a.User)
+                .Where(f => f.FlatStatus == "Occupied" || f.Assignments.Any(a => a.IsActive))
                 .OrderBy(f => f.FlatNumber)
                 .ToListAsync();
 
@@ -1502,6 +1866,8 @@ Date:
             }
 
             var flat = await dbContext.Flats
+                .Include(f => f.Assignments.Where(a => a.IsActive))
+                    .ThenInclude(a => a.User)
                 .FirstOrDefaultAsync(f => f.FlatId == FlatId);
 
             if (flat == null)
@@ -1510,7 +1876,10 @@ Date:
                 return RedirectToAction(nameof(Parking));
             }
 
+            var resident = flat.Assignments.FirstOrDefault()?.User?.FullName ?? "Resident";
+
             parking.FlatId = flat.FlatId;
+            parking.AssignedUserId = flat.Assignments.FirstOrDefault()?.UserId;
             parking.Status = "Assigned";
             parking.IsAvailable = false;
 
@@ -1518,14 +1887,14 @@ Date:
             {
                 ParkingSpotId = parking.ParkingSpotId,
                 Action = "Parking Assigned",
-                Details = $"Manager assigned {parking.SpotNumber} to Flat {flat.FlatNumber}.",
+                Details = $"Manager assigned space {parking.SpotNumber} to Flat {flat.FlatNumber} (Resident: {resident}).",
                 CreatedBy = User.Identity?.Name ?? "Manager",
                 CreatedAt = DateTime.UtcNow
             });
 
             await dbContext.SaveChangesAsync();
 
-            TempData["Success"] = $"Parking {parking.SpotNumber} assigned successfully.";
+            TempData["Success"] = $"Parking {parking.SpotNumber} assigned successfully to Flat {flat.FlatNumber} ({resident}).";
             return RedirectToAction(nameof(Parking));
         }
 

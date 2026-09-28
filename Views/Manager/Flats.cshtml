@@ -1,23 +1,202 @@
 @model IEnumerable<ADHUNIK_BARI.Models.Flat>
-@{ ViewData["Title"] = "Flats & occupancy"; var occupied = Model.Count(f => f.FlatStatus == "Occupied"); var available = Model.Count() - occupied; }
+@{ 
+    ViewData["Title"] = "Flats & occupancy"; 
+    var occupied = Model.Count(f => f.FlatStatus == "Occupied" || f.Assignments.Any(a => a.IsActive)); 
+    var available = Model.Count() - occupied; 
+    var flatParking = ViewBag.FlatParking as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
 <div class="ab-app-page">
     <header class="ab-page-heading ab-page-heading-compact">
-        <div><div class="ab-page-kicker"><span></span>Property operations</div><h1>Flats &amp; <em>occupancy.</em></h1><p>Keep every apartment, rent setting, and resident assignment in one clear view.</p></div>
-        <div class="ab-page-heading-actions"><a asp-action="AssignFlat" class="ab-app-btn ab-app-btn-secondary"><i class="fa-solid fa-user-plus"></i>Assign resident</a><a asp-action="CreateFlat" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Add flat</a></div>
+        <div>
+            <div class="ab-page-kicker"><span></span>Property operations</div>
+            <h1>Flats &amp; <em>occupancy.</em></h1>
+            <p>Keep every apartment, rent setting, resident occupancy, and assigned parking in one clear view.</p>
+        </div>
+        <div class="ab-page-heading-actions">
+            <a asp-action="AssignFlat" class="ab-app-btn ab-app-btn-secondary"><i class="fa-solid fa-user-plus"></i>Assign resident</a>
+            <a asp-action="CreateFlat" class="ab-app-btn ab-app-btn-primary"><i class="fa-solid fa-plus"></i>Add flat</a>
+        </div>
     </header>
+
     @if (TempData["Success"] != null) { <div class="alert alert-success ab-toast-alert" role="alert"><i class="fa-solid fa-circle-check"></i>@TempData["Success"]</div> }
-    @if (TempData["Error"] != null) { <div class="alert alert-danger" role="alert"><i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger ab-toast-alert" role="alert"><i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]</div> }
+
     <section class="ab-stat-strip" aria-label="Flat summary">
         <article class="ab-stat-chip"><span><i class="fa-solid fa-building"></i></span><div><strong>@Model.Count()</strong><small>Total flats</small></div></article>
         <article class="ab-stat-chip"><span><i class="fa-solid fa-key"></i></span><div><strong>@occupied</strong><small>Occupied</small></div></article>
         <article class="ab-stat-chip"><span><i class="fa-solid fa-door-open"></i></span><div><strong>@available</strong><small>Available</small></div></article>
     </section>
+
     <section class="ab-panel ab-data-panel">
-        <div class="ab-panel-head"><div class="ab-table-title"><span><i class="fa-solid fa-city"></i></span><div><div class="ab-panel-kicker">LIVE INVENTORY</div><h2>Apartment directory</h2></div></div><div class="ab-panel-status"><i></i>@Model.Count() records</div></div>
+        <div class="ab-panel-head">
+            <div class="ab-table-title">
+                <span><i class="fa-solid fa-city"></i></span>
+                <div>
+                    <div class="ab-panel-kicker">LIVE INVENTORY</div>
+                    <h2>Apartment directory</h2>
+                </div>
+            </div>
+            <div class="ab-panel-status"><i></i>@Model.Count() records</div>
+        </div>
+
         @if (Model.Any()) {
-        <div class="table-responsive"><table class="table ab-app-table align-middle"><thead><tr><th>Apartment</th><th>Floor</th><th>Monthly rent</th><th>Status</th><th>Created</th><th class="text-end">Action</th></tr></thead><tbody>
-        @foreach (var flat in Model) { <tr><td><div class="ab-unit-name"><span>@flat.FlatNumber</span><strong>Flat @flat.FlatNumber</strong></div></td><td>Floor @flat.FloorNumber</td><td><strong class="ab-money">৳@flat.MonthlyRent.ToString("N0")</strong><small class="ab-table-sub">Tenant rate / month</small></td><td><span class="ab-status @(flat.FlatStatus == "Occupied" ? "ab-status-warning" : "ab-status-success")"><i></i>@flat.FlatStatus</span></td><td>@flat.CreatedAt.ToString("dd MMM yyyy")</td><td class="text-end"><a asp-action="EditFlat" asp-route-id="@flat.FlatId" class="ab-icon-btn" aria-label="Edit flat @flat.FlatNumber"><i class="fa-solid fa-pen"></i></a></td></tr> }
-        </tbody></table></div>
-        } else { <div class="ab-empty-state-app"><i class="fa-solid fa-building-circle-exclamation"></i><h2>Your building is ready for its first flat</h2><p>Create an apartment record, then assign a resident when it is ready.</p><a asp-action="CreateFlat" class="ab-app-btn ab-app-btn-primary">Create first flat</a></div> }
+        <div class="table-responsive">
+            <table class="table ab-app-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Apartment</th>
+                        <th>Floor</th>
+                        <th>Current resident</th>
+                        <th>Assigned parking</th>
+                        <th>Monthly rent</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var flat in Model) {
+                    var activeAssign = flat.Assignments?.FirstOrDefault(a => a.IsActive);
+                    var isFlatOccupied = activeAssign != null || flat.FlatStatus == "Occupied";
+                    var residentName = activeAssign?.User?.FullName ?? (isFlatOccupied ? "Resident Assigned" : string.Empty);
+                    var residentType = activeAssign?.ResidentType ?? string.Empty;
+                    var residentContact = activeAssign?.User?.PhoneNumber ?? activeAssign?.User?.Email ?? string.Empty;
+                    flatParking.TryGetValue(flat.FlatId, out var spotNumbers);
+
+                    <tr>
+                        <td>
+                            <div class="ab-unit-name">
+                                <span>@flat.FlatNumber</span>
+                                <strong>Flat @flat.FlatNumber</strong>
+                            </div>
+                        </td>
+                        <td>Floor @flat.FloorNumber</td>
+                        <td>
+                            @if (activeAssign != null)
+                            {
+                                <div>
+                                    <strong class="text-dark"><i class="fa-solid fa-user me-1 text-primary"></i>@residentName</strong>
+                                    <span class="badge bg-light text-dark border ms-1" style="font-size:11px;">@residentType</span>
+                                    @if (!string.IsNullOrEmpty(residentContact))
+                                    {
+                                        <small class="ab-table-sub d-block text-muted">@residentContact</small>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted small fst-italic">Vacant / Available</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(spotNumbers))
+                            {
+                                <span class="badge bg-primary-subtle text-primary border" style="font-size:12px;">
+                                    <i class="fa-solid fa-square-parking me-1"></i>@spotNumbers
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td>
+                            <strong class="ab-money">৳@flat.MonthlyRent.ToString("N0")</strong>
+                            <small class="ab-table-sub">Tenant rate / mo</small>
+                        </td>
+                        <td>
+                            <span class="ab-status @(isFlatOccupied ? "ab-status-warning" : "ab-status-success")">
+                                <i></i>@(isFlatOccupied ? "Occupied" : "Available")
+                            </span>
+                        </td>
+                        <td>@flat.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <a asp-action="EditFlat" asp-route-id="@flat.FlatId" class="ab-icon-btn" title="Edit flat @flat.FlatNumber" aria-label="Edit flat @flat.FlatNumber">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                @if (isFlatOccupied && activeAssign != null)
+                                {
+                                    <button type="button" class="ab-icon-btn text-danger" title="Vacate resident / Resident departure"
+                                            onclick="openVacateModal(@flat.FlatId, '@flat.FlatNumber', '@(residentName.Replace("'", "\\'"))')">
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    </button>
+                                }
+                                else if (!isFlatOccupied)
+                                {
+                                    <a asp-action="AssignFlat" asp-route-flatId="@flat.FlatId" class="ab-icon-btn text-success" title="Assign resident to this flat">
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr> 
+                }
+                </tbody>
+            </table>
+        </div>
+        } else { 
+            <div class="ab-empty-state-app">
+                <i class="fa-solid fa-building-circle-exclamation"></i>
+                <h2>Your building is ready for its first flat</h2>
+                <p>Create an apartment record, then assign a resident when it is ready.</p>
+                <a asp-action="CreateFlat" class="ab-app-btn ab-app-btn-primary">Create first flat</a>
+            </div> 
+        }
     </section>
 </div>
+
+<!-- Modal: Vacate Flat & Handle Resident Account -->
+<div class="modal fade" id="flatsVacateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Resident Departure / Vacate Flat
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="VacateFlat" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="modalVacateFlatId" name="flatId" />
+                <div class="modal-body">
+                    <p>Are you sure the resident <strong id="modalVacateResidentName"></strong> is vacating <strong>Flat <span id="modalVacateFlatNumber"></span></strong>?</p>
+                    <ul class="small text-muted mb-3">
+                        <li>The flat occupancy status will immediately reset to <strong>Available</strong>.</li>
+                        <li>Any assigned basement parking space will be automatically released.</li>
+                        <li>The active residency record for this apartment will be closed.</li>
+                    </ul>
+                    <div class="form-check p-3 rounded bg-light border">
+                        <input class="form-check-input" type="checkbox" name="deleteAccount" value="true" id="checkFlatsDeleteAccount" />
+                        <label class="form-check-label fw-bold text-danger small" for="checkFlatsDeleteAccount">
+                            Also permanently delete resident account and personal data
+                        </label>
+                        <div class="small text-muted mt-1">
+                            Check this if the resident is departing permanently and you wish to delete their login account, service requests, and records.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Confirm Vacate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function openVacateModal(flatId, flatNumber, residentName) {
+        document.getElementById('modalVacateFlatId').value = flatId;
+        document.getElementById('modalVacateFlatNumber').textContent = flatNumber;
+        document.getElementById('modalVacateResidentName').textContent = residentName || 'Resident';
+        document.getElementById('checkFlatsDeleteAccount').checked = false;
+        var modal = new bootstrap.Modal(document.getElementById('flatsVacateModal'));
+        modal.show();
+    }
+</script>
+}
+
