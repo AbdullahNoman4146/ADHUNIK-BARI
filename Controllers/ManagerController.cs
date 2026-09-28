@@ -930,6 +930,7 @@ Date:
             var floorSpots = await dbContext.ParkingSpots
                 .Where(s => s.ParkingFloorId == currentFloor.ParkingFloorId)
                 .Include(s => s.Flat)
+                .Include(s => s.AssignedUser)
                 .OrderBy(s => s.SpotNumber)
                 .ToListAsync();
 
@@ -962,6 +963,7 @@ Date:
                     floorSpots = await dbContext.ParkingSpots
                         .Where(s => s.ParkingFloorId == currentFloor.ParkingFloorId)
                         .Include(s => s.Flat)
+                        .Include(s => s.AssignedUser)
                         .OrderBy(s => s.SpotNumber)
                         .ToListAsync();
                 }
@@ -974,14 +976,29 @@ Date:
                 .Where(a => a.IsActive)
                 .ToListAsync();
 
-            var assignmentMap = activeAssignments.ToDictionary(a => a.FlatId, a => a);
+            // Group by FlatId to prevent duplicate key crashes when multiple active assignments exist for a flat
+            var assignmentMap = activeAssignments
+                .GroupBy(a => a.FlatId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.AssignmentDate).First());
 
             // Fetch parking bill items to accurately determine payment status (Paid vs Due)
             var parkingBillItems = await dbContext.BillItems
                 .Include(bi => bi.Bill)
+                    .ThenInclude(b => b!.Assignment)
                 .Where(bi => bi.ItemType == BillItemTypes.Parking && bi.Bill != null)
                 .OrderByDescending(bi => bi.CreatedAt)
                 .ToListAsync();
+
+            // Pre-fetch latest bills for active assignments to avoid synchronous queries inside loop
+            var assignmentIds = assignmentMap.Values.Select(a => a.AssignmentId).Distinct().ToList();
+            var latestBills = await dbContext.Bills
+                .Where(b => assignmentIds.Contains(b.AssignmentId))
+                .OrderByDescending(b => b.BillYear)
+                .ThenByDescending(b => b.BillMonth)
+                .ToListAsync();
+            var latestBillMap = latestBills
+                .GroupBy(b => b.AssignmentId)
+                .ToDictionary(g => g.Key, g => g.First());
 
             // Map each spot to ParkingSpotTileViewModel
             var spotTiles = floorSpots.Select(s =>
@@ -997,6 +1014,16 @@ Date:
                     residentType = assign.ResidentType ?? string.Empty;
                     flatFloor = assign.Flat?.FloorNumber;
                 }
+                else if (s.AssignedUser != null)
+                {
+                    residentName = s.AssignedUser.FullName;
+                    residentType = "Parking Member";
+                }
+
+                // Normalize legacy "Occupied" status to "Assigned"
+                string normalizedStatus = string.Equals(s.Status, "Occupied", StringComparison.OrdinalIgnoreCase)
+                    ? "Assigned"
+                    : (s.Status ?? "Available");
 
                 // Determine payment status:
                 string paymentStatus = "Due";
@@ -1009,14 +1036,8 @@ Date:
                     {
                         paymentStatus = "Paid";
                     }
-                    else if (assign != null)
+                    else if (assign != null && latestBillMap.TryGetValue(assign.AssignmentId, out var latestBill))
                     {
-                        var latestBill = dbContext.Bills
-                            .Where(b => b.AssignmentId == assign.AssignmentId)
-                            .OrderByDescending(b => b.BillYear)
-                            .ThenByDescending(b => b.BillMonth)
-                            .FirstOrDefault();
-
                         if (latestBill != null && latestBill.BillStatus == "Paid")
                         {
                             paymentStatus = "Paid";
@@ -1030,7 +1051,7 @@ Date:
                     ParkingFloorId = s.ParkingFloorId,
                     FloorName = currentFloor.FloorName,
                     SpotNumber = s.SpotNumber,
-                    Status = s.Status,
+                    Status = normalizedStatus,
                     VehicleType = s.ParkingType ?? "Car",
                     MonthlyFee = s.ParkingFee,
                     ListingPrice = s.ListingPrice,
@@ -1050,7 +1071,7 @@ Date:
             if (totalCap < allSpots.Count) totalCap = allSpots.Count;
 
             int availCount = allSpots.Count(s => s.Status == "Available");
-            int assignedCount = allSpots.Count(s => s.Status == "Assigned");
+            int assignedCount = allSpots.Count(s => s.Status == "Assigned" || s.Status == "Occupied");
             int forSaleCount = allSpots.Count(s => s.Status == "ForSale");
             int toLetCount = allSpots.Count(s => s.Status == "ToLet");
 
@@ -1060,12 +1081,12 @@ Date:
                 .Sum(bi => bi.Amount);
 
             decimal revenueDue = spotTiles
-                .Where(st => st.Status == "Assigned" && st.PaymentStatus == "Due")
+                .Where(st => (st.Status == "Assigned" || st.Status == "Occupied") && st.PaymentStatus == "Due")
                 .Sum(st => st.MonthlyFee);
 
             if (revenueCollected == 0 && assignedCount > 0)
             {
-                revenueDue = allSpots.Where(s => s.Status == "Assigned").Sum(s => s.ParkingFee);
+                revenueDue = allSpots.Where(s => s.Status == "Assigned" || s.Status == "Occupied").Sum(s => s.ParkingFee);
             }
 
             // Occupied flats for searchable typeahead dropdown
