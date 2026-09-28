@@ -143,9 +143,10 @@
                 @foreach (var spot in Model.Spots)
                 {
                     currentIndex++;
-                    var statusClass = spot.Status.ToLowerInvariant() switch
+                    var rawStatus = spot.Status ?? "Available";
+                    var statusClass = rawStatus.ToLowerInvariant() switch
                     {
-                        "assigned" => "status-assigned",
+                        "assigned" or "occupied" => "status-assigned",
                         "forsale" => "status-forsale",
                         "tolet" => "status-tolet",
                         _ => "status-available"
@@ -169,12 +170,12 @@
                             <span class="spot-code">@spot.SpotNumber</span>
                             <span class="status-badge">
                                 <i class="fa-solid fa-circle"></i>
-                                @(spot.Status == "ForSale" ? "For Sale" : (spot.Status == "ToLet" ? "To-Let" : spot.Status))
+                                @(spot.Status == "ForSale" ? "For Sale" : (spot.Status == "ToLet" ? "To-Let" : (spot.Status == "Occupied" ? "Assigned" : spot.Status)))
                             </span>
                         </div>
 
                         <div class="spot-mid">
-                            @if (spot.Status == "Assigned" && !string.IsNullOrEmpty(spot.FlatNumber))
+                            @if ((spot.Status == "Assigned" || spot.Status == "Occupied") && !string.IsNullOrEmpty(spot.FlatNumber))
                             {
                                 <div class="assigned-flat-pill">
                                     <i class="fa-solid fa-house"></i>
@@ -204,7 +205,7 @@
                                 <i class="fa-solid @(spot.VehicleType == "Bike" ? "fa-motorcycle" : "fa-car") me-1"></i>
                                 ৳@spot.MonthlyFee.ToString("N0")<small class="text-muted">/mo</small>
                             </span>
-                            @if (spot.Status == "Assigned")
+                            @if (spot.Status == "Assigned" || spot.Status == "Occupied")
                             {
                                 <span class="payment-pill @(spot.PaymentStatus == "Paid" ? "pill-paid" : "pill-due")">
                                     @spot.PaymentStatus
@@ -254,7 +255,7 @@
                 {
                     <div class="ab-activity-entry">
                         <div class="ab-activity-icon">
-                            <i class="fa-solid @(log.Action.Contains("Assign") ? "fa-link" : (log.Action.Contains("Release") ? "fa-link-slash" : "fa-square-parking"))"></i>
+                            <i class="fa-solid @(log.Action?.Contains("Assign") == true ? "fa-link" : (log.Action?.Contains("Release") == true ? "fa-link-slash" : "fa-square-parking"))"></i>
                         </div>
                         <div class="ab-activity-body">
                             <strong>@log.Action · Space @log.SpotNumber</strong>
